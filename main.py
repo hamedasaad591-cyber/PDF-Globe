@@ -12,6 +12,9 @@ from typing import Optional
 import fitz  # PyMuPDF
 import httpx
 from docx import Document
+from docx.shared import Pt
+from docx.enum.section import WD_SECTION
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
@@ -99,43 +102,129 @@ async def compress_pdf(file: UploadFile = File(...)):
         return download_response(out, out.name, "application/pdf")
 
 
+def create_layout_preserving_docx(src: Path, out: Path, dpi: int = 180) -> None:
+    """Create a DOCX with one full-page image per PDF page.
+
+    This mode prioritizes visual fidelity for mixed RTL/LTR documents, labels,
+    barcodes, tables, and scanned pages. The page content is not text-editable.
+    """
+    pdf = fitz.open(src)
+    if pdf.is_encrypted:
+        pdf.close()
+        raise ValueError("الملف محمي بكلمة مرور. أزل الحماية أولاً")
+    if pdf.page_count > 80:
+        pdf.close()
+        raise ValueError("وضع الحفاظ على التصميم يدعم حتى 80 صفحة في المرة الواحدة")
+
+    doc = Document()
+    doc.core_properties.title = "PDF Globe - Layout-preserved PDF conversion"
+    max_page_pt = 22 * 72  # Word's practical maximum page dimension.
+    epsilon_pt = 0.7      # Avoid a fractional-point overflow onto a blank page.
+
+    try:
+        for index, page in enumerate(pdf):
+            section = doc.sections[0] if index == 0 else doc.add_section(WD_SECTION.NEW_PAGE)
+            width_pt = float(page.rect.width)
+            height_pt = float(page.rect.height)
+            dimension_scale = min(1.0, max_page_pt / max(width_pt, height_pt))
+            target_w = width_pt * dimension_scale
+            target_h = height_pt * dimension_scale
+
+            section.page_width = Pt(target_w)
+            section.page_height = Pt(target_h)
+            section.top_margin = Pt(0)
+            section.bottom_margin = Pt(0)
+            section.left_margin = Pt(0)
+            section.right_margin = Pt(0)
+            section.header_distance = Pt(0)
+            section.footer_distance = Pt(0)
+
+            render_scale = (dpi / 72.0) * dimension_scale
+            pix = page.get_pixmap(
+                matrix=fitz.Matrix(render_scale, render_scale),
+                colorspace=fitz.csRGB,
+                alpha=False,
+                annots=True,
+            )
+            image_path = out.parent / f"pdfglobe-page-{index + 1}.png"
+            pix.save(image_path)
+
+            paragraph = doc.add_paragraph()
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            fmt = paragraph.paragraph_format
+            fmt.space_before = Pt(0)
+            fmt.space_after = Pt(0)
+            fmt.left_indent = Pt(0)
+            fmt.right_indent = Pt(0)
+            fmt.first_line_indent = Pt(0)
+            fmt.line_spacing = Pt(max(1, target_h - epsilon_pt))
+            run = paragraph.add_run()
+            run.add_picture(
+                str(image_path),
+                width=Pt(max(1, target_w - epsilon_pt)),
+                height=Pt(max(1, target_h - epsilon_pt)),
+            )
+            image_path.unlink(missing_ok=True)
+    finally:
+        pdf.close()
+
+    doc.save(out)
+
+
 @app.post("/api/pdf/to-word")
-async def pdf_to_word(file: UploadFile = File(...)):
+async def pdf_to_word(file: UploadFile = File(...), mode: str = Form("layout")):
+    mode = (mode or "layout").strip().lower()
+    if mode not in {"layout", "editable"}:
+        raise HTTPException(status_code=400, detail="اختر طريقة التحويل: الحفاظ على شكل الصفحات أو استخراج النص القابل للتحرير")
     with tempfile.TemporaryDirectory(prefix="pdfglobe-") as td:
         folder = Path(td)
         src = await store_upload(file, folder, {".pdf"})
         out = folder / f"{safe_name(file.filename)}.docx"
-        conversion_error = None
-        try:
-            from pdf2docx import Converter
-            converter = Converter(str(src))
-            converter.convert(str(out), start=0, end=None)
-            converter.close()
-        except Exception as exc:
-            conversion_error = exc
-            # Text-only fallback keeps the action usable when pdf2docx cannot parse a PDF.
-            try:
-                fallback = Document()
-                source_pdf = fitz.open(src)
-                extracted_any = False
-                for page_no, page in enumerate(source_pdf, start=1):
-                    if page_no > 1:
-                        fallback.add_page_break()
-                    for block in page.get_text("blocks"):
-                        block_text = str(block[4]).strip()
-                        if block_text:
-                            fallback.add_paragraph(block_text)
-                            extracted_any = True
-                source_pdf.close()
-                if extracted_any:
-                    fallback.save(out)
-            except Exception:
-                pass
-        if not out.exists():
-            detail = f"تعذر التحويل إلى Word. قد يكون الملف ممسوحاً ضوئياً أو معقد التخطيط: {conversion_error}"
-            raise HTTPException(status_code=422, detail=detail)
-        return download_response(out, out.name, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
+        if mode == "layout":
+            try:
+                create_layout_preserving_docx(src, out, dpi=200)
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc))
+            except Exception as exc:
+                raise HTTPException(status_code=422, detail=f"تعذر إنشاء Word مع الحفاظ على شكل الصفحات: {str(exc)[:300]}")
+        elif mode == "editable":
+            # pdf2docx is best-effort for editable extraction. It does not reliably
+            # preserve RTL/bidi order, complex Arabic shaping, labels or barcodes.
+            # Do not silently return a text-only PyMuPDF fallback: that fallback
+            # loses geometry and can scramble Arabic reading order while appearing
+            # to have succeeded.
+            converter = None
+            try:
+                from pdf2docx import Converter
+                converter = Converter(str(src))
+                converter.convert(str(out), start=0, end=None)
+            except Exception as exc:
+                out.unlink(missing_ok=True)
+                raise HTTPException(
+                    status_code=422,
+                    detail=(
+                        "تعذر استخراج نص قابل للتحرير من هذا الملف. قد يكون تخطيطه معقداً أو "
+                        "يحتوي على نص عربي/مختلط الاتجاه. جرّب وضع الحفاظ على شكل الصفحات. "
+                        f"التفاصيل: {str(exc)[:220]}"
+                    ),
+                )
+            finally:
+                if converter is not None:
+                    try:
+                        converter.close()
+                    except Exception:
+                        pass
+            if not out.exists() or out.stat().st_size == 0:
+                raise HTTPException(status_code=422, detail="لم ينتج محرك التحويل ملف Word صالحاً. جرّب وضع الحفاظ على شكل الصفحات.")
+        else:
+            raise HTTPException(status_code=400, detail="اختر وضع التحويل: layout أو editable")
+
+        return download_response(
+            out,
+            out.name,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
 
 @app.post("/api/word/to-pdf")
 async def word_to_pdf(file: UploadFile = File(...)):
