@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://pdf-globe.onrender.com/sitemap.xml
