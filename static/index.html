@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PDF Globe — منصة عالمية مجانية لأدوات PDF: دمج وتحويل وضغط وترجمة الملفات والمزيد.">
+  <meta name="theme-color" content="#f7f8fc">
+  <title>PDF Globe — عالم ملفات PDF</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#home" aria-label="PDF Globe home">
+      <span class="brand-mark"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M11 4h12l8 8v23H11z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M23 4v9h8M16 21h10M16 27h10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="9" cy="29" r="5" fill="#39c6a5" stroke="#fff" stroke-width="1.5"/></svg></span>
+      <span class="brand-name">PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span>
+    </a>
+    <nav class="desktop-nav"><a href="#tools" data-i18n="nav_tools">الأدوات</a><a href="#how" data-i18n="nav_how">كيف يعمل</a><a href="#privacy" data-i18n="nav_privacy">الخصوصية</a></nav>
+    <div class="top-actions">
+      <select id="uiLanguage" class="language-select" aria-label="Interface language">
+        <option value="ar">العربية</option><option value="en">English</option><option value="fr">Français</option><option value="es">Español</option><option value="tr">Türkçe</option><option value="ur">اردو</option>
+      </select>
+      <a class="header-cta" href="#tools" data-i18n="get_started">ابدأ الآن</a>
+    </div>
+  </header>
+
+  <main id="home">
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="eyebrow">أدوات ملفات متاحة للجميع حول العالم</span></div>
+        <h1 data-i18n="hero_title">كل ما تحتاجه لملفاتك<br><em>في مكان واحد.</em></h1>
+        <p class="hero-lead" data-i18n="hero_text">حوّل ملفات PDF وعدّلها وادمجها واضغطها وترجمها بسهولة. أدوات عملية، بواجهة بسيطة، ومصممة لتعمل معك أينما كنت.</p>
+        <div class="hero-buttons"><a class="primary-btn" href="#tools"><span data-i18n="explore_tools">استكشف الأدوات</span><span class="arrow">↗</span></a><span class="free-note"><span class="check">✓</span><span data-i18n="free_note">استخدام مجاني ضمن حدود الخدمة</span></span></div>
+        <div class="hero-proof"><div class="proof-avatars"><i>A</i><i>م</i><i>文</i><i>ع</i></div><span data-i18n="global_note">مصمم لمستخدمين من مختلف الدول واللغات</span></div>
+      </div>
+      <div class="hero-art" aria-label="PDF tools illustration">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="hero-globe"><div class="globe-lines"></div><span>PDF</span><small>GLOBE</small></div>
+        <div class="float-card card-convert"><span class="mini-icon purple">⇄</span><div><b data-i18n="convert">تحويل الملفات</b><small>PDF ⇄ DOCX</small></div></div>
+        <div class="float-card card-translate"><span class="mini-icon green">文</span><div><b data-i18n="translate">ترجمة المستندات</b><small>AR · EN · FR · ES</small></div></div>
+        <div class="float-card card-merge"><span class="mini-icon orange">▤</span><div><b data-i18n="merge">دمج ملفات PDF</b><small>PDF + PDF</small></div></div>
+        <div class="hero-spark spark-a">✳</div><div class="hero-spark spark-b">✦</div>
+      </div>
+    </section>
+
+    <section class="quick-stats wrap">
+      <div><strong>18+</strong><span data-i18n="stat_tools">أداة مفيدة</span></div><i></i><div><strong>6</strong><span data-i18n="stat_ui">لغات للواجهة</span></div><i></i><div><strong>0</strong><span data-i18n="stat_signup">حساب مطلوب للبدء</span></div><i></i><div><strong>∞</strong><span data-i18n="stat_places">مستخدمون من كل مكان</span></div>
+    </section>
+
+    <section id="tools" class="tools-section wrap">
+      <div class="section-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="tools_kicker">مساحة العمل</span></div><h2 data-i18n="tools_title">اختر الأداة المناسبة لمهمتك</h2><p data-i18n="tools_subtitle">كل الأدوات الأساسية للملفات والمستندات في واجهة واحدة.</p></div><div class="search-box"><span>⌕</span><input id="toolSearch" type="search" data-i18n-placeholder="search_tools" placeholder="ابحث عن أداة..."></div></div>
+      <div class="category-row" id="categories">
+        <button class="category active" data-category="all" data-i18n="cat_all">كل الأدوات</button>
+        <button class="category" data-category="organize" data-i18n="cat_organize">تنظيم PDF</button>
+        <button class="category" data-category="convert" data-i18n="cat_convert">التحويل</button>
+        <button class="category" data-category="edit" data-i18n="cat_edit">التعديل</button>
+        <button class="category" data-category="security" data-i18n="cat_security">الحماية</button>
+        <button class="category" data-category="ocr" data-i18n="cat_ocr">استخراج النص والترجمة</button>
+      </div>
+      <div class="tool-grid" id="toolGrid">
+        <button class="tool-card" data-tool="merge" data-category="organize"><span class="tool-icon tint-blue">▤</span><b data-i18n="tool_merge">دمج PDF</b><small data-i18n="desc_merge">اجمع عدة ملفات في ملف واحد.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="split" data-category="organize"><span class="tool-icon tint-cyan">⫶</span><b data-i18n="tool_split">تقسيم واستخراج الصفحات</b><small data-i18n="desc_split">اختر الصفحات التي تريدها.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="compress" data-category="organize"><span class="tool-icon tint-violet">⇣</span><b data-i18n="tool_compress">ضغط PDF</b><small data-i18n="desc_compress">قلّل حجم الملف مع محاولة الحفاظ على الجودة.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="rotate" data-category="organize"><span class="tool-icon tint-orange">⟳</span><b data-i18n="tool_rotate">تدوير الصفحات</b><small data-i18n="desc_rotate">دوّر صفحات المستند بالاتجاه المناسب.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="delete" data-category="organize"><span class="tool-icon tint-red">▣</span><b data-i18n="tool_delete">حذف الصفحات</b><small data-i18n="desc_delete">احذف الصفحات غير المطلوبة.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="reorder" data-category="organize"><span class="tool-icon tint-green">☷</span><b data-i18n="tool_reorder">ترتيب الصفحات</b><small data-i18n="desc_reorder">أعد ترتيب الصفحات حسب الأرقام.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="pdf-word" data-category="convert"><span class="tool-icon tint-blue">W</span><b data-i18n="tool_pdfword">PDF إلى Word</b><small data-i18n="desc_pdfword">حوّل الملف إلى مستند DOCX قابل للتحرير.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="word-pdf" data-category="convert"><span class="tool-icon tint-indigo">P</span><b data-i18n="tool_wordpdf">Word إلى PDF</b><small data-i18n="desc_wordpdf">حوّل مستندات Word إلى PDF.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="image-pdf" data-category="convert"><span class="tool-icon tint-pink">▧</span><b data-i18n="tool_imagepdf">صور إلى PDF</b><small data-i18n="desc_imagepdf">حوّل صور JPG وPNG إلى ملف PDF.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="pdf-image" data-category="convert"><span class="tool-icon tint-cyan">▧</span><b data-i18n="tool_pdfimage">PDF إلى صور</b><small data-i18n="desc_pdfimage">صدّر صفحات PDF بصيغة JPG داخل ZIP.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="watermark" data-category="edit"><span class="tool-icon tint-orange">◈</span><b data-i18n="tool_watermark">إضافة علامة مائية</b><small data-i18n="desc_watermark">أضف نصاً شفافاً على صفحات الملف.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="numbers" data-category="edit"><span class="tool-icon tint-violet">№</span><b data-i18n="tool_numbers">ترقيم الصفحات</b><small data-i18n="desc_numbers">أضف أرقاماً إلى صفحات المستند.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="sign" data-category="edit"><span class="tool-icon tint-green">✍</span><b data-i18n="tool_sign">توقيع PDF</b><small data-i18n="desc_sign">ارسم توقيعك وأضفه إلى صفحة محددة.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="protect" data-category="security"><span class="tool-icon tint-red">♙</span><b data-i18n="tool_protect">حماية PDF</b><small data-i18n="desc_protect">أضف كلمة مرور إلى ملفك.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="unlock" data-category="security"><span class="tool-icon tint-blue">♧</span><b data-i18n="tool_unlock">فتح PDF</b><small data-i18n="desc_unlock">أزل كلمة المرور التي تعرفها.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="repair" data-category="security"><span class="tool-icon tint-green">⌁</span><b data-i18n="tool_repair">إصلاح PDF</b><small data-i18n="desc_repair">أعد حفظ الملف لمحاولة إصلاح بنيته.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="ocr" data-category="ocr"><span class="tool-icon tint-pink">文</span><b data-i18n="tool_ocr">استخراج النص OCR</b><small data-i18n="desc_ocr">استخرج النص من الصور والملفات الممسوحة.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="translate" data-category="ocr"><span class="tool-icon tint-indigo">⇄</span><b data-i18n="tool_translate">ترجمة المستندات</b><small data-i18n="desc_translate">ترجم النص إلى لغة أخرى واحفظه في Word.</small><span class="tool-arrow">↗</span></button>
+      </div>
+      <p id="noResults" class="no-results hidden" data-i18n="no_results">لم نعثر على أداة بهذا الاسم.</p>
+    </section>
+
+    <section class="workspace-section" id="workspaceSection">
+      <div class="workspace wrap">
+        <div class="workspace-head"><div><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="workspace_kicker">منطقة المعالجة</span></div><h2 id="workspaceTitle" data-i18n="choose_tool">اختر أداة للبدء</h2><p id="workspaceDescription" data-i18n="choose_tool_hint">اضغط على إحدى الأدوات أعلاه، ثم أضف الملف واتبع التعليمات.</p></div><button id="closeWorkspace" class="close-btn" aria-label="Close">×</button></div>
+        <div class="workspace-body">
+          <div class="upload-area" id="uploadArea">
+            <input id="fileInput" type="file" hidden>
+            <div class="upload-symbol"><span>↑</span></div>
+            <h3 data-i18n="drop_title">اسحب ملفاتك إلى هنا</h3>
+            <p data-i18n="drop_subtitle">أو اختر الملفات من جهازك</p>
+            <button id="browseFiles" class="browse-btn" data-i18n="browse_files">اختيار الملفات</button>
+            <small id="acceptedFiles" data-i18n="accepted_files">PDF أو صور أو Word حسب الأداة · حتى 50 MB للملف</small>
+          </div>
+          <div id="fileList" class="file-list hidden"></div>
+          <div id="optionsPanel" class="options-panel hidden"></div>
+          <div class="execute-row"><button id="runTool" class="run-btn" disabled><span data-i18n="run_tool">تنفيذ الأداة</span><span>↗</span></button><span class="secure-hint"><span>♢</span><span data-i18n="secure_hint">لا نحتفظ بنسخ دائمة من الملفات على هذا الموقع.</span></span></div>
+          <div id="progressWrap" class="progress-wrap hidden"><div class="progress-meta"><span id="progressText" data-i18n="processing">جارٍ المعالجة...</span><span id="progressPercent">0%</span></div><div class="progress-track"><i id="progressBar"></i></div></div>
+          <div id="resultBox" class="result-box hidden" role="status"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="steps-section wrap"><div class="section-heading centered"><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="how_kicker">سهل من البداية للنهاية</span></div><h2 data-i18n="how_title">ثلاث خطوات، ومهمتك تنتهي</h2></div><div class="steps-grid"><div class="step-card"><span class="step-number">01</span><div class="step-visual upload-visual">↑</div><h3 data-i18n="step1_title">اختر الأداة</h3><p data-i18n="step1_text">حدد ما تريد فعله بملفك من قائمة الأدوات.</p></div><div class="step-card"><span class="step-number">02</span><div class="step-visual process-visual">✦</div><h3 data-i18n="step2_title">أضف الملف</h3><p data-i18n="step2_text">ارفع ملفك واضبط الخيارات المناسبة.</p></div><div class="step-card"><span class="step-number">03</span><div class="step-visual download-visual">↓</div><h3 data-i18n="step3_title">حمّل النتيجة</h3><p data-i18n="step3_text">نزّل الملف بعد انتهاء المعالجة.</p></div></div></section>
+
+    <section id="privacy" class="privacy-section wrap"><div class="privacy-card"><div class="privacy-icon">◉</div><div><h2 data-i18n="privacy_title">ملفاتك تستحق الخصوصية</h2><p data-i18n="privacy_text">تتم معظم عمليات PDF داخل متصفحك على جهازك. بعض التحويلات والترجمة تحتاج إرسال الملف أو النص إلى الخادم أو مزود الترجمة لتنفيذها. لا ترفع معلومات حساسة إلا إذا كنت موافقاً على طريقة المعالجة.</p></div><div class="privacy-points"><span>✓ <b data-i18n="privacy_point1">لا نطلب إنشاء حساب</b></span><span>✓ <b data-i18n="privacy_point2">حذف الملفات المؤقتة بعد المعالجة</b></span></div></div></section>
+  </main>
+  <footer class="footer"><div class="wrap footer-inner"><a class="brand" href="#home"><span class="brand-mark small-mark">PDF</span><span class="brand-name">PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><span data-i18n="footer_note">أدوات الملفات للجميع، أينما كانوا.</span><span class="footer-links"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></span><span>© <span id="year"></span> PDF Globe</span></div><p class="footer-disclaimer wrap" data-i18n="disclaimer">هذه المنصة أداة مساعدة. راجع نتائج التحويل والترجمة قبل الاعتماد الرسمي، فقد تختلف الجودة بحسب الملف واللغة.</p></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
