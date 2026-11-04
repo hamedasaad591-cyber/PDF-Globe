@@ -25,6 +25,7 @@ MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "50"))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 LIBRETRANSLATE_URL = os.getenv("LIBRETRANSLATE_URL", "").rstrip("/")
 LIBRETRANSLATE_API_KEY = os.getenv("LIBRETRANSLATE_API_KEY", "")
+MYMEMORY_CONTACT_EMAIL = os.getenv("MYMEMORY_CONTACT_EMAIL", "").strip()
 
 app = FastAPI(title="PDF Globe API", version="1.0.0")
 
@@ -288,54 +289,144 @@ async def repair_pdf(file: UploadFile = File(...)):
         return download_response(out, out.name, "application/pdf")
 
 
+def split_utf8_chunks(paragraph: str, max_bytes: int = 450) -> list[str]:
+    """Split a paragraph into chunks that stay below MyMemory's 500-byte q limit.
+
+    Count UTF-8 bytes rather than Python characters; Arabic and many other scripts
+    use multiple bytes per character. Prefer word boundaries, but split a single
+    oversized token safely at Unicode character boundaries when necessary.
+    """
+    text = paragraph.strip()
+    if not text:
+        return []
+    chunks: list[str] = []
+    start = 0
+    while start < len(text):
+        end = start
+        used = 0
+        last_space = -1
+        while end < len(text):
+            char_size = len(text[end].encode("utf-8"))
+            if used + char_size > max_bytes:
+                break
+            used += char_size
+            if text[end].isspace():
+                last_space = end
+            end += 1
+        if end == len(text):
+            piece = text[start:end].strip()
+            if piece:
+                chunks.append(piece)
+            break
+        if end == start:
+            # Defensive guard: max_bytes is much larger than one UTF-8 code point.
+            raise ValueError("تعذر تقسيم النص إلى أجزاء صالحة لمحرك الترجمة")
+        if last_space >= start:
+            cut = last_space
+            piece = text[start:cut].strip()
+            next_start = last_space + 1
+        else:
+            # A single word/token is larger than the provider limit.
+            piece = text[start:end].strip()
+            next_start = end
+        if piece:
+            chunks.append(piece)
+        start = next_start
+    return chunks
+
+
 async def translate_chunk(text: str, source: str, target: str) -> str:
     if LIBRETRANSLATE_URL:
         payload = {"q": text, "source": source, "target": target, "format": "text"}
         if LIBRETRANSLATE_API_KEY:
             payload["api_key"] = LIBRETRANSLATE_API_KEY
-        async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.post(f"{LIBRETRANSLATE_URL}/translate", data=payload)
-            response.raise_for_status()
-            data = response.json()
-            if not data.get("translatedText"):
-                raise ValueError("لم يرجع محرك الترجمة نصاً مترجماً")
-            return data["translatedText"]
-    # Free fallback for small jobs. MyMemory has provider-side quotas and language-pair limits.
+        try:
+            async with httpx.AsyncClient(timeout=60, follow_redirects=True) as client:
+                response = await client.post(f"{LIBRETRANSLATE_URL}/translate", data=payload)
+                response.raise_for_status()
+                data = response.json()
+        except httpx.TimeoutException as exc:
+            raise HTTPException(status_code=504, detail="انتهت مهلة الاتصال بمحرك LibreTranslate. حاول مجدداً بعد قليل") from exc
+        except httpx.RequestError as exc:
+            raise HTTPException(status_code=502, detail="تعذر الوصول إلى خادم LibreTranslate. تحقق من عنوان الخدمة وإعداداتها في Render") from exc
+        if not data.get("translatedText"):
+            raise HTTPException(status_code=502, detail="استقبل الموقع رداً من LibreTranslate لكنه لا يحتوي على نص مترجم")
+        return data["translatedText"]
+
+    # MyMemory's q parameter is limited to 500 UTF-8 bytes per request.
+    if len(text.encode("utf-8")) > 450:
+        raise HTTPException(status_code=413, detail="جزء النص أكبر من الحد الآمن لمحرك MyMemory. أعد المحاولة بعد تحديث الموقع")
     if source == "auto":
-        raise HTTPException(status_code=400, detail="اختر لغة المصدر بدلاً من (تلقائي) عند استخدام الترجمة المجانية الاحتياطية")
-    async with httpx.AsyncClient(timeout=45) as client:
-        response = await client.get(
-            "https://api.mymemory.translated.net/get",
-            params={"q": text, "langpair": f"{source}|{target}"},
-        )
-        response.raise_for_status()
+        raise HTTPException(status_code=400, detail="اختر لغة المصدر بدلاً من (تلقائي) عند استخدام محرك MyMemory المجاني")
+
+    params = {"q": text, "langpair": f"{source}|{target}"}
+    if MYMEMORY_CONTACT_EMAIL:
+        params["de"] = MYMEMORY_CONTACT_EMAIL
+    try:
+        async with httpx.AsyncClient(timeout=45, follow_redirects=True, headers={"User-Agent": "PDF-Globe/1.1"}) as client:
+            response = await client.get("https://api.mymemory.translated.net/get", params=params)
+    except httpx.TimeoutException as exc:
+        raise HTTPException(status_code=504, detail="انتهت مهلة الاتصال بمحرك MyMemory. حاول مجدداً بعد قليل") from exc
+    except httpx.RequestError as exc:
+        raise HTTPException(status_code=502, detail="تعذر الوصول إلى خادم MyMemory من Render. قد تكون الخدمة الخارجية غير متاحة مؤقتاً") from exc
+
+    if response.status_code == 429:
+        raise HTTPException(status_code=503, detail="محرك MyMemory رفض الطلب بسبب حد الاستخدام أو كثرة الطلبات. انتظر ثم حاول لاحقاً")
+    if response.status_code >= 500:
+        raise HTTPException(status_code=503, detail=f"محرك MyMemory يواجه عطلاً مؤقتاً (HTTP {response.status_code}). حاول لاحقاً")
+    if response.status_code >= 400:
+        raise HTTPException(status_code=502, detail=f"محرك MyMemory رفض الطلب (HTTP {response.status_code}). تحقق من اللغات وحجم النص")
+
+    try:
         data = response.json()
-        if data.get("responseStatus") != 200:
-            raise ValueError(data.get("responseDetails") or "محرك الترجمة لم يقبل الطلب")
-        translated = data.get("responseData", {}).get("translatedText")
-        if not translated:
-            raise ValueError("لم ينتج محرك الترجمة نصاً")
-        return html.unescape(translated)
+    except ValueError as exc:
+        raise HTTPException(status_code=502, detail="أعاد محرك MyMemory استجابة غير مفهومة") from exc
+
+    try:
+        provider_status = int(data.get("responseStatus", 0))
+    except (TypeError, ValueError):
+        provider_status = 0
+    if provider_status != 200:
+        details = str(data.get("responseDetails") or "محرك الترجمة لم يقبل الطلب")
+        low = details.lower()
+        quota_terms = ("quota", "daily", "limit", "too many", "available free", "exceeded")
+        if any(term in low for term in quota_terms):
+            raise HTTPException(status_code=503, detail="تم تجاوز الحصة المجانية لمحرك MyMemory أو حد الطلبات. انتظر تجدد الحصة أو اضبط MYMEMORY_CONTACT_EMAIL في Render لرفع الحد اليومي المعلن من المزود")
+        raise HTTPException(status_code=502, detail=f"محرك MyMemory رفض طلب الترجمة: {details[:220]}")
+
+    translated = data.get("responseData", {}).get("translatedText")
+    if not translated:
+        raise HTTPException(status_code=502, detail="لم يرجع محرك MyMemory نصاً مترجماً")
+    return html.unescape(translated)
 
 
 async def translate_long_text(text: str, source: str, target: str) -> str:
-    # Split on paragraphs and then into provider-safe chunks, retaining paragraph boundaries.
     chunks: list[str] = []
-    max_chars = 450 if not LIBRETRANSLATE_URL else 4500
-    for paragraph in text.splitlines():
-        if not paragraph.strip():
-            chunks.append("")
-            continue
-        current = ""
-        for word in paragraph.split(" "):
-            candidate = (current + " " + word).strip()
-            if len(candidate) > max_chars and current:
+    if LIBRETRANSLATE_URL:
+        # LibreTranslate's accepted request size depends on the configured instance.
+        max_chars = 4500
+        for paragraph in text.splitlines():
+            if not paragraph.strip():
+                chunks.append("")
+                continue
+            current = ""
+            for word in paragraph.split():
+                candidate = (current + " " + word).strip()
+                if len(candidate) > max_chars and current:
+                    chunks.append(current)
+                    current = word
+                else:
+                    current = candidate
+            if current:
                 chunks.append(current)
-                current = word
+    else:
+        # MyMemory documents a 500-byte maximum for q. Use 450 bytes for headroom.
+        for paragraph in text.splitlines():
+            if not paragraph.strip():
+                chunks.append("")
             else:
-                current = candidate
-        if current:
-            chunks.append(current)
+                chunks.extend(split_utf8_chunks(paragraph, max_bytes=450))
+
     translated: list[str] = []
     for chunk in chunks:
         if not chunk:
