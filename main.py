@@ -582,7 +582,15 @@ def _extract_page_layout_items(page) -> list[dict]:
                 items.append({
                     "kind": "text", "text": text, "spans": spans,
                     "bbox": (x0, y0, x1, y1), "center_y": (y0 + y1) / 2,
-                    "anchor": anchor, "rtl": rtl,
+                    # Keep all three horizontal anchors. A PDF line's right edge
+                    # is NOT a stable column anchor when centered Arabic labels
+                    # have different text lengths. The page-level selector below
+                    # chooses left, center, or right alignment from the evidence.
+                    "anchor": (x0 + x1) / 2,
+                    "anchor_left": x0,
+                    "anchor_center": (x0 + x1) / 2,
+                    "anchor_right": x1,
+                    "rtl": rtl,
                     "font_size": max([float(sp.get("size", 10) or 10) for sp in spans] or [10]),
                     "order": (block_index, line_index),
                 })
@@ -608,6 +616,100 @@ def _cluster_numeric(values: list[float], tolerance: float) -> list[list[float]]
         else:
             clusters[-1].append(value)
     return clusters
+
+
+def _native_table_column_bounds(page) -> tuple[list[float] | None, int, int]:
+    """Return trustworthy x boundaries from PyMuPDF's detected native tables.
+
+    PyMuPDF Table.cells is column-major: cells for column 0 come first, then
+    column 1, etc. We only use the geometry when it forms a complete rectangular
+    grid with stable column edges. Otherwise the layout-anchor heuristic is used.
+    """
+    try:
+        tables = list(getattr(page.find_tables(), "tables", []) or [])
+    except Exception:
+        return None, 0, 0
+    candidates = []
+    for table in tables:
+        rows = int(getattr(table, "row_count", 0) or 0)
+        cols = int(getattr(table, "col_count", 0) or 0)
+        cells = list(getattr(table, "cells", []) or [])
+        if rows < 2 or cols < 2 or len(cells) < rows * cols:
+            continue
+        column_ranges = []
+        valid = True
+        for col in range(cols):
+            col_cells = [cells[col * rows + row] for row in range(rows)]
+            col_cells = [cell for cell in col_cells if cell and len(cell) == 4]
+            if len(col_cells) < max(2, rows // 2):
+                valid = False
+                break
+            x0 = min(float(cell[0]) for cell in col_cells)
+            x1 = max(float(cell[2]) for cell in col_cells)
+            if x1 - x0 < 5:
+                valid = False
+                break
+            column_ranges.append((x0, x1))
+        if not valid:
+            continue
+        bounds = [column_ranges[0][0]]
+        for left, right in column_ranges:
+            if abs(left - bounds[-1]) > 4.0 and len(bounds) > 1:
+                valid = False
+                break
+            if len(bounds) == 1:
+                bounds[0] = left
+            bounds.append(right)
+        if not valid or len(bounds) != cols + 1:
+            continue
+        if any(bounds[i + 1] - bounds[i] < 4 for i in range(cols)):
+            continue
+        area = max(0.0, float(table.bbox[2] - table.bbox[0])) * max(0.0, float(table.bbox[3] - table.bbox[1]))
+        candidates.append((area, bounds, rows, cols))
+    if not candidates:
+        return None, 0, 0
+    _, bounds, rows, cols = max(candidates, key=lambda item: item[0])
+    return bounds, rows, cols
+
+
+def _select_column_anchor(items: list[dict], page_width: float) -> tuple[str, list[list[float]]]:
+    """Choose the most stable horizontal anchor for a page's text columns.
+
+    PDF text spans expose the visible glyph bounds, not their containing cell.
+    Using the right edge for every RTL line fragments a centered Arabic column
+    into many false columns whenever player/team names have different lengths.
+    Compare left, center and right anchors and prefer the strategy that produces
+    a compact set of repeatedly occupied columns with few singleton clusters.
+    """
+    tolerance = max(12.0, min(24.0, page_width * 0.035))
+    strategies = ("left", "center", "right")
+    scored: list[tuple[float, int, str, list[list[float]]]] = []
+    for strategy in strategies:
+        key = f"anchor_{strategy}"
+        values = [float(item.get(key, item.get("anchor", 0.0))) for item in items]
+        clusters = _cluster_numeric(values, tolerance)
+        if not clusters:
+            continue
+        singletons = sum(1 for cluster in clusters if len(cluster) == 1)
+        # Penalise fragmentation much more than a modestly larger legitimate
+        # column count. Repeated alignments are strong evidence of real columns.
+        singleton_ratio = singletons / len(clusters)
+        too_many = max(0, len(clusters) - 12)
+        dispersion = sum(
+            sum(abs(value - (sum(cluster) / len(cluster))) for value in cluster) / max(1, len(cluster))
+            for cluster in clusters
+        ) / len(clusters)
+        score = len(clusters) + 2.2 * singletons + 0.015 * dispersion + 2.5 * too_many
+        scored.append((score, len(clusters), strategy, clusters))
+    if not scored:
+        return "center", []
+    # Stable tie-break favors center alignment for diagrams/brackets, where
+    # labels are commonly centered within their visual boxes.
+    scored.sort(key=lambda row: (round(row[0], 4), row[1], 0 if row[2] == "center" else 1))
+    _, _, selected, clusters = scored[0]
+    for item in items:
+        item["anchor"] = float(item.get(f"anchor_{selected}", item.get("anchor", 0.0)))
+    return selected, clusters
 
 
 def _set_cell_margins(cell, top=0, start=0, bottom=0, end=0) -> None:
@@ -767,7 +869,9 @@ def _add_editable_layout_grid_page(doc: Document, page, section, dpi: int = 160)
         raise ValueError("لا توجد نصوص كافية لإعادة بناء جدول قابل للتحرير. قد يكون الملف صورة ممسوحة ضوئياً؛ استخدم OCR أولاً.")
 
     median_font = sorted(item["font_size"] for item in text_items)[len(text_items) // 2]
-    y_tolerance = max(2.0, min(5.5, median_font * 0.42))
+    # PDF lines that visually share a row can have slightly different text
+    # baselines (especially when Arabic and Latin labels are mixed).
+    y_tolerance = max(2.8, min(7.5, median_font * 0.62))
     row_groups: list[list[dict]] = []
     for item in sorted(items, key=lambda obj: (obj["center_y"], obj["bbox"][0])):
         if not row_groups:
@@ -779,29 +883,45 @@ def _add_editable_layout_grid_page(doc: Document, page, section, dpi: int = 160)
         else:
             row_groups.append([item])
 
-    # Cluster stable left anchors for LTR lines and right anchors for RTL lines.
-    # Images are mapped later to the nearest existing text column.
-    anchor_tolerance = max(12.0, min(22.0, page_w * 0.028))
-    anchor_clusters = _cluster_numeric([item["anchor"] for item in text_items], anchor_tolerance)
-    while len(anchor_clusters) > 14:
-        gaps = [
-            (abs(sum(anchor_clusters[i + 1]) / len(anchor_clusters[i + 1]) - sum(anchor_clusters[i]) / len(anchor_clusters[i])), i)
-            for i in range(len(anchor_clusters) - 1)
-        ]
-        _, idx = min(gaps)
-        anchor_clusters[idx] = anchor_clusters[idx] + anchor_clusters[idx + 1]
-        del anchor_clusters[idx + 1]
-    if not anchor_clusters:
-        raise ValueError("تعذر تحديد أعمدة الصفحة")
-    col_centers = [sum(cluster) / len(cluster) for cluster in anchor_clusters]
-    col_bounds = [0.0]
-    for left, right in zip(col_centers, col_centers[1:]):
-        col_bounds.append(max(col_bounds[-1] + 4.0, (left + right) / 2))
-    col_bounds.append(page_w)
-    # Keep all physical column widths positive and in order.
-    for i in range(1, len(col_bounds)):
-        col_bounds[i] = max(col_bounds[i], col_bounds[i - 1] + 2.0)
-    col_bounds[-1] = page_w
+    # Prefer actual rectangular table geometry when PyMuPDF can detect it.
+    # This preserves original cell widths instead of guessing them from glyphs.
+    native_col_bounds, native_rows, native_cols = _native_table_column_bounds(page)
+    if native_col_bounds and 2 <= len(native_col_bounds) - 1 <= 14:
+        anchor_strategy = "native-table-centers"
+        col_bounds = native_col_bounds
+        col_centers = [(col_bounds[i] + col_bounds[i + 1]) / 2 for i in range(len(col_bounds) - 1)]
+        # Map text by visible center when real cell boundaries are available;
+        # this avoids text-length-dependent edge anchors in mixed Arabic/LTR rows.
+        for item in text_items:
+            item["anchor"] = item["anchor_center"]
+        for item in items:
+            if item["kind"] == "image":
+                item["anchor"] = (item["bbox"][0] + item["bbox"][2]) / 2
+    else:
+        # Infer the page's actual alignment strategy. For centered Arabic team
+        # names, x1/right-edge clustering creates a separate column for each text
+        # length; center anchors retain the shared visual column. Left/right
+        # strategies remain available for ordinary aligned tabular documents.
+        anchor_strategy, anchor_clusters = _select_column_anchor(text_items, page_w)
+        while len(anchor_clusters) > 14:
+            gaps = [
+                (abs(sum(anchor_clusters[i + 1]) / len(anchor_clusters[i + 1]) - sum(anchor_clusters[i]) / len(anchor_clusters[i])), i)
+                for i in range(len(anchor_clusters) - 1)
+            ]
+            _, idx = min(gaps)
+            anchor_clusters[idx] = anchor_clusters[idx] + anchor_clusters[idx + 1]
+            del anchor_clusters[idx + 1]
+        if not anchor_clusters:
+            raise ValueError("تعذر تحديد أعمدة الصفحة")
+        col_centers = [sum(cluster) / len(cluster) for cluster in anchor_clusters]
+        col_bounds = [0.0]
+        for left, right in zip(col_centers, col_centers[1:]):
+            col_bounds.append(max(col_bounds[-1] + 4.0, (left + right) / 2))
+        col_bounds.append(page_w)
+        # Keep all physical column widths positive and in order.
+        for i in range(1, len(col_bounds)):
+            col_bounds[i] = max(col_bounds[i], col_bounds[i - 1] + 2.0)
+        col_bounds[-1] = page_w
 
     row_centers = [sum(item["center_y"] for item in group) / len(group) for group in row_groups]
     vertical_pad = max(8.0, min(18.0, median_font * 1.35))
@@ -940,8 +1060,17 @@ def _add_editable_layout_grid_page(doc: Document, page, section, dpi: int = 160)
                         pass
                     first = False
 
-    _apply_pdf_rules_to_grid(table, row_bounds, col_bounds, _line_segments(page), scale)
-    return {"rows": rows_count, "columns": cols_count, "text_lines": len(text_items)}
+    segments = _line_segments(page)
+    _apply_pdf_rules_to_grid(table, row_bounds, col_bounds, segments, scale)
+    if anchor_strategy == "native-table-centers":
+        # Native table detection is reliable evidence that the source has cell
+        # boundaries. Apply a restrained grid to all output cells; detected PDF
+        # rules above can then override the default edge colors/weights.
+        for row in table.rows:
+            for cell in row.cells:
+                for edge in ("top", "bottom", "left", "right"):
+                    _set_cell_edge(cell, edge, "B8C2CC", 4)
+    return {"rows": rows_count, "columns": cols_count, "text_lines": len(text_items), "anchor_strategy": anchor_strategy}
 
 
 def create_structured_editable_docx(src: Path, out: Path) -> dict:
