@@ -25,7 +25,20 @@ MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "50"))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 LIBRETRANSLATE_URL = os.getenv("LIBRETRANSLATE_URL", "").rstrip("/")
 LIBRETRANSLATE_API_KEY = os.getenv("LIBRETRANSLATE_API_KEY", "")
+CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
+CLOUDFLARE_API_TOKEN = os.getenv("CLOUDFLARE_API_TOKEN", "").strip()
+CLOUDFLARE_TRANSLATION_MODEL = os.getenv("CLOUDFLARE_TRANSLATION_MODEL", "@cf/meta/m2m100-1.2b").strip()
 MYMEMORY_CONTACT_EMAIL = os.getenv("MYMEMORY_CONTACT_EMAIL", "").strip()
+
+
+def translation_provider_name() -> str:
+    if CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN:
+        if CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN:
+            return "Cloudflare Workers AI (Meta M2M100 1.2B)"
+        return "Cloudflare configuration incomplete"
+    if LIBRETRANSLATE_URL:
+        return "LibreTranslate"
+    return "MyMemory fallback"
 
 app = FastAPI(title="PDF Globe API", version="1.0.0")
 
@@ -78,7 +91,8 @@ async def health():
         "ok": True,
         "service": "PDF Globe",
         "max_upload_mb": MAX_UPLOAD_MB,
-        "translation_provider": "LibreTranslate" if LIBRETRANSLATE_URL else "MyMemory fallback",
+        "translation_provider": translation_provider_name(),
+        "cloudflare_configured": bool(CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN),
         "libreoffice": bool(shutil.which("libreoffice")),
         "qpdf": bool(shutil.which("qpdf")),
     }
@@ -289,6 +303,28 @@ async def repair_pdf(file: UploadFile = File(...)):
         return download_response(out, out.name, "application/pdf")
 
 
+def split_character_chunks(paragraph: str, max_chars: int) -> list[str]:
+    """Split long text at word boundaries, with a hard character fallback."""
+    text = paragraph.strip()
+    if not text:
+        return []
+    chunks: list[str] = []
+    start = 0
+    while start < len(text):
+        end = min(start + max_chars, len(text))
+        if end < len(text):
+            cut = text.rfind(" ", start, end)
+            if cut > start:
+                end = cut
+        piece = text[start:end].strip()
+        if piece:
+            chunks.append(piece)
+        start = end
+        while start < len(text) and text[start].isspace():
+            start += 1
+    return chunks
+
+
 def split_utf8_chunks(paragraph: str, max_bytes: int = 450) -> list[str]:
     """Split a paragraph into chunks that stay below MyMemory's 500-byte q limit.
 
@@ -336,24 +372,78 @@ def split_utf8_chunks(paragraph: str, max_bytes: int = 450) -> list[str]:
 
 
 async def translate_chunk(text: str, source: str, target: str) -> str:
+    # Primary option: Cloudflare-hosted Meta M2M100 translation model.
+    # The model supports Arabic and many other languages; credentials stay on Render.
+    if CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN:
+        if not (CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN):
+            raise HTTPException(
+                status_code=503,
+                detail="إعداد Cloudflare غير مكتمل. أضف CLOUDFLARE_ACCOUNT_ID وCLOUDFLARE_API_TOKEN معاً في Render.",
+            )
+        if source == "auto":
+            raise HTTPException(
+                status_code=400,
+                detail="اختر لغة المصدر صراحةً عند استخدام محرك Cloudflare؛ وضع الكشف التلقائي غير مدعوم في هذا النموذج.",
+            )
+        url = (
+            "https://api.cloudflare.com/client/v4/accounts/"
+            f"{CLOUDFLARE_ACCOUNT_ID}/ai/run/{CLOUDFLARE_TRANSLATION_MODEL}"
+        )
+        payload = {"text": text, "source_lang": source, "target_lang": target}
+        headers = {"Authorization": f"Bearer {CLOUDFLARE_API_TOKEN}", "Content-Type": "application/json"}
+        try:
+            async with httpx.AsyncClient(timeout=90, follow_redirects=True) as client:
+                response = await client.post(url, json=payload, headers=headers)
+        except httpx.TimeoutException as exc:
+            raise HTTPException(status_code=504, detail="انتهت مهلة الاتصال بمحرك Cloudflare AI. حاول مجدداً بعد قليل") from exc
+        except httpx.RequestError as exc:
+            raise HTTPException(status_code=502, detail="تعذر الاتصال بمحرك Cloudflare AI من الخادم. تحقق من الاتصال وحاول لاحقاً") from exc
+
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise HTTPException(status_code=502, detail="أعاد Cloudflare استجابة غير مفهومة") from exc
+
+        errors = data.get("errors") or []
+        error_text = " ".join(str(item.get("message", item)) for item in errors) if isinstance(errors, list) else str(errors)
+        lowered = error_text.lower()
+        if response.status_code == 429 or "3036" in error_text or "daily free allocation" in lowered or "neurons" in lowered:
+            raise HTTPException(
+                status_code=503,
+                detail="تم استهلاك الحصة المجانية اليومية لـ Cloudflare Workers AI (10,000 Neurons). تتجدد الحصة يومياً؛ حاول في اليوم التالي.",
+            )
+        if response.status_code >= 500:
+            raise HTTPException(status_code=503, detail=f"محرك Cloudflare AI يواجه عطلاً مؤقتاً (HTTP {response.status_code}). حاول لاحقاً")
+        if response.status_code >= 400 or data.get("success") is False or errors:
+            detail = error_text[:240] or f"HTTP {response.status_code}"
+            raise HTTPException(status_code=502, detail=f"رفض Cloudflare طلب الترجمة: {detail}")
+
+        translated = (data.get("result") or {}).get("translated_text")
+        if not translated:
+            raise HTTPException(status_code=502, detail="لم يرجع نموذج Cloudflare M2M100 نصاً مترجماً")
+        return str(translated)
+
+    # Optional self-hosted LibreTranslate endpoint, if an operator configures one.
     if LIBRETRANSLATE_URL:
         payload = {"q": text, "source": source, "target": target, "format": "text"}
         if LIBRETRANSLATE_API_KEY:
             payload["api_key"] = LIBRETRANSLATE_API_KEY
-        try:
-            async with httpx.AsyncClient(timeout=60, follow_redirects=True) as client:
+        async with httpx.AsyncClient(timeout=60, follow_redirects=True) as client:
+            try:
                 response = await client.post(f"{LIBRETRANSLATE_URL}/translate", data=payload)
                 response.raise_for_status()
                 data = response.json()
-        except httpx.TimeoutException as exc:
-            raise HTTPException(status_code=504, detail="انتهت مهلة الاتصال بمحرك LibreTranslate. حاول مجدداً بعد قليل") from exc
-        except httpx.RequestError as exc:
-            raise HTTPException(status_code=502, detail="تعذر الوصول إلى خادم LibreTranslate. تحقق من عنوان الخدمة وإعداداتها في Render") from exc
+            except httpx.TimeoutException as exc:
+                raise HTTPException(status_code=504, detail="انتهت مهلة الاتصال بمحرك LibreTranslate. حاول مجدداً بعد قليل") from exc
+            except httpx.RequestError as exc:
+                raise HTTPException(status_code=502, detail="تعذر الوصول إلى خادم LibreTranslate. تحقق من عنوان الخدمة وإعداداتها في Render") from exc
+            except ValueError as exc:
+                raise HTTPException(status_code=502, detail="أعاد LibreTranslate استجابة غير مفهومة") from exc
         if not data.get("translatedText"):
             raise HTTPException(status_code=502, detail="استقبل الموقع رداً من LibreTranslate لكنه لا يحتوي على نص مترجم")
         return data["translatedText"]
 
-    # MyMemory's q parameter is limited to 500 UTF-8 bytes per request.
+    # Fallback option: MyMemory, subject to its independent daily usage limits.
     if len(text.encode("utf-8")) > 450:
         raise HTTPException(status_code=413, detail="جزء النص أكبر من الحد الآمن لمحرك MyMemory. أعد المحاولة بعد تحديث الموقع")
     if source == "auto":
@@ -363,7 +453,7 @@ async def translate_chunk(text: str, source: str, target: str) -> str:
     if MYMEMORY_CONTACT_EMAIL:
         params["de"] = MYMEMORY_CONTACT_EMAIL
     try:
-        async with httpx.AsyncClient(timeout=45, follow_redirects=True, headers={"User-Agent": "PDF-Globe/1.1"}) as client:
+        async with httpx.AsyncClient(timeout=45, follow_redirects=True, headers={"User-Agent": "PDF-Globe/1.2"}) as client:
             response = await client.get("https://api.mymemory.translated.net/get", params=params)
     except httpx.TimeoutException as exc:
         raise HTTPException(status_code=504, detail="انتهت مهلة الاتصال بمحرك MyMemory. حاول مجدداً بعد قليل") from exc
@@ -402,23 +492,22 @@ async def translate_chunk(text: str, source: str, target: str) -> str:
 
 async def translate_long_text(text: str, source: str, target: str) -> str:
     chunks: list[str] = []
-    if LIBRETRANSLATE_URL:
+    if CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN:
+        # M2M100 has a finite model context; keep pieces conservative, especially for Arabic.
+        max_chars = 700
+        for paragraph in text.splitlines():
+            if not paragraph.strip():
+                chunks.append("")
+            else:
+                chunks.extend(split_character_chunks(paragraph, max_chars=max_chars))
+    elif LIBRETRANSLATE_URL:
         # LibreTranslate's accepted request size depends on the configured instance.
         max_chars = 4500
         for paragraph in text.splitlines():
             if not paragraph.strip():
                 chunks.append("")
-                continue
-            current = ""
-            for word in paragraph.split():
-                candidate = (current + " " + word).strip()
-                if len(candidate) > max_chars and current:
-                    chunks.append(current)
-                    current = word
-                else:
-                    current = candidate
-            if current:
-                chunks.append(current)
+            else:
+                chunks.extend(split_character_chunks(paragraph, max_chars=max_chars))
     else:
         # MyMemory documents a 500-byte maximum for q. Use 450 bytes for headroom.
         for paragraph in text.splitlines():
@@ -443,13 +532,24 @@ async def translate_api(payload: dict):
     target = str(payload.get("target", "ar")).lower()
     if not text_value.strip():
         raise HTTPException(status_code=400, detail="لا يوجد نص لترجمته")
-    limit = 100_000 if LIBRETRANSLATE_URL else 4_000
+    if CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN:
+        limit = 100_000
+        limit_label = "100 ألف حرف لكل طلب"
+    elif LIBRETRANSLATE_URL:
+        limit = 100_000
+        limit_label = "100 ألف حرف"
+    else:
+        limit = 4_000
+        limit_label = "4 آلاف حرف في وضع الترجمة المجانية الاحتياطي"
     if len(text_value) > limit:
-        label = "100 ألف حرف" if LIBRETRANSLATE_URL else "4 آلاف حرف في وضع الترجمة المجانية الاحتياطي"
-        raise HTTPException(status_code=413, detail=f"النص يتجاوز الحد الحالي ({label}). استخدم خدمة LibreTranslate مهيأة للملفات الطويلة أو قسّم المستند")
+        raise HTTPException(status_code=413, detail=f"النص يتجاوز الحد الحالي ({limit_label}). قسّم المستند إلى أجزاء أصغر")
     try:
         result = await translate_long_text(text_value, source, target)
-        return {"translated_text": result, "provider": "LibreTranslate" if LIBRETRANSLATE_URL else "MyMemory", "notice": "راجع الأسماء والأرقام والمصطلحات قبل اعتماد الترجمة النهائية."}
+        provider = translation_provider_name()
+        notice = "راجع الأسماء والأرقام والمصطلحات قبل اعتماد الترجمة النهائية."
+        if provider.startswith("Cloudflare"):
+            notice += " الحصة المجانية لـ Cloudflare Workers AI محدودة يومياً وقد تتوقف الترجمة عند استنفادها."
+        return {"translated_text": result, "provider": provider, "notice": notice}
     except HTTPException:
         raise
     except Exception as exc:
@@ -492,7 +592,7 @@ async def languages():
                 return {"provider": "LibreTranslate", "languages": data}
         except Exception:
             pass
-    return {"provider": "MyMemory", "languages": [
+    return {"provider": translation_provider_name(), "languages": [
         {"code": "ar", "name": "Arabic"}, {"code": "en", "name": "English"}, {"code": "fr", "name": "French"},
         {"code": "es", "name": "Spanish"}, {"code": "de", "name": "German"}, {"code": "it", "name": "Italian"},
         {"code": "pt", "name": "Portuguese"}, {"code": "tr", "name": "Turkish"}, {"code": "ur", "name": "Urdu"},
