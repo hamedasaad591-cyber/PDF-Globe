@@ -6,13 +6,14 @@ import html
 import shutil
 import subprocess
 import tempfile
+import unicodedata
 from pathlib import Path
 from typing import Optional
 
 import fitz  # PyMuPDF
 import httpx
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, RGBColor
 from docx.enum.section import WD_SECTION
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -61,6 +62,7 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type"],
+    expose_headers=["X-PDF-Globe-Hybrid-Editable-Pages", "X-PDF-Globe-Hybrid-Image-Pages"],
     max_age=3600,
 )
 
@@ -208,17 +210,354 @@ def create_layout_preserving_docx(src: Path, out: Path, dpi: int = 180) -> None:
     doc.save(out)
 
 
+_ARABIC_BIDI = {"R", "AL", "AN"}
+
+
+def _is_rtl_text(value: str) -> bool:
+    """Return True when Arabic/Hebrew directional characters dominate a block."""
+    directional = [unicodedata.bidirectional(ch) for ch in value if ch.isalpha()]
+    if not directional:
+        return False
+    rtl_count = sum(code in _ARABIC_BIDI for code in directional)
+    return rtl_count >= max(1, int(len(directional) * 0.18))
+
+
+def _block_plain_text(block: dict) -> str:
+    lines = block.get("lines", [])
+    return "\n".join(
+        "".join(str(span.get("text", "")) for span in line.get("spans", []))
+        for line in lines
+    ).strip()
+
+
+def _cluster_y_rows(blocks: list[dict], tolerance: float = 8.0) -> list[list[dict]]:
+    rows: list[list[dict]] = []
+    for block in sorted(blocks, key=lambda item: (item["bbox"][1], item["bbox"][0])):
+        y = (float(block["bbox"][1]) + float(block["bbox"][3])) / 2
+        match = None
+        for row in rows:
+            row_y = sum(item["center_y"] for item in row) / len(row)
+            if abs(y - row_y) <= tolerance:
+                match = row
+                break
+        if match is None:
+            match = []
+            rows.append(match)
+        match.append({"block": block, "center_y": y})
+    return [[entry["block"] for entry in row] for row in rows]
+
+
+def detect_complex_page(page) -> tuple[bool, str]:
+    """Conservatively detect pages whose spatial structure should remain an image.
+
+    The detection is intentionally conservative: when a page looks like a table,
+    bracket, form, diagram, or scan, the full page is embedded as an image in DOCX.
+    Plain text pages remain editable. This avoids silently rearranging matches,
+    names, times, and table cells into unrelated paragraphs.
+    """
+    page_rect = page.rect
+    page_area = max(1.0, float(page_rect.width * page_rect.height))
+    raw_blocks = page.get_text("dict").get("blocks", [])
+    text_blocks = [
+        block for block in raw_blocks
+        if block.get("type") == 0 and _block_plain_text(block)
+    ]
+    text_chars = sum(len(_block_plain_text(block)) for block in text_blocks)
+
+    # 1) Native table detection (PyMuPDF >= 1.23; requirements use 1.25.5).
+    try:
+        found = page.find_tables()
+        for table in getattr(found, "tables", []) or []:
+            row_count = int(getattr(table, "row_count", 0) or 0)
+            col_count = int(getattr(table, "col_count", 0) or 0)
+            if row_count >= 2 and col_count >= 2 and row_count * col_count >= 4:
+                return True, f"table:{row_count}x{col_count}"
+    except Exception:
+        # Table detection can fail on malformed or unusual PDFs. Continue with heuristics.
+        pass
+
+    # 2) Large embedded images or image-only/scanned pages.
+    try:
+        image_infos = page.get_image_info()
+    except Exception:
+        image_infos = []
+    for image in image_infos:
+        bbox = image.get("bbox")
+        if bbox and len(bbox) == 4:
+            area = max(0.0, float(bbox[2] - bbox[0])) * max(0.0, float(bbox[3] - bbox[1]))
+            if area / page_area >= 0.22:
+                return True, "large-image-region"
+    if text_chars < 25 and (image_infos or page.get_images(full=True)):
+        return True, "scanned-or-image-page"
+
+    # 3) Vector drawing density plus spatially distributed labels: common in
+    # tournament brackets, flowcharts and forms. A normal Arabic page often has
+    # many decorative rules but all text blocks share one right edge, so require
+    # both left and right edges to form several distinct clusters.
+    try:
+        drawings = page.get_drawings()
+        drawing_items = sum(len(drawing.get("items", [])) for drawing in drawings)
+    except Exception:
+        drawing_items = 0
+
+    def _cluster_sizes(values: list[float], tolerance: float = 32.0) -> list[int]:
+        clusters: list[list[float]] = []
+        for value in sorted(values):
+            if not clusters or abs(value - (sum(clusters[-1]) / len(clusters[-1]))) > tolerance:
+                clusters.append([value])
+            else:
+                clusters[-1].append(value)
+        return [len(cluster) for cluster in clusters]
+
+    if drawing_items >= 14 and len(text_blocks) >= 6:
+        left_edges = [float(block["bbox"][0]) for block in text_blocks]
+        right_edges = [float(block["bbox"][2]) for block in text_blocks]
+        left_clusters = _cluster_sizes(left_edges)
+        right_clusters = _cluster_sizes(right_edges)
+        left_dominance = max(left_clusters, default=0) / max(1, len(text_blocks))
+        right_dominance = max(right_clusters, default=0) / max(1, len(text_blocks))
+        bracket_like_alignment = (
+            len(left_clusters) >= 3 and len(right_clusters) >= 3
+            and left_dominance < 0.78 and right_dominance < 0.78
+        )
+        if bracket_like_alignment:
+            return True, f"diagram:{drawing_items}-vector-items"
+
+    # 4) Repeated rows with multiple separately positioned text blocks indicate tables.
+    rows = _cluster_y_rows(text_blocks)
+    multi_block_rows = [row for row in rows if len(row) >= 2]
+    if len(text_blocks) >= 8 and len(multi_block_rows) >= 4:
+        return True, f"aligned-table-rows:{len(multi_block_rows)}"
+
+    # 5) Multiple stable text columns with repeated blocks can indicate a bracket/table.
+    x_positions = sorted(float(block["bbox"][0]) for block in text_blocks)
+    x_clusters: list[list[float]] = []
+    for x in x_positions:
+        if not x_clusters or abs(x - (sum(x_clusters[-1]) / len(x_clusters[-1]))) > 42:
+            x_clusters.append([x])
+        else:
+            x_clusters[-1].append(x)
+    substantial_columns = [cluster for cluster in x_clusters if len(cluster) >= 4]
+    if len(text_blocks) >= 10 and len(substantial_columns) >= 2:
+        return True, f"multi-column-layout:{len(substantial_columns)}"
+
+    return False, "plain-text"
+
+
+def _set_paragraph_bidi(paragraph, rtl: bool) -> None:
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    ppr = paragraph._p.get_or_add_pPr()
+    existing = ppr.find(qn("w:bidi"))
+    if existing is None and rtl:
+        bidi = OxmlElement("w:bidi")
+        bidi.set(qn("w:val"), "1")
+        ppr.append(bidi)
+
+
+def _set_run_direction(run, rtl: bool) -> None:
+    if not rtl:
+        return
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    rpr = run._r.get_or_add_rPr()
+    rtl_node = rpr.find(qn("w:rtl"))
+    if rtl_node is None:
+        rtl_node = OxmlElement("w:rtl")
+        rtl_node.set(qn("w:val"), "1")
+        rpr.append(rtl_node)
+    rfonts = rpr.rFonts
+    if rfonts is not None:
+        rfonts.set(qn("w:cs"), "Arial")
+        rfonts.set(qn("w:eastAsia"), "Arial")
+
+
+def _configure_docx_page(section, width_pt: float, height_pt: float, image_page: bool) -> float:
+    max_page_pt = 22 * 72
+    scale = min(1.0, max_page_pt / max(width_pt, height_pt, 1.0))
+    section.page_width = Pt(max(36, width_pt * scale))
+    section.page_height = Pt(max(36, height_pt * scale))
+    margin = 0 if image_page else min(18.0, max(8.0, width_pt * scale * 0.025))
+    section.top_margin = Pt(margin)
+    section.bottom_margin = Pt(margin)
+    section.left_margin = Pt(margin)
+    section.right_margin = Pt(margin)
+    section.header_distance = Pt(0)
+    section.footer_distance = Pt(0)
+    return scale
+
+
+def _add_full_page_image(doc: Document, page, section, image_path: Path, dpi: int = 160) -> None:
+    width_pt = float(page.rect.width)
+    height_pt = float(page.rect.height)
+    scale = _configure_docx_page(section, width_pt, height_pt, image_page=True)
+    render_scale = (dpi / 72.0) * scale
+    pix = page.get_pixmap(
+        matrix=fitz.Matrix(render_scale, render_scale),
+        colorspace=fitz.csRGB,
+        alpha=False,
+        annots=True,
+    )
+    pix.save(image_path)
+    paragraph = doc.add_paragraph()
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    paragraph.paragraph_format.space_before = Pt(0)
+    paragraph.paragraph_format.space_after = Pt(0)
+    paragraph.paragraph_format.left_indent = Pt(0)
+    paragraph.paragraph_format.right_indent = Pt(0)
+    paragraph.paragraph_format.first_line_indent = Pt(0)
+    target_w = max(1.0, width_pt * scale - 0.8)
+    target_h = max(1.0, height_pt * scale - 0.8)
+    paragraph.paragraph_format.line_spacing = Pt(max(1.0, target_h - 0.5))
+    paragraph.add_run().add_picture(str(image_path), width=Pt(target_w), height=Pt(target_h))
+    image_path.unlink(missing_ok=True)
+
+
+def _add_editable_text_page(doc: Document, page, section) -> bool:
+    """Write ordinary text blocks as editable paragraphs with approximate placement."""
+    width_pt = float(page.rect.width)
+    height_pt = float(page.rect.height)
+    scale = _configure_docx_page(section, width_pt, height_pt, image_page=False)
+    margin = float(section.left_margin.pt)
+    blocks = [
+        block for block in page.get_text("dict").get("blocks", [])
+        if block.get("type") == 0 and _block_plain_text(block)
+    ]
+    blocks.sort(key=lambda block: (float(block["bbox"][1]), float(block["bbox"][0])))
+    if not blocks:
+        return False
+
+    previous_bottom = margin / max(scale, 0.001)
+    body_width = max(20.0, width_pt - (2 * margin / max(scale, 0.001)))
+    for block in blocks:
+        x0, y0, x1, y1 = [float(value) for value in block.get("bbox", (0, 0, width_pt, 12))]
+        x0, y0, x1, y1 = [max(0.0, value) for value in (x0, y0, x1, y1)]
+        block_text = _block_plain_text(block)
+        rtl = _is_rtl_text(block_text)
+        center_x = (x0 + x1) / 2
+        centered = abs(center_x - width_pt / 2) <= width_pt * 0.07
+
+        paragraph = doc.add_paragraph()
+        paragraph.paragraph_format.space_before = Pt(max(0.0, (y0 - previous_bottom) * scale))
+        paragraph.paragraph_format.space_after = Pt(0)
+        paragraph.paragraph_format.keep_together = True
+        paragraph.paragraph_format.widow_control = False
+        paragraph.paragraph_format.line_spacing = 1.0
+        if centered:
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        elif rtl:
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+            right_indent = max(0.0, width_pt - x1 - margin)
+            paragraph.paragraph_format.right_indent = Pt(right_indent * scale)
+        else:
+            paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            left_indent = max(0.0, x0 - margin)
+            paragraph.paragraph_format.left_indent = Pt(left_indent * scale)
+        _set_paragraph_bidi(paragraph, rtl)
+
+        lines = block.get("lines", [])
+        first_line = True
+        for line in lines:
+            spans = line.get("spans", [])
+            if not first_line:
+                paragraph.add_run().add_break()
+            for span in spans:
+                text = str(span.get("text", ""))
+                if not text:
+                    continue
+                run = paragraph.add_run(text)
+                run.font.name = "Arial"
+                font_size = float(span.get("size", 10) or 10) * scale
+                run.font.size = Pt(min(42, max(5, font_size)))
+                font_name = str(span.get("font", "")).lower()
+                flags = int(span.get("flags", 0) or 0)
+                run.bold = ("bold" in font_name) or bool(flags & 16)
+                run.italic = ("italic" in font_name) or bool(flags & 2)
+                color = span.get("color")
+                if isinstance(color, int) and color >= 0:
+                    run.font.color.rgb = RGBColor((color >> 16) & 255, (color >> 8) & 255, color & 255)
+                _set_run_direction(run, rtl)
+            first_line = False
+        previous_bottom = max(previous_bottom, y1)
+
+    return True
+
+
+def create_hybrid_docx(src: Path, out: Path, dpi: int = 160) -> dict:
+    """Create a hybrid DOCX: ordinary text pages editable, complex pages as images.
+
+    Table/bracket/diagram/scan detection is conservative and page-based. If a page
+    contains a detected complex region, the whole page is embedded as an image to
+    preserve the spatial relationships that editable extraction commonly destroys.
+    """
+    pdf = fitz.open(src)
+    if pdf.is_encrypted:
+        pdf.close()
+        raise ValueError("الملف محمي بكلمة مرور. أزل الحماية أولاً")
+    if pdf.page_count > 60:
+        pdf.close()
+        raise ValueError("التحويل الهجين يدعم حتى 60 صفحة في المرة الواحدة لتقليل استهلاك الذاكرة")
+
+    doc = Document()
+    doc.core_properties.title = "PDF Globe - Hybrid PDF to Word conversion"
+    editable_pages = 0
+    image_pages = 0
+    reasons: list[str] = []
+    try:
+        for index, page in enumerate(pdf):
+            if index > 0:
+                section = doc.add_section(WD_SECTION.NEW_PAGE)
+            else:
+                section = doc.sections[0]
+            complex_page, reason = detect_complex_page(page)
+            if complex_page:
+                image_pages += 1
+                reasons.append(f"{index + 1}:{reason}")
+                image_path = out.parent / f"pdfglobe-hybrid-page-{index + 1}.png"
+                _add_full_page_image(doc, page, section, image_path, dpi=dpi)
+            else:
+                if _add_editable_text_page(doc, page, section):
+                    editable_pages += 1
+                else:
+                    image_pages += 1
+                    reasons.append(f"{index + 1}:no-extractable-text")
+                    image_path = out.parent / f"pdfglobe-hybrid-page-{index + 1}.png"
+                    _add_full_page_image(doc, page, section, image_path, dpi=dpi)
+    finally:
+        pdf.close()
+
+    if editable_pages == 0 and image_pages == 0:
+        raise ValueError("لم يتم العثور على صفحات قابلة للتحويل")
+    doc.core_properties.subject = (
+        f"Hybrid conversion: {editable_pages} editable text page(s); "
+        f"{image_pages} page image(s) used for complex layouts."
+    )
+    doc.core_properties.comments = (
+        "Complex pages such as tables, tournament brackets, forms, diagrams, or scans "
+        "may be embedded as page images to preserve their appearance."
+    )
+    doc.save(out)
+    return {"editable_pages": editable_pages, "image_pages": image_pages, "reasons": reasons}
+
+
 @app.post("/api/pdf/to-word")
-async def pdf_to_word(file: UploadFile = File(...), mode: str = Form("layout")):
+async def pdf_to_word(file: UploadFile = File(...), mode: str = Form("hybrid")):
     mode = (mode or "layout").strip().lower()
-    if mode not in {"layout", "editable"}:
-        raise HTTPException(status_code=400, detail="اختر طريقة التحويل: الحفاظ على شكل الصفحات أو استخراج النص القابل للتحرير")
+    if mode not in {"layout", "editable", "hybrid"}:
+        raise HTTPException(status_code=400, detail="اختر طريقة التحويل: هجين، أو الحفاظ على شكل الصفحات، أو استخراج النص القابل للتحرير")
     with tempfile.TemporaryDirectory(prefix="pdfglobe-") as td:
         folder = Path(td)
         src = await store_upload(file, folder, {".pdf"})
         out = folder / f"{safe_name(file.filename)}.docx"
 
-        if mode == "layout":
+        if mode == "hybrid":
+            try:
+                summary = create_hybrid_docx(src, out, dpi=160)
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc))
+            except Exception as exc:
+                raise HTTPException(status_code=422, detail=f"تعذر إنشاء Word بالتحويل الهجين: {str(exc)[:300]}")
+        elif mode == "layout":
             try:
                 create_layout_preserving_docx(src, out, dpi=200)
             except ValueError as exc:
@@ -257,11 +596,15 @@ async def pdf_to_word(file: UploadFile = File(...), mode: str = Form("layout")):
         else:
             raise HTTPException(status_code=400, detail="اختر وضع التحويل: layout أو editable")
 
-        return download_response(
+        response = download_response(
             out,
             out.name,
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+        if mode == "hybrid":
+            response.headers["X-PDF-Globe-Hybrid-Editable-Pages"] = str(summary["editable_pages"])
+            response.headers["X-PDF-Globe-Hybrid-Image-Pages"] = str(summary["image_pages"])
+        return response
 
 @app.post("/api/word/to-pdf")
 async def word_to_pdf(file: UploadFile = File(...)):
