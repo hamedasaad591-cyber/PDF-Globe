@@ -3,7 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="PDF Globe — منصة عالمية مجانية لأدوات PDF: دمج وتحويل وضغط وترجمة الملفات والمزيد.">
+  <meta name="description" content="Free PDF tools for everyone: merge, split, compress, convert PDF to Word, translate documents and more. أدوات PDF مجانية للجميع.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://pdf-globe.pages.dev/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="PDF Globe — Free PDF Tools">
+  <meta property="og:description" content="Merge, split, compress, convert and translate documents online.">
+  <meta property="og:url" content="https://pdf-globe.pages.dev/">
   <meta name="theme-color" content="#f7f8fc">
   <title>PDF Globe — عالم ملفات PDF</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -84,6 +90,19 @@
         <button class="tool-card" data-tool="translate" data-category="ocr"><span class="tool-icon tint-indigo">⇄</span><b data-i18n="tool_translate">ترجمة المستندات</b><small data-i18n="desc_translate">ترجم النص إلى لغة أخرى واحفظه في Word.</small><span class="tool-arrow">↗</span></button>
       </div>
       <p id="noResults" class="no-results hidden" data-i18n="no_results">لم نعثر على أداة بهذا الاسم.</p>
+      <div class="seo-discovery" aria-label="Popular PDF tools">
+        <h3>Popular PDF tools · أدوات PDF شائعة</h3>
+        <div class="seo-discovery-links">
+          <a href="/pdf-to-word">PDF to Word · تحويل PDF إلى Word</a>
+          <a href="/merge-pdf">Merge PDF · دمج PDF</a>
+          <a href="/compress-pdf">Compress PDF · ضغط PDF</a>
+          <a href="/translate-pdf">Translate PDF · ترجمة PDF</a>
+          <a href="/split-pdf">Split PDF · تقسيم PDF</a>
+          <a href="/word-to-pdf">Word to PDF · تحويل Word إلى PDF</a>
+          <a href="/images-to-pdf">Images to PDF · الصور إلى PDF</a>
+          <a href="/pdf-to-jpg">PDF to JPG · PDF إلى صور</a>
+        </div>
+      </div>
     </section>
 
     <section class="workspace-section" id="workspaceSection">
@@ -113,6 +132,7 @@
   </main>
   <footer class="footer"><div class="wrap footer-inner"><a class="brand" href="#home"><span class="brand-mark small-mark">PDF</span><span class="brand-name">PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><span data-i18n="footer_note">أدوات الملفات للجميع، أينما كانوا.</span><span class="footer-links"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></span><span>© <span id="year"></span> PDF Globe</span></div><p class="footer-disclaimer wrap" data-i18n="disclaimer">هذه المنصة أداة مساعدة. راجع نتائج التحويل والترجمة قبل الاعتماد الرسمي، فقد تختلف الجودة بحسب الملف واللغة.</p></footer>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/app.js?v=20261103-word-rtl-fix"></script>
+  <script src="/api-config.js"></script>
+  <script src="/app.js?v=20261104-pages-api"></script>
 </body>
 </html>

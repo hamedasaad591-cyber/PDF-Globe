@@ -2,6 +2,8 @@
 (() => {
   'use strict';
   const $ = (selector, root = document) => root.querySelector(selector);
+  const API_BASE = String(window.PDF_GLOBE_API_BASE || window.location.origin).replace(/\/+$/, '');
+  const apiUrl = (path) => `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const pdfLib = window.PDFLib;
   if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -231,7 +233,7 @@
   }
   async function apiFile(path,file,extra={}){
     const form=new FormData();form.append('file',file);Object.entries(extra).forEach(([k,v])=>form.append(k,v));
-    const response=await fetch(path,{method:'POST',body:form});
+    const response=await fetch(apiUrl(path),{method:'POST',body:form});
     if(!response.ok){let message=t('error_server');try{const data=await response.json();message=data.detail||message;}catch{}throw new Error(message);}
     return response.blob();
   }
@@ -248,9 +250,9 @@
     if(id==='translate'){
       if(!$('#translationConsent').checked)throw new Error(t('error_consent'));
       setProgress(5,t('translation_started'));const extracted=await extractPdfText(f,$('#translateOcrLang').value.trim()||'eng+ara');if(!extracted.trim())throw new Error('No text layer found. Run OCR first for scanned PDFs.');
-      const tr=await fetch('/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:extracted,source:$('#sourceLang').value,target:$('#targetLang').value})});
+      const tr=await fetch(apiUrl('/api/translate'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:extracted,source:$('#sourceLang').value,target:$('#targetLang').value})});
       const data=await tr.json();if(!tr.ok)throw new Error(data.detail||t('error_server'));setProgress(80,t('processing'));
-      const doc=await fetch('/api/translate/docx',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({translated_text:data.translated_text,target:$('#targetLang').value})});if(!doc.ok){const err=await doc.json();throw new Error(err.detail||t('error_server'));}
+      const doc=await fetch(apiUrl('/api/translate/docx'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({translated_text:data.translated_text,target:$('#targetLang').value})});if(!doc.ok){const err=await doc.json();throw new Error(err.detail||t('error_server'));}
       const blob=await doc.blob();showResult(blob,outputName(f,'translated','docx'),`${t('done')} ${t('translation_warning')}`);return;
     }
   }
@@ -275,7 +277,12 @@
 
   // Configure language direction and initial tool cards.
   applyLanguage('ar');
+  // Deep links from SEO landing pages open the requested tool in the main workspace.
+  const requestedTool = new URLSearchParams(window.location.search).get('tool');
+  if (requestedTool && Object.prototype.hasOwnProperty.call(toolMeta, requestedTool)) {
+    openTool(requestedTool, false);
+  }
   // Show API readiness in browser console for operators, without exposing secrets.
-  fetch('/api/health').then(r=>r.json()).then(data=>{document.documentElement.dataset.apiReady=data.ok?'true':'false';}).catch(()=>{document.documentElement.dataset.apiReady='false';});
-  fetch('/api/languages').then(r=>r.json()).then(data=>{if(Array.isArray(data.languages)&&data.languages.length){translationLanguages=data.languages.map(x=>[x.code,x.name||x.code]);if(currentTool==='translate')renderOptions('translate');}}).catch(()=>{});
+  fetch(apiUrl('/api/health')).then(r=>r.json()).then(data=>{document.documentElement.dataset.apiReady=data.ok?'true':'false';}).catch(()=>{document.documentElement.dataset.apiReady='false';});
+  fetch(apiUrl('/api/languages')).then(r=>r.json()).then(data=>{if(Array.isArray(data.languages)&&data.languages.length){translationLanguages=data.languages.map(x=>[x.code,x.name||x.code]);if(currentTool==='translate')renderOptions('translate');}}).catch(()=>{});
 })();
