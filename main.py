@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import html
+from io import BytesIO
 import shutil
 import subprocess
 import tempfile
@@ -15,6 +16,7 @@ import httpx
 from docx import Document
 from docx.shared import Pt, RGBColor
 from docx.enum.section import WD_SECTION
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_ROW_HEIGHT_RULE, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,7 +64,11 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type"],
-    expose_headers=["X-PDF-Globe-Hybrid-Editable-Pages", "X-PDF-Globe-Hybrid-Image-Pages"],
+    expose_headers=[
+        "X-PDF-Globe-Hybrid-Editable-Pages", "X-PDF-Globe-Hybrid-Image-Pages",
+        "X-PDF-Globe-Structured-Editable-Pages", "X-PDF-Globe-Structured-Table-Pages",
+        "X-PDF-Globe-Structured-Image-Pages",
+    ],
     max_age=3600,
 )
 
@@ -540,17 +546,504 @@ def create_hybrid_docx(src: Path, out: Path, dpi: int = 160) -> dict:
     return {"editable_pages": editable_pages, "image_pages": image_pages, "reasons": reasons}
 
 
+
+# ---------------- Editable-layout DOCX conversion ----------------
+# Unlike the legacy hybrid mode, this mode does NOT rasterize complex text pages.
+# It maps spatially aligned PDF text lines into a native Word table grid so that
+# names, times, labels and table cells remain editable. Horizontal/vertical PDF
+# rules are approximated as Word cell borders. Exact fidelity is not guaranteed:
+# PDF does not necessarily contain semantic table cells, and diagonal/vector art
+# or unusual layouts may need manual touch-up.
+
+def _normalise_pdf_text(value: str) -> str:
+    # PDF fonts sometimes expose Arabic Presentation Forms; NFKC converts them
+    # back to ordinary Unicode Arabic characters suitable for editing in Word.
+    return unicodedata.normalize("NFKC", value or "")
+
+
+def _extract_page_layout_items(page) -> list[dict]:
+    data = page.get_text("dict", sort=False)
+    items: list[dict] = []
+    for block_index, block in enumerate(data.get("blocks", [])):
+        if block.get("type") == 0:
+            for line_index, line in enumerate(block.get("lines", [])):
+                spans = [sp for sp in line.get("spans", []) if str(sp.get("text", ""))]
+                text = _normalise_pdf_text("".join(str(sp.get("text", "")) for sp in spans)).strip()
+                if not text:
+                    continue
+                bbox = line.get("bbox") or block.get("bbox")
+                if not bbox or len(bbox) != 4:
+                    continue
+                x0, y0, x1, y1 = map(float, bbox)
+                rtl = _is_rtl_text(text)
+                # Right edge is the more stable anchor for right-aligned RTL
+                # columns; left edge works better for LTR columns.
+                anchor = x1 if rtl else x0
+                items.append({
+                    "kind": "text", "text": text, "spans": spans,
+                    "bbox": (x0, y0, x1, y1), "center_y": (y0 + y1) / 2,
+                    "anchor": anchor, "rtl": rtl,
+                    "font_size": max([float(sp.get("size", 10) or 10) for sp in spans] or [10]),
+                    "order": (block_index, line_index),
+                })
+        elif block.get("type") == 1 and block.get("image"):
+            bbox = block.get("bbox")
+            if not bbox or len(bbox) != 4:
+                continue
+            x0, y0, x1, y1 = map(float, bbox)
+            items.append({
+                "kind": "image", "image": block["image"], "ext": block.get("ext", "png"),
+                "bbox": (x0, y0, x1, y1), "center_y": (y0 + y1) / 2,
+                "anchor": (x0 + x1) / 2, "rtl": False, "font_size": 10,
+                "order": (block_index, 0),
+            })
+    return items
+
+
+def _cluster_numeric(values: list[float], tolerance: float) -> list[list[float]]:
+    clusters: list[list[float]] = []
+    for value in sorted(values):
+        if not clusters or abs(value - (sum(clusters[-1]) / len(clusters[-1]))) > tolerance:
+            clusters.append([value])
+        else:
+            clusters[-1].append(value)
+    return clusters
+
+
+def _set_cell_margins(cell, top=0, start=0, bottom=0, end=0) -> None:
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    tc = cell._tc
+    tc_pr = tc.get_or_add_tcPr()
+    tc_mar = tc_pr.first_child_found_in("w:tcMar")
+    if tc_mar is None:
+        tc_mar = OxmlElement("w:tcMar")
+        tc_pr.append(tc_mar)
+    for edge, value in (("top", top), ("start", start), ("bottom", bottom), ("end", end)):
+        node = tc_mar.find(qn(f"w:{edge}"))
+        if node is None:
+            node = OxmlElement(f"w:{edge}")
+            tc_mar.append(node)
+        node.set(qn("w:w"), str(int(value)))
+        node.set(qn("w:type"), "dxa")
+
+
+def _set_cell_edge(cell, edge: str, color: str = "808080", size: int = 4, style: str = "single") -> None:
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    tc_pr = cell._tc.get_or_add_tcPr()
+    borders = tc_pr.first_child_found_in("w:tcBorders")
+    if borders is None:
+        borders = OxmlElement("w:tcBorders")
+        tc_pr.append(borders)
+    tag = qn(f"w:{edge}")
+    node = borders.find(tag)
+    if node is None:
+        node = OxmlElement(f"w:{edge}")
+        borders.append(node)
+    node.set(qn("w:val"), style)
+    node.set(qn("w:sz"), str(max(2, min(16, int(size)))))
+    node.set(qn("w:space"), "0")
+    node.set(qn("w:color"), color if re.fullmatch(r"[0-9A-Fa-f]{6}", color or "") else "808080")
+
+
+def _line_segments(page) -> list[dict]:
+    segments: list[dict] = []
+    try:
+        drawings = page.get_drawings()
+    except Exception:
+        return segments
+    for drawing in drawings:
+        color_value = drawing.get("color") or drawing.get("fill") or (0.5, 0.5, 0.5)
+        try:
+            color = "".join(f"{round(max(0, min(1, float(c))) * 255):02X}" for c in color_value[:3])
+        except Exception:
+            color = "808080"
+        width = float(drawing.get("width", 0.5) or 0.5)
+        for item in drawing.get("items", []):
+            kind = item[0]
+            if kind == "l" and len(item) >= 3:
+                p1, p2 = item[1], item[2]
+                x1, y1, x2, y2 = float(p1.x), float(p1.y), float(p2.x), float(p2.y)
+                if abs(y1 - y2) <= 1.5 and abs(x1 - x2) >= 5:
+                    segments.append({"kind": "h", "pos": (y1 + y2) / 2, "a": min(x1, x2), "b": max(x1, x2), "color": color, "width": width})
+                elif abs(x1 - x2) <= 1.5 and abs(y1 - y2) >= 5:
+                    segments.append({"kind": "v", "pos": (x1 + x2) / 2, "a": min(y1, y2), "b": max(y1, y2), "color": color, "width": width})
+            elif kind == "re" and len(item) >= 2:
+                rect = item[1]
+                x0, y0, x1, y1 = float(rect.x0), float(rect.y0), float(rect.x1), float(rect.y1)
+                if x1 - x0 >= 5 and y1 - y0 >= 5:
+                    segments.extend([
+                        {"kind": "h", "pos": y0, "a": x0, "b": x1, "color": color, "width": width},
+                        {"kind": "h", "pos": y1, "a": x0, "b": x1, "color": color, "width": width},
+                        {"kind": "v", "pos": x0, "a": y0, "b": y1, "color": color, "width": width},
+                        {"kind": "v", "pos": x1, "a": y0, "b": y1, "color": color, "width": width},
+                    ])
+    return segments
+
+
+def _apply_pdf_rules_to_grid(table, row_bounds: list[float], col_bounds: list[float], segments: list[dict], scale: float) -> None:
+    if not segments:
+        return
+    y_tol = 2.2
+    x_tol = 2.2
+    for r, row in enumerate(table.rows):
+        y0, y1 = row_bounds[r], row_bounds[r + 1]
+        for c, cell in enumerate(row.cells):
+            x0, x1 = col_bounds[c], col_bounds[c + 1]
+            for seg in segments:
+                if seg["kind"] == "h":
+                    overlaps = min(x1, seg["b"]) - max(x0, seg["a"])
+                    if overlaps < max(7.0, (x1 - x0) * 0.18):
+                        continue
+                    if abs(seg["pos"] - y0) <= y_tol:
+                        _set_cell_edge(cell, "top", seg["color"], round(seg["width"] * scale * 8))
+                    if abs(seg["pos"] - y1) <= y_tol:
+                        _set_cell_edge(cell, "bottom", seg["color"], round(seg["width"] * scale * 8))
+                else:
+                    overlaps = min(y1, seg["b"]) - max(y0, seg["a"])
+                    if overlaps < max(7.0, (y1 - y0) * 0.18):
+                        continue
+                    if abs(seg["pos"] - x0) <= x_tol:
+                        _set_cell_edge(cell, "left", seg["color"], round(seg["width"] * scale * 8))
+                    if abs(seg["pos"] - x1) <= x_tol:
+                        _set_cell_edge(cell, "right", seg["color"], round(seg["width"] * scale * 8))
+
+
+def _add_editable_spans(paragraph, spans: list[dict], rtl: bool, scale: float, left_indent_pt: float = 0.0, right_indent_pt: float = 0.0) -> None:
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT if rtl else WD_ALIGN_PARAGRAPH.LEFT
+    _set_paragraph_bidi(paragraph, rtl)
+    pf = paragraph.paragraph_format
+    pf.space_before = Pt(0)
+    pf.space_after = Pt(0)
+    pf.left_indent = Pt(max(0.0, left_indent_pt))
+    pf.right_indent = Pt(max(0.0, right_indent_pt))
+    pf.first_line_indent = Pt(0)
+    pf.line_spacing = 1.0
+    for span in spans:
+        text = _normalise_pdf_text(str(span.get("text", "")))
+        if not text:
+            continue
+        run = paragraph.add_run(text)
+        run.font.name = "Arial"
+        run._element.get_or_add_rPr().rFonts.set(qn("w:ascii"), "Arial")
+        run._element.get_or_add_rPr().rFonts.set(qn("w:hAnsi"), "Arial")
+        font_size = float(span.get("size", 10) or 10) * scale
+        run.font.size = Pt(min(36, max(5, font_size)))
+        font_name = str(span.get("font", "")).lower()
+        flags = int(span.get("flags", 0) or 0)
+        run.bold = ("bold" in font_name) or bool(flags & 16)
+        run.italic = ("italic" in font_name) or bool(flags & 2)
+        color = span.get("color")
+        if isinstance(color, int) and color >= 0:
+            run.font.color.rgb = RGBColor((color >> 16) & 255, (color >> 8) & 255, color & 255)
+        _set_run_direction(run, rtl)
+
+
+
+def _add_editable_layout_grid_page(doc: Document, page, section, dpi: int = 160) -> dict:
+    """Rebuild a complex PDF page as a native editable Word table grid.
+
+    Text is placed in actual Word table cells, not rasterized. The grid approximates
+    the PDF's x/y geometry; detected horizontal and vertical rules become cell
+    borders. This is intended for schedules, forms and table-like tournament pages.
+    """
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    page_w = float(page.rect.width)
+    page_h = float(page.rect.height)
+    scale = _configure_docx_page(section, page_w, page_h, image_page=False)
+    # Horizontal margins stay zero. Vertical margins are calculated from the first
+    # and last content baselines so the Word table preserves top/bottom whitespace
+    # without forcing an oversized blank final row onto an extra page.
+    section.left_margin = Pt(0)
+    section.right_margin = Pt(0)
+
+    items = _extract_page_layout_items(page)
+    text_items = [item for item in items if item["kind"] == "text"]
+    if len(text_items) < 2:
+        raise ValueError("لا توجد نصوص كافية لإعادة بناء جدول قابل للتحرير. قد يكون الملف صورة ممسوحة ضوئياً؛ استخدم OCR أولاً.")
+
+    median_font = sorted(item["font_size"] for item in text_items)[len(text_items) // 2]
+    y_tolerance = max(2.0, min(5.5, median_font * 0.42))
+    row_groups: list[list[dict]] = []
+    for item in sorted(items, key=lambda obj: (obj["center_y"], obj["bbox"][0])):
+        if not row_groups:
+            row_groups.append([item])
+            continue
+        row_center = sum(obj["center_y"] for obj in row_groups[-1]) / len(row_groups[-1])
+        if abs(item["center_y"] - row_center) <= y_tolerance:
+            row_groups[-1].append(item)
+        else:
+            row_groups.append([item])
+
+    # Cluster stable left anchors for LTR lines and right anchors for RTL lines.
+    # Images are mapped later to the nearest existing text column.
+    anchor_tolerance = max(12.0, min(22.0, page_w * 0.028))
+    anchor_clusters = _cluster_numeric([item["anchor"] for item in text_items], anchor_tolerance)
+    while len(anchor_clusters) > 14:
+        gaps = [
+            (abs(sum(anchor_clusters[i + 1]) / len(anchor_clusters[i + 1]) - sum(anchor_clusters[i]) / len(anchor_clusters[i])), i)
+            for i in range(len(anchor_clusters) - 1)
+        ]
+        _, idx = min(gaps)
+        anchor_clusters[idx] = anchor_clusters[idx] + anchor_clusters[idx + 1]
+        del anchor_clusters[idx + 1]
+    if not anchor_clusters:
+        raise ValueError("تعذر تحديد أعمدة الصفحة")
+    col_centers = [sum(cluster) / len(cluster) for cluster in anchor_clusters]
+    col_bounds = [0.0]
+    for left, right in zip(col_centers, col_centers[1:]):
+        col_bounds.append(max(col_bounds[-1] + 4.0, (left + right) / 2))
+    col_bounds.append(page_w)
+    # Keep all physical column widths positive and in order.
+    for i in range(1, len(col_bounds)):
+        col_bounds[i] = max(col_bounds[i], col_bounds[i - 1] + 2.0)
+    col_bounds[-1] = page_w
+
+    row_centers = [sum(item["center_y"] for item in group) / len(group) for group in row_groups]
+    vertical_pad = max(8.0, min(18.0, median_font * 1.35))
+    content_top = max(0.0, row_centers[0] - vertical_pad)
+    content_bottom = min(page_h, row_centers[-1] + vertical_pad)
+    row_bounds = [content_top]
+    for top, bottom in zip(row_centers, row_centers[1:]):
+        row_bounds.append((top + bottom) / 2)
+    row_bounds.append(max(row_bounds[-1] + 6.0, content_bottom))
+    section.top_margin = Pt(content_top * scale)
+    section.bottom_margin = Pt(0)
+
+    # Limit table size on the free Render instance; a page with unusually dense
+    # text is still preserved, but the API returns a clear message instead.
+    rows_count = len(row_groups)
+    cols_count = len(col_centers)
+    if rows_count > 180 or cols_count > 14 or rows_count * cols_count > 1800:
+        raise ValueError("تخطيط الصفحة كثيف جداً لإعادة بناء جدول Word آمن. جرّب تقسيم الملف أو وضع استخراج النص.")
+
+    table = doc.add_table(rows=rows_count, cols=cols_count)
+    table.alignment = WD_TABLE_ALIGNMENT.LEFT
+    table.autofit = False
+    tbl_pr = table._tbl.tblPr
+    layout = tbl_pr.find(qn("w:tblLayout"))
+    if layout is None:
+        layout = OxmlElement("w:tblLayout")
+        tbl_pr.append(layout)
+    layout.set(qn("w:type"), "fixed")
+    tbl_w = tbl_pr.find(qn("w:tblW"))
+    if tbl_w is None:
+        tbl_w = OxmlElement("w:tblW")
+        tbl_pr.append(tbl_w)
+    tbl_w.set(qn("w:w"), str(int(page_w * scale * 20)))
+    tbl_w.set(qn("w:type"), "dxa")
+    tbl_ind = tbl_pr.find(qn("w:tblInd"))
+    if tbl_ind is None:
+        tbl_ind = OxmlElement("w:tblInd")
+        tbl_pr.append(tbl_ind)
+    tbl_ind.set(qn("w:w"), "0")
+    tbl_ind.set(qn("w:type"), "dxa")
+
+    for c, col in enumerate(table.columns):
+        width = max(4.0, (col_bounds[c + 1] - col_bounds[c]) * scale)
+        col.width = Pt(width)
+        for cell in col.cells:
+            cell.width = Pt(width)
+            _set_cell_margins(cell, 0, 0, 0, 0)
+            cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+
+    for r, row in enumerate(table.rows):
+        row_height = max(7.0, (row_bounds[r + 1] - row_bounds[r]) * scale)
+        row.height = Pt(row_height)
+        row.height_rule = WD_ROW_HEIGHT_RULE.AT_LEAST
+        tr_pr = row._tr.get_or_add_trPr()
+        cant_split = OxmlElement("w:cantSplit")
+        tr_pr.append(cant_split)
+        for cell in row.cells:
+            cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+            _set_cell_margins(cell, 0, 0, 0, 0)
+
+    # If a text line physically spans more than one inferred column (for example
+    # a page title above a bracket), merge the corresponding Word cells. This
+    # preserves its original line width and keeps the text editable.
+    item_column: dict[int, int] = {}
+    row_cell_maps: dict[int, dict[int, int]] = {}
+    for r, group in enumerate(row_groups):
+        mapped = {}
+        for item in group:
+            base_col = min(range(cols_count), key=lambda idx: abs(col_centers[idx] - item["anchor"]))
+            mapped[id(item)] = base_col
+        row_cell_maps[r] = {c: c for c in range(cols_count)}
+        for item in [x for x in group if x["kind"] == "text"]:
+            x0, _, x1, _ = item["bbox"]
+            start_col = max(0, min(cols_count - 1, next((i for i in range(cols_count) if x0 < col_bounds[i + 1]), cols_count - 1)))
+            end_col = max(start_col, min(cols_count - 1, next((i for i in range(cols_count) if x1 <= col_bounds[i + 1] + 1.0), cols_count - 1)))
+            base_col = mapped[id(item)]
+            # Merge only when the line crosses a column boundary and no other
+            # item in this row is anchored in the intervening cells.
+            occupied = {mapped[id(other)] for other in group if other is not item}
+            if end_col > start_col and not any(c in occupied for c in range(start_col + 1, end_col + 1)):
+                try:
+                    table.cell(r, start_col).merge(table.cell(r, end_col))
+                    for c in range(start_col, end_col + 1):
+                        row_cell_maps[r][c] = start_col
+                    item_column[id(item)] = start_col
+                except Exception:
+                    item_column[id(item)] = base_col
+            else:
+                item_column[id(item)] = base_col
+        for item in group:
+            if id(item) not in item_column:
+                item_column[id(item)] = mapped[id(item)]
+
+    # Place each text line or embedded image into its nearest (possibly merged) cell.
+    for r, group in enumerate(row_groups):
+        cell_items: dict[int, list[dict]] = {}
+        for item in group:
+            c = item_column[id(item)]
+            cell_items.setdefault(c, []).append(item)
+        for c, content_items in cell_items.items():
+            cell = table.cell(r, c)
+            # Word merges retain the original empty paragraphs from each source
+            # cell. Remove those extra blanks or they inflate row heights and can
+            # push the final rows onto an unintended second page.
+            for extra_paragraph in list(cell.paragraphs[1:]):
+                if not extra_paragraph.text.strip():
+                    extra_paragraph._element.getparent().remove(extra_paragraph._element)
+            paragraph = cell.paragraphs[0]
+            for child in list(paragraph._p):
+                if child.tag != qn("w:pPr"):
+                    paragraph._p.remove(child)
+            content_items.sort(key=lambda obj: (obj["bbox"][1], obj["bbox"][0]))
+            first = True
+            for item in content_items:
+                if item["kind"] == "text":
+                    p = paragraph if first else cell.add_paragraph()
+                    if item["rtl"]:
+                        left_indent = 0.0
+                        right_indent = max(0.0, (col_bounds[c + 1] - item["bbox"][2]) * scale)
+                    else:
+                        left_indent = max(0.0, (item["bbox"][0] - col_bounds[c]) * scale)
+                        right_indent = 0.0
+                    _add_editable_spans(p, item["spans"], item["rtl"], scale, left_indent, right_indent)
+                    first = False
+                else:
+                    p = paragraph if first else cell.add_paragraph()
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    p.paragraph_format.space_before = Pt(0)
+                    p.paragraph_format.space_after = Pt(0)
+                    img = BytesIO(item["image"])
+                    max_width = max(4.0, (col_bounds[c + 1] - col_bounds[c]) * scale)
+                    max_height = max(4.0, (row_bounds[r + 1] - row_bounds[r]) * scale)
+                    try:
+                        p.add_run().add_picture(img, width=Pt(min(max_width, max(4.0, item["bbox"][2] - item["bbox"][0]) * scale)))
+                    except Exception:
+                        pass
+                    first = False
+
+    _apply_pdf_rules_to_grid(table, row_bounds, col_bounds, _line_segments(page), scale)
+    return {"rows": rows_count, "columns": cols_count, "text_lines": len(text_items)}
+
+
+def create_structured_editable_docx(src: Path, out: Path) -> dict:
+    """Convert text and table-like pages to an editable Word layout grid.
+
+    Simple prose pages use editable paragraphs. Complex table/bracket pages use
+    native Word table cells with editable text and approximated borders/geometry.
+    Image-only/scanned pages fall back to a page image because they have no text
+    layer to edit; an OCR pass is needed to make their contents editable.
+    """
+    pdf = fitz.open(src)
+    if pdf.is_encrypted:
+        pdf.close()
+        raise ValueError("الملف محمي بكلمة مرور. أزل الحماية أولاً")
+    if pdf.page_count > 50:
+        pdf.close()
+        raise ValueError("وضع الجداول القابلة للتحرير يدعم حتى 50 صفحة في المرة الواحدة")
+    doc = Document()
+    doc.core_properties.title = "PDF Globe - Editable Table Layout"
+    editable_pages = 0
+    table_pages = 0
+    image_pages = 0
+    page_summaries: list[dict] = []
+    try:
+        for index, page in enumerate(pdf):
+            if index == 0:
+                section = doc.sections[0]
+                # Remove python-docx's initial empty paragraph so the first grid
+                # starts at the top edge of the page.
+                if doc.paragraphs:
+                    p = doc.paragraphs[0]._element
+                    p.getparent().remove(p)
+            else:
+                section = doc.add_section(WD_SECTION.NEW_PAGE)
+            complex_page, reason = detect_complex_page(page)
+            if not complex_page and page.get_images(full=True):
+                complex_page, reason = True, "embedded-images"
+            if complex_page:
+                # Full-page image regions (scans, shipping labels, photo-heavy forms)
+                # do not have enough native text geometry to reconstruct faithfully.
+                # Preserve those pages visually; table/bracket pages with selectable
+                # text and vector layout are rebuilt as editable Word table grids.
+                if reason.startswith("large-image-region") or reason.startswith("scanned-or-image-page"):
+                    image_path = out.parent / f"pdfglobe-structured-fallback-{index + 1}.png"
+                    _add_full_page_image(doc, page, section, image_path, dpi=180)
+                    image_pages += 1
+                    page_summaries.append({"page": index + 1, "mode": "image-fallback", "reason": reason})
+                    continue
+                try:
+                    info = _add_editable_layout_grid_page(doc, page, section)
+                    table_pages += 1
+                    editable_pages += 1
+                    page_summaries.append({"page": index + 1, "mode": "editable-table", **info, "reason": reason})
+                except ValueError as exc:
+                    # If extraction is genuinely impossible (e.g. scan), preserve
+                    # the visual page rather than silently produce empty Word.
+                    image_path = out.parent / f"pdfglobe-structured-fallback-{index + 1}.png"
+                    _add_full_page_image(doc, page, section, image_path, dpi=170)
+                    image_pages += 1
+                    page_summaries.append({"page": index + 1, "mode": "image-fallback", "reason": str(exc)[:150]})
+            else:
+                if _add_editable_text_page(doc, page, section):
+                    editable_pages += 1
+                    page_summaries.append({"page": index + 1, "mode": "editable-text"})
+                else:
+                    image_path = out.parent / f"pdfglobe-structured-fallback-{index + 1}.png"
+                    _add_full_page_image(doc, page, section, image_path, dpi=170)
+                    image_pages += 1
+                    page_summaries.append({"page": index + 1, "mode": "image-fallback", "reason": "no-text-layer"})
+    finally:
+        pdf.close()
+    doc.core_properties.subject = (
+        f"Editable layout conversion: {editable_pages} editable page(s), "
+        f"{table_pages} editable table-layout page(s), {image_pages} image fallback page(s)."
+    )
+    doc.core_properties.comments = (
+        "Complex pages are reconstructed as native Word table grids with editable text; "
+        "font, spacing and vector rules are best-effort and may require manual review. "
+        "Scanned/image-only pages remain images unless OCR is performed first."
+    )
+    doc.save(out)
+    return {"editable_pages": editable_pages, "table_pages": table_pages, "image_pages": image_pages, "pages": page_summaries}
+
+
 @app.post("/api/pdf/to-word")
-async def pdf_to_word(file: UploadFile = File(...), mode: str = Form("hybrid")):
+async def pdf_to_word(file: UploadFile = File(...), mode: str = Form("structured")):
     mode = (mode or "layout").strip().lower()
-    if mode not in {"layout", "editable", "hybrid"}:
+    if mode not in {"layout", "editable", "hybrid", "structured"}:
         raise HTTPException(status_code=400, detail="اختر طريقة التحويل: هجين، أو الحفاظ على شكل الصفحات، أو استخراج النص القابل للتحرير")
     with tempfile.TemporaryDirectory(prefix="pdfglobe-") as td:
         folder = Path(td)
         src = await store_upload(file, folder, {".pdf"})
         out = folder / f"{safe_name(file.filename)}.docx"
 
-        if mode == "hybrid":
+        if mode == "structured":
+            try:
+                summary = create_structured_editable_docx(src, out)
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc))
+            except Exception as exc:
+                raise HTTPException(status_code=422, detail=f"تعذر إنشاء Word بجداول قابلة للتحرير: {str(exc)[:300]}")
+        elif mode == "hybrid":
             try:
                 summary = create_hybrid_docx(src, out, dpi=160)
             except ValueError as exc:
@@ -601,6 +1094,10 @@ async def pdf_to_word(file: UploadFile = File(...), mode: str = Form("hybrid")):
             out.name,
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
+        if mode == "structured":
+            response.headers["X-PDF-Globe-Structured-Editable-Pages"] = str(summary["editable_pages"])
+            response.headers["X-PDF-Globe-Structured-Table-Pages"] = str(summary["table_pages"])
+            response.headers["X-PDF-Globe-Structured-Image-Pages"] = str(summary["image_pages"])
         if mode == "hybrid":
             response.headers["X-PDF-Globe-Hybrid-Editable-Pages"] = str(summary["editable_pages"])
             response.headers["X-PDF-Globe-Hybrid-Image-Pages"] = str(summary["image_pages"])
