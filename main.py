@@ -16,6 +16,7 @@ from docx.shared import Pt
 from docx.enum.section import WD_SECTION
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
@@ -40,7 +41,28 @@ def translation_provider_name() -> str:
         return "LibreTranslate"
     return "MyMemory fallback"
 
-app = FastAPI(title="PDF Globe API", version="1.0.0")
+app = FastAPI(title="PDF Globe API", version="1.1.0")
+
+# The static UI is hosted on Cloudflare Pages; PDF Globe's API remains on Render.
+# Set FRONTEND_ORIGINS in Render if the Pages project name or custom domain changes.
+FRONTEND_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv(
+        "FRONTEND_ORIGINS",
+        "https://pdf-globe.pages.dev,https://pdf-globe.onrender.com",
+    ).split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=FRONTEND_ORIGINS,
+    # Allows Cloudflare Pages branch/commit preview URLs for this project only.
+    allow_origin_regex=r"^https://([a-z0-9-]+\.)*pdf-globe\.pages\.dev$",
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
+    max_age=3600,
+)
 
 
 def safe_name(name: str, fallback: str = "document") -> str:
