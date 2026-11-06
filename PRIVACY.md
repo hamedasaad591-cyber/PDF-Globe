@@ -1,32 +1,62 @@
-# Privacy notice — PDF Globe
+# PDF Globe Privacy Policy
 
-**Draft notice.** Replace the operator contact details and have this notice reviewed for the jurisdictions in which the service will operate before public launch.
+**Last updated: 6 November 2026**  
+**Contact:** hamedasaad591@gmail.com  
+**Website:** https://pdf-globe.pages.dev/
 
-## What this service processes
+This notice describes the current PDF Globe website and application implementation. It is general information, not legal advice.
 
-PDF Globe lets visitors select files and run document operations. Many operations (merge, page extraction, rotation, watermarking, page numbering, signing, image conversion, PDF rendering and browser OCR) run in the visitor's browser. Server-side features (compression, PDF/Word conversion, password operations, repair and translation output generation) send the selected file or extracted text to the PDF Globe server for the requested operation.
+## 1. How file processing works
 
-## Temporary processing
+### Browser-based tools
 
-The application writes server-side uploads and generated outputs into a temporary directory for the duration of a request. The directory is removed when the request completes. The application does not implement a permanent file library or user account system. Hosting infrastructure may still retain operational logs, security logs, backups, crash data or network metadata according to the hosting provider's policies.
+Merge, split/extract pages, rotate, delete/reorder pages, watermarks, page numbers, signatures, images-to-PDF, PDF-to-images, and OCR are designed to process content in the visitor's browser. These browser-based operations do not intentionally upload the selected file to the PDF Globe API. The browser may download software libraries, fonts, or OCR language data from third-party content delivery networks; OCR recognition itself runs in the browser.
 
-## Third-party services
+### Server-based tools
 
-- The website loads JavaScript libraries and web fonts from third-party CDNs. Those providers may receive ordinary connection metadata such as IP address and browser headers.
-- OCR language data may be downloaded by Tesseract.js from its configured language-data host.
-- Translation sends extracted document text to the configured translation provider. If `LIBRETRANSLATE_URL` is configured, that service receives the text. Otherwise the current fallback sends text to the MyMemory public translation API. These providers operate under their own privacy terms and may process or retain requests independently of PDF Globe.
-- The site operator should list the exact providers and links to their current privacy terms here before public launch.
+PDF compression, PDF-to-Word conversion, Word-to-PDF conversion, PDF repair, and PDF password protection/unlocking currently use the PDF Globe API hosted by Render. When one of these tools is selected, the file is transmitted over HTTPS to the API for processing.
 
-## Sensitive information
+### Translation
 
-Do not upload information that you are not authorized to process. Avoid uploading identity documents, medical records, financial records, confidential business materials or legal documents unless you have reviewed the data-processing arrangements and are comfortable with them. The visitor must obtain any required consent from other people whose information appears in a document.
+Text is extracted or recognised in the browser and sent to the PDF Globe API. The API forwards the text to the configured translation provider. The current primary configuration is Cloudflare Workers AI. Depending on configuration or availability, LibreTranslate or the MyMemory public translation API may be used instead. The translation workflow intentionally sends extracted text, not the original PDF, to the translation provider. The translated text is then sent to the PDF Globe API to generate a DOCX output.
 
-## Cookies and tracking
+## 2. Temporary files and retention
 
-This starter project does not include advertising pixels, analytics scripts, or account cookies. The interface uses browser memory only for its current operation. Hosting providers, CDNs or future added services may use their own technical mechanisms; update this notice if such services are added.
+For server-based operations, the application uses request-scoped temporary working folders and is designed to remove uploaded working files and generated outputs when the request finishes. PDF Globe does not provide a permanent document library or user file account. Application-level cleanup does not control hosting infrastructure logs, security records, backups, crash diagnostics, or records retained by providers under their own policies. Unexpected process interruption may affect normal cleanup.
 
-## Security and contact
+If a visitor emails the operator, the email address and message content are received and retained as reasonably needed to respond, keep a record of the communication, and meet applicable obligations.
 
-The operator should use HTTPS, keep dependencies and the hosting environment updated, restrict upload sizes, configure abuse controls/rate limits, monitor errors, and publish a monitored privacy contact before launch.
+## 3. Service providers and external resources
 
-**Operator contact:** add a real contact email and legal operator name before public launch.
+- **Cloudflare Pages:** serves the static website and may process ordinary connection/security metadata.
+- **Render:** hosts the API and may process request, network, operational, and security metadata. Files used by server-based tools pass through this API.
+- **Cloudflare Workers AI:** receives extracted text when configured as the translation provider.
+- **LibreTranslate or MyMemory:** may receive translation text if configured or used as a fallback.
+- **External assets:** the website loads some libraries, fonts, and OCR language resources from Google Fonts, unpkg, cdnjs, and jsDelivr. These providers receive ordinary requests from the browser when assets are retrieved.
+
+Provider notices: [Cloudflare](https://www.cloudflare.com/privacypolicy/), [Render](https://render.com/privacy), [Google](https://policies.google.com/privacy). Each provider operates under its own terms and policies.
+
+## 4. Technical information, cookies, and analytics
+
+Hosting and security providers may receive IP address, browser/device information, request time, requested URL, referring page, and error/security events to deliver, secure, and troubleshoot the service.
+
+The current application does not require registration and its application code does not intentionally set first-party login or advertising cookies or store user profiles in browser storage. The current site code does not intentionally include third-party advertising pixels or an advertising network. Hosting/security providers may use their own technical mechanisms under their policies. This notice will be updated if analytics, advertising, or other tracking technologies are added.
+
+## 5. Visitor choices and responsibilities
+
+- Use browser-based processing when preferred and supported.
+- Submit only files the visitor has the right to use and process.
+- Avoid submitting highly sensitive identity, medical, financial, legal, or confidential business documents unless the provider arrangements have been reviewed and accepted.
+- Keep original files and personal backups; PDF Globe is not a permanent storage or backup service.
+
+## 6. Security and international processing
+
+The public website and API use HTTPS. No internet transmission or storage method can be guaranteed completely secure. Hosting and translation providers may process information in countries other than the visitor's country under their own arrangements and applicable laws.
+
+## 7. Privacy requests
+
+Depending on applicable law, visitors may have rights to request access to, correction of, or deletion of personal information. Contact: **hamedasaad591@gmail.com**. Do not email passwords, API keys, or confidential document contents. The operator may request sufficient information to understand and verify a request.
+
+## 8. Changes
+
+This notice may change when the website, its providers, or applicable requirements change. The “Last updated” date identifies the current version.
