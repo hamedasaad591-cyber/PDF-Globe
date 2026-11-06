@@ -1,1 +1,140 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy — PDF Globe</title><link rel="stylesheet" href="/style.css"></head><body><header class="topbar"><a class="brand" href="/"><span class="brand-mark">PDF</span><span class="brand-name">PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><a class="header-cta" href="/">Home</a></header><main class="wrap legal-page"><div class="eyebrow">PDF GLOBE · LEGAL</div><h1>Privacy notice</h1><p class="legal-draft">Draft notice. Replace the operator contact details and have this notice reviewed for the jurisdictions in which the service will operate before public launch.</p><h2>What this service processes</h2><p>PDF Globe lets visitors select files and run document operations. Many operations (merge, page extraction, rotation, watermarking, page numbering, signing, image conversion, PDF rendering and browser OCR) run in the visitor's browser. Server-side features (compression, PDF/Word conversion, password operations, repair and translation output generation) send the selected file or extracted text to the PDF Globe server for the requested operation.</p><h2>Temporary processing</h2><p>The application writes server-side uploads and generated outputs into a temporary directory for the duration of a request. The directory is removed when the request completes. The application does not implement a permanent file library or user account system. Hosting infrastructure may still retain operational logs, security logs, backups, crash data or network metadata according to the hosting provider's policies.</p><h2>Third-party services</h2><ul><li>The website loads JavaScript libraries and web fonts from third-party CDNs. Those providers may receive ordinary connection metadata such as IP address and browser headers.</li><li>OCR language data may be downloaded by Tesseract.js from its configured language-data host.</li><li>Translation sends extracted document text to the configured translation provider. If LibreTranslate is configured, that service receives the text. Otherwise the current fallback sends text to the MyMemory public translation API. These providers operate under their own privacy terms and may process or retain requests independently of PDF Globe.</li><li>The site operator should list exact providers and current privacy-policy links here before launch.</li></ul><h2>Sensitive information</h2><p>Do not upload information that you are not authorized to process. Avoid uploading identity documents, medical records, financial records, confidential business materials or legal documents unless you have reviewed the data-processing arrangements and are comfortable with them. Obtain any required consent from other people whose information appears in a document.</p><h2>Cookies and tracking</h2><p>This starter project does not include advertising pixels, analytics scripts, or account cookies. Hosting providers, CDNs or future added services may use their own technical mechanisms; update this notice if such services are added.</p><h2>Security and contact</h2><p>The operator should use HTTPS, keep dependencies updated, restrict upload sizes, configure abuse controls/rate limits, monitor errors, and publish a monitored privacy contact before launch.</p><p><strong>Operator contact:</strong> add a real contact email and legal operator name before public launch.</p><p><a class="primary-btn" href="/">Return to PDF Globe</a></p></main><footer class="footer"><div class="wrap footer-inner"><span>PDF Globe</span><span>Privacy</span><span>© 2026 PDF Globe</span></div></footer></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="index,follow">
+  <meta name="description" content="PDF Globe Privacy Policy: how browser-based and server-based PDF tools process files, text, and technical information.">
+  <link rel="canonical" href="https://pdf-globe.pages.dev/privacy">
+  <title>Privacy Policy | سياسة الخصوصية — PDF Globe</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .legal-page{max-width:920px;margin:42px auto 64px;line-height:1.8}
+    .legal-page .legal-meta{color:#64748b;font-size:.92rem;margin:8px 0 24px}
+    .legal-page h2{margin-top:28px}
+    .legal-page h3{margin-top:18px}
+    .legal-page .language-block{border:1px solid rgba(100,116,139,.2);border-radius:18px;padding:24px;margin:22px 0;background:rgba(255,255,255,.72)}
+    .legal-page .language-block[dir="rtl"]{text-align:right}
+    .legal-page li{margin:7px 0}
+    .legal-page a{overflow-wrap:anywhere}
+    .legal-page .contact-card{background:#eef6ff;border-radius:14px;padding:16px 18px;margin:18px 0}
+    .legal-page .notice{border-inline-start:4px solid #e1a23a;background:#fff8e8;padding:14px 16px;border-radius:10px}
+    .legal-page .jump-links{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}
+    .legal-page .jump-links a{padding:7px 12px;border:1px solid #dbe3ef;border-radius:999px;text-decoration:none}
+    @media(max-width:640px){.legal-page{margin:24px auto 44px}.legal-page .language-block{padding:16px}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="PDF Globe home"><span class="brand-mark">PDF</span><span class="brand-name">PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a>
+    <a class="header-cta" href="/">Home / الرئيسية</a>
+  </header>
+  <main class="wrap legal-page">
+    <div class="eyebrow">PDF GLOBE · LEGAL</div>
+    <h1>Privacy Policy | سياسة الخصوصية</h1>
+    <p class="legal-meta">Last updated / آخر تحديث: 6 November 2026</p>
+    <div class="jump-links" aria-label="Language navigation">
+      <a href="#english">English</a><a href="#arabic">العربية</a><a href="/terms">Terms of Use / شروط الاستخدام</a>
+    </div>
+
+    <section id="english" class="language-block" lang="en" dir="ltr">
+      <h2>English</h2>
+      <p>This notice explains how PDF Globe (“PDF Globe”, “we”, “us”) handles information when you visit <a href="https://pdf-globe.pages.dev/">pdf-globe.pages.dev</a> and use its PDF and document tools. The service currently does not require an account.</p>
+
+      <h3>1. How file processing works</h3>
+      <p><strong>Browser-based tools.</strong> Tools such as merge, split/extract pages, rotate, delete or reorder pages, watermarks, page numbers, signatures, images-to-PDF, PDF-to-images, and OCR are designed to process the selected content in your browser. The file is not intentionally uploaded to the PDF Globe API for these browser-based operations. OCR software and language data may be downloaded from a third-party content delivery network; the OCR recognition itself runs in the browser.</p>
+      <p><strong>Server-based tools.</strong> Some operations need the PDF Globe API hosted by Render. These currently include PDF compression, PDF-to-Word conversion, Word-to-PDF conversion, PDF repair, and PDF password protection/unlocking. When you choose one of these tools, the selected file is transmitted over HTTPS to the API so the requested operation can be performed.</p>
+      <p><strong>Translation.</strong> Text is extracted or recognised in the browser and sent to the PDF Globe API. The API sends the text to the translation provider configured at the time of the request. The current primary configuration is Cloudflare Workers AI. Depending on service configuration or availability, LibreTranslate or the MyMemory public translation API may be used instead. The original PDF is not intentionally sent to the translation provider by this text-translation workflow; extracted text is sent. The translated text is then sent to the PDF Globe API to generate a downloadable DOCX file.</p>
+
+      <h3>2. Temporary files and retention</h3>
+      <p>For server-based operations, the application uses request-scoped temporary working folders and is designed to remove uploaded working files and generated outputs when the request finishes. The service does not provide a permanent document library or user file account. This application-level cleanup does not control infrastructure logs, security records, backups, crash diagnostics, or records retained by hosting and third-party providers under their own policies. Unexpected interruption of a server process may also affect normal cleanup.</p>
+      <p>If you email us, we receive the email address and message content that you choose to send. We retain support correspondence for as long as reasonably needed to respond, keep a record of the communication, and meet applicable obligations.</p>
+
+      <h3>3. Service providers and external resources</h3>
+      <ul>
+        <li><strong>Cloudflare Pages:</strong> delivers the static website and may process ordinary connection and security metadata.</li>
+        <li><strong>Render:</strong> hosts the PDF Globe API and may process request, network, operational, and security metadata. Files submitted for server-based tools pass through this API.</li>
+        <li><strong>Cloudflare Workers AI:</strong> receives extracted text when it is the configured translation provider.</li>
+        <li><strong>Other translation providers:</strong> LibreTranslate or MyMemory may receive translation text if configured or used as a fallback.</li>
+        <li><strong>Libraries, fonts, and OCR data:</strong> the website loads some software libraries, fonts, or language data from third-party delivery services, including Google Fonts, unpkg, cdnjs, and jsDelivr. Those services receive standard request information when your browser retrieves their resources.</li>
+      </ul>
+      <p>These providers operate under their own terms and privacy notices. Please review, where relevant: <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare Privacy Policy</a>, <a href="https://render.com/privacy" target="_blank" rel="noopener noreferrer">Render Privacy Policy</a>, and <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>. The provider used for translation can change if the service configuration changes.</p>
+
+      <h3>4. Technical information, cookies, and analytics</h3>
+      <p>Like most websites, the hosting and security providers may receive technical information such as IP address, browser and device details, request time, requested URL, referring page, and error/security events. This information may be used to deliver the site, prevent abuse, troubleshoot errors, and protect the service.</p>
+      <p>The current website application does not require registration and its application code does not intentionally set first-party login or advertising cookies, or store user profiles in browser storage. The current site code does not intentionally include third-party advertising pixels or an advertising network. Hosting or security providers may still use their own technical mechanisms under their policies. This notice will be updated if analytics, advertising, or other tracking technologies are added.</p>
+
+      <h3>5. Your choices and responsibilities</h3>
+      <ul>
+        <li>Choose a browser-based tool when you prefer local processing and the tool supports it.</li>
+        <li>Do not upload documents unless you have the right to use and process them.</li>
+        <li>Avoid submitting highly sensitive documents, including identity, medical, financial, legal, or confidential business records, unless you have reviewed the processing described here and accept the relevant provider arrangements.</li>
+        <li>Keep your own original copies. Do not treat the service as a backup or permanent storage location.</li>
+      </ul>
+
+      <h3>6. Security and international processing</h3>
+      <p>The site uses HTTPS for connections to its public website and API. No internet transmission or storage method can be guaranteed to be completely secure. Cloud hosting and translation providers may process information in countries other than the country where you are located, subject to their own arrangements and applicable laws.</p>
+
+      <h3>7. Privacy requests and contact</h3>
+      <p>Depending on the law that applies to you, you may have rights to request access to, correction of, or deletion of personal information. To ask a privacy question or make a request, contact the PDF Globe operator at:</p>
+      <div class="contact-card"><strong>Email:</strong> <a href="mailto:hamedasaad591@gmail.com">hamedasaad591@gmail.com</a></div>
+      <p>Please do not email passwords, API keys, or confidential document contents. We may ask for enough information to understand and verify a request.</p>
+
+      <h3>8. Changes to this notice</h3>
+      <p>This notice may be updated when the website, its providers, or applicable requirements change. The “Last updated” date at the top identifies the current version.</p>
+    </section>
+
+    <section id="arabic" class="language-block" lang="ar" dir="rtl">
+      <h2>العربية</h2>
+      <p>توضح سياسة الخصوصية هذه كيفية تعامل PDF Globe («الموقع» أو «نحن») مع المعلومات عند زيارة <a href="https://pdf-globe.pages.dev/">pdf-globe.pages.dev</a> واستخدام أدوات ملفات PDF والمستندات. لا يتطلب الموقع حالياً إنشاء حساب لاستخدام الأدوات.</p>
+
+      <h3>1. كيف تتم معالجة الملفات؟</h3>
+      <p><strong>الأدوات التي تعمل داخل المتصفح:</strong> صُممت أدوات مثل دمج الملفات، وتقسيم الصفحات واستخراجها، والتدوير والحذف وإعادة الترتيب، والعلامة المائية، وترقيم الصفحات، والتوقيع، وتحويل الصور إلى PDF، وتحويل صفحات PDF إلى صور، والتعرّف الضوئي على الحروف (OCR) لمعالجة المحتوى داخل متصفحك. لا يُرسل الملف عمداً إلى واجهة PDF Globe الخلفية عند استخدام هذه الأدوات المحلية. قد ينزّل المتصفح مكتبات البرنامج أو ملفات اللغات الخاصة بالتعرّف الضوئي من شبكات توصيل محتوى خارجية، بينما تتم عملية التعرّف نفسها داخل المتصفح.</p>
+      <p><strong>الأدوات التي تحتاج إلى الخادم:</strong> بعض العمليات تتطلب واجهة PDF Globe المستضافة لدى Render، ومنها حالياً ضغط PDF، وتحويل PDF إلى Word، وتحويل Word إلى PDF، ومحاولة إصلاح PDF، وحماية PDF بكلمة مرور أو إزالة الحماية عند معرفة كلمة المرور. عند اختيار إحدى هذه الأدوات، يُرسل الملف المحدد عبر HTTPS إلى واجهة الموقع لتنفيذ العملية المطلوبة.</p>
+      <p><strong>الترجمة:</strong> يُستخرج النص أو يُتعرّف عليه داخل المتصفح، ثم يُرسل النص إلى واجهة PDF Globe. ترسل الواجهة النص إلى مزود الترجمة المهيأ وقت الطلب. الإعداد الأساسي الحالي هو Cloudflare Workers AI، وقد يُستخدم LibreTranslate أو MyMemory كبديل بحسب إعداد الخدمة أو توفر المزود. في مسار ترجمة النصوص، لا يُرسل ملف PDF الأصلي عمداً إلى مزود الترجمة؛ بل يُرسل النص المستخرج. بعد الترجمة يُرسل النص المترجم إلى واجهة PDF Globe لإنشاء ملف Word قابل للتنزيل.</p>
+
+      <h3>2. الملفات المؤقتة وفترة الاحتفاظ</h3>
+      <p>في العمليات التي تحتاج إلى الخادم، يستخدم التطبيق مجلدات عمل مؤقتة خاصة بكل طلب، وهو مصمم لإزالة الملفات المرفوعة وملفات النتائج المؤقتة عند انتهاء الطلب. لا يوفر الموقع مكتبة دائمة للمستندات أو حساباً لحفظ ملفات المستخدم. لا تشمل عملية التنظيف التي ينفذها التطبيق سجلات البنية التحتية أو سجلات الأمان أو النسخ الاحتياطية أو بيانات الأعطال أو السجلات التي قد يحتفظ بها مزود الاستضافة أو المزودون الخارجيون وفق سياساتهم. كما قد يؤثر الانقطاع غير المتوقع للخادم في عملية التنظيف المعتادة.</p>
+      <p>إذا راسلتنا بالبريد الإلكتروني، فسنتلقى عنوان بريدك ومحتوى الرسالة التي تختار إرسالها. نحتفظ بمراسلات الدعم بالقدر المعقول اللازم للرد وتوثيق التواصل والوفاء بالالتزامات النظامية عند انطباقها.</p>
+
+      <h3>3. مزودو الخدمات والموارد الخارجية</h3>
+      <ul>
+        <li><strong>Cloudflare Pages:</strong> يقدم ملفات الموقع الثابتة وقد يعالج بيانات الاتصال والأمان المعتادة.</li>
+        <li><strong>Render:</strong> يستضيف واجهة PDF Globe الخلفية وقد يعالج بيانات الطلبات والشبكة والتشغيل والأمان. تمر الملفات المرسلة للأدوات التي تحتاج إلى الخادم عبر هذه الواجهة.</li>
+        <li><strong>Cloudflare Workers AI:</strong> يستقبل النص المستخرج عندما يكون هو مزود الترجمة المهيأ.</li>
+        <li><strong>مزودو الترجمة الآخرون:</strong> قد يستقبل LibreTranslate أو MyMemory نص الترجمة إذا تم تهيئتهما أو استخدامهما كبديل.</li>
+        <li><strong>المكتبات والخطوط وبيانات OCR:</strong> يحمّل الموقع بعض مكتبات البرامج والخطوط وملفات اللغات من خدمات خارجية، ومنها Google Fonts وunpkg وcdnjs وjsDelivr. تتلقى هذه الخدمات بيانات الطلب المعتادة عندما يحمّل متصفحك مواردها.</li>
+      </ul>
+      <p>يخضع كل مزود لشروطه وإشعارات الخصوصية الخاصة به. يمكنك مراجعة <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">سياسة خصوصية Cloudflare</a> و<a href="https://render.com/privacy" target="_blank" rel="noopener noreferrer">سياسة خصوصية Render</a> و<a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">سياسة خصوصية Google</a>. وقد يتغير مزود الترجمة عند تغيير إعدادات الخدمة.</p>
+
+      <h3>4. المعلومات التقنية وملفات الارتباط والتحليلات</h3>
+      <p>قد يتلقى مزودو الاستضافة والأمان معلومات تقنية معتادة مثل عنوان IP ونوع المتصفح والجهاز ووقت الطلب والرابط المطلوب والصفحة المُحيلة وأحداث الأخطاء أو الأمان. قد تُستخدم هذه المعلومات لتقديم الموقع ومنع إساءة الاستخدام ومعالجة الأعطال وحماية الخدمة.</p>
+      <p>لا يتطلب التطبيق الحالي التسجيل، ولا يتضمن كوده عمداً ملفات ارتباط خاصة بتسجيل الدخول أو الإعلانات، ولا يخزن ملفات تعريف للمستخدمين في مساحة تخزين المتصفح. كما لا يتضمن كود الموقع الحالي عمداً وحدات تتبع إعلانية أو شبكة إعلانات. ومع ذلك قد يستخدم مزودو الاستضافة أو الأمان آليات تقنية خاصة بهم وفق سياساتهم. سنحدّث هذه السياسة إذا أضفنا التحليلات أو الإعلانات أو تقنيات تتبع أخرى.</p>
+
+      <h3>5. اختياراتك ومسؤولياتك</h3>
+      <ul>
+        <li>اختر الأداة التي تعالج الملف داخل المتصفح عندما تفضّل المعالجة المحلية وتكون الأداة داعمة لذلك.</li>
+        <li>لا ترفع مستنداً ما لم تكن تملك الحق في استخدامه ومعالجته.</li>
+        <li>تجنب رفع المستندات شديدة الحساسية، مثل وثائق الهوية أو السجلات الطبية أو المالية أو القانونية أو مستندات الأعمال السرية، ما لم تكن قد راجعت طريقة المعالجة المذكورة هنا وقبلت ترتيبات المزودين المعنيين.</li>
+        <li>احتفظ بنسخة أصلية من ملفاتك. لا تستخدم الموقع كخدمة نسخ احتياطي أو تخزين دائم.</li>
+      </ul>
+
+      <h3>6. الأمان والمعالجة الدولية</h3>
+      <p>يستخدم الموقع HTTPS للاتصال بموقعه العام وواجهته الخلفية. لا يمكن ضمان أمان أي عملية نقل أو تخزين عبر الإنترنت بصورة مطلقة. وقد يعالج مزودو الاستضافة والترجمة المعلومات في دول غير الدولة التي تقيم فيها، وفق ترتيباتهم والقوانين السارية.</p>
+
+      <h3>7. طلبات الخصوصية والتواصل</h3>
+      <p>قد تمنحك القوانين المطبقة عليك حقوقاً لطلب الوصول إلى المعلومات الشخصية أو تصحيحها أو حذفها. للاستفسار عن الخصوصية أو تقديم طلب، تواصل مع مشغّل PDF Globe عبر البريد التالي:</p>
+      <div class="contact-card"><strong>البريد الإلكتروني:</strong> <a href="mailto:hamedasaad591@gmail.com">hamedasaad591@gmail.com</a></div>
+      <p>يرجى عدم إرسال كلمات المرور أو مفاتيح API أو محتويات مستندات سرية عبر البريد. قد نطلب معلومات كافية لفهم الطلب والتحقق منه.</p>
+
+      <h3>8. تحديث هذه السياسة</h3>
+      <p>قد نحدّث هذه السياسة عند تغيير الموقع أو مزودي خدماته أو المتطلبات النظامية. يوضح تاريخ «آخر تحديث» أعلى الصفحة تاريخ النسخة الحالية.</p>
+    </section>
+
+    <p class="notice" lang="en">This policy describes the website's current implementation as reviewed on the date above. It is general information, not legal advice. The operator should obtain jurisdiction-specific legal review before adding advertising, paid features, or processing regulated/sensitive data.</p>
+    <p class="notice" lang="ar" dir="rtl">تصف هذه السياسة طريقة عمل الموقع الحالية وفق المراجعة في التاريخ الموضح أعلاه، وهي معلومات عامة وليست استشارة قانونية. ينبغي لمشغّل الموقع الحصول على مراجعة قانونية خاصة بالدولة المعنية قبل إضافة الإعلانات أو الخدمات المدفوعة أو معالجة بيانات منظمة أو شديدة الحساسية.</p>
+    <p><a class="primary-btn" href="/">Return to PDF Globe / العودة إلى PDF Globe</a></p>
+  </main>
+  <footer class="footer"><div class="wrap footer-inner"><span>PDF Globe</span><span>Privacy / الخصوصية</span><span>© 2026 PDF Globe</span></div></footer>
+</body>
+</html>
