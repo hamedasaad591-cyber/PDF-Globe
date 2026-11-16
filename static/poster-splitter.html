@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <title>Free Poster Splitter – Print Large Posters on A4 or A3 | PDF Globe</title>
+  <meta name="description" content="Turn a large image or the first page of a PDF into a tiled poster PDF. Split A0, A1, A2 and custom posters across A4, A3 or Letter sheets with adjustable overlap.">
+  <link rel="canonical" href="https://pdf-globe.pages.dev/poster-splitter.html">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Free Poster Splitter – PDF Globe">
+  <meta property="og:description" content="Make a large tiled poster PDF from an image or PDF page. Choose paper size, overlap and print quality.">
+  <meta name="theme-color" content="#102a43">
+  <style>
+    :root{--ink:#102a43;--muted:#526579;--line:#d8e1ea;--bg:#f4f7fb;--card:#fff;--brand:#1769aa;--brand2:#0f528a;--good:#13795b;--bad:#b42318;--radius:16px;--shadow:0 8px 26px rgba(16,42,67,.07)}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+    a{color:var(--brand)}.wrap{max-width:1160px;margin:auto;padding:0 20px}.topbar{background:#fff;border-bottom:1px solid var(--line)}.topbar .wrap{height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:1.18rem;font-weight:800;letter-spacing:-.03em;text-decoration:none;color:var(--ink)}.brand span{color:var(--brand)}.nav{display:flex;gap:18px;flex-wrap:wrap;font-size:.92rem}.nav a{text-decoration:none;color:var(--muted)}
+    header.hero{padding:46px 0 24px}.eyebrow{color:var(--brand);font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.hero h1{font-size:clamp(2rem,4vw,3.15rem);line-height:1.08;letter-spacing:-.045em;margin:9px 0 14px;max-width:850px}.hero p{max-width:760px;color:var(--muted);font-size:1.08rem;margin:0}
+    .layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:22px;align-items:start;padding:14px 0 34px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-bottom:18px}.card h2{margin:0 0 14px;font-size:1.15rem;letter-spacing:-.02em}.upload{border:2px dashed #9db5c9;border-radius:14px;background:#f8fbff;padding:28px 18px;text-align:center;cursor:pointer;transition:.18s}.upload.drag{border-color:var(--brand);background:#edf6ff}.upload .symbol{font-size:2rem}.upload strong{display:block;font-size:1.03rem;margin:4px 0}.upload p{color:var(--muted);margin:0;font-size:.9rem}.upload input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.file-row{display:none;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#f2f7fb;border:1px solid var(--line);border-radius:10px;margin-top:14px}.file-row.show{display:flex}.file-name{font-weight:700;overflow-wrap:anywhere}.file-meta{color:var(--muted);font-size:.83rem}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:.88rem;font-weight:700}.field small{font-weight:400;color:var(--muted)}select,input[type=number]{width:100%;min-height:44px;border:1px solid #bdcbd8;border-radius:9px;background:#fff;padding:9px 11px;font:inherit;color:var(--ink)}select:focus,input:focus,button:focus-visible{outline:3px solid rgba(23,105,170,.2);border-color:var(--brand)}.check{display:flex;align-items:center;gap:9px;margin-top:8px;font-size:.9rem}.check input{width:17px;height:17px;accent-color:var(--brand)}
+    .btn{border:0;border-radius:10px;padding:12px 17px;min-height:46px;font-family:inherit;font-size:.97rem;font-weight:700;line-height:1.2;cursor:pointer}.primary{background:var(--brand);color:white;width:100%;margin-top:18px}.primary:hover{background:var(--brand2)}.primary:disabled{opacity:.5;cursor:not-allowed}.secondary{background:#eaf1f7;color:var(--ink);padding:8px 12px;min-height:auto}.download{display:none;background:var(--good);color:white;width:100%;margin-top:12px}.download.show{display:block}.status{display:none;margin-top:14px;padding:11px 13px;border-radius:9px;font-size:.9rem}.status.show{display:block}.status.info{background:#eef6ff;color:#174a72}.status.error{background:#fff0ef;color:var(--bad)}.status.success{background:#eaf8f2;color:#126449}.progress{height:8px;background:#e7edf3;border-radius:99px;overflow:hidden;margin-top:12px;display:none}.progress.show{display:block}.progress>span{display:block;height:100%;width:0;background:var(--brand);transition:width .15s}
+    .preview-box{background:#f8fafc;border:1px solid var(--line);border-radius:12px;overflow:hidden}.preview-box canvas{display:block;width:100%;height:auto}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:13px}.stat{background:#f3f7fa;border-radius:10px;padding:10px;text-align:center}.stat b{display:block;font-size:1.23rem}.stat span{font-size:.75rem;color:var(--muted)}.hint{font-size:.85rem;color:var(--muted);margin:11px 0 0}.features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}.feature{background:white;border:1px solid var(--line);border-radius:12px;padding:15px}.feature b{display:block;margin-bottom:4px}.feature p{margin:0;color:var(--muted);font-size:.87rem}.content{max-width:900px;padding-bottom:42px}.content h2{font-size:1.35rem;margin:25px 0 8px}.content p,.content li{color:#40576b}.faq{border-top:1px solid var(--line);padding:13px 0}.faq h3{font-size:1rem;margin:0 0 5px}.faq p{margin:0}.footer{background:#fff;border-top:1px solid var(--line);padding:22px 0;color:var(--muted);font-size:.88rem}.footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+    @media(max-width:850px){.layout{grid-template-columns:1fr}.features{grid-template-columns:1fr}.hero{padding-top:32px!important}}@media(max-width:520px){.wrap{padding:0 13px}.topbar .wrap{height:auto;min-height:58px;align-items:flex-start;padding-top:12px;padding-bottom:12px;flex-direction:column}.nav{gap:12px}.card{padding:16px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.summary{grid-template-columns:repeat(3,1fr)}.hero h1{font-size:2.15rem}}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" defer></script>
+  <script type="module">
+    const PDFJS_VERSION = '4.10.38';
+    let pdfjsLib = null;
+    try {
+      pdfjsLib = await import(`https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.min.mjs`);
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`;
+    } catch (error) {
+      console.warn('PDF.js could not be loaded. Image upload remains available.', error);
+    }
+
+    const $ = (id) => document.getElementById(id);
+    const fileInput = $('fileInput');
+    const uploadZone = $('uploadZone');
+    const generateBtn = $('generateBtn');
+    const downloadBtn = $('downloadBtn');
+    const statusBox = $('statusBox');
+    const progress = $('progress');
+    const progressFill = $('progressFill');
+    const previewCanvas = $('posterPreview');
+    const previewCtx = previewCanvas.getContext('2d');
+    const MAX_FILE_BYTES = 30 * 1024 * 1024;
+    const MAX_SOURCE_PIXELS = 80_000_000;
+    const MAX_OUTPUT_PAGES = 64;
+    const PT_PER_MM = 72 / 25.4;
+    const MM_PER_INCH = 25.4;
+    let sourceCanvas = null;
+    let currentFileName = '';
+    let downloadUrl = null;
+    let currentPlan = null;
+
+    const POSTER_SIZES = {
+      A0: [841, 1189], A1: [594, 841], A2: [420, 594], A3: [297, 420],
+      A4: [210, 297], A5: [148, 210]
+    };
+    const PAPER_SIZES = {
+      A4: [210, 297], A3: [297, 420], Letter: [215.9, 279.4]
+    };
+
+    function announce(message, type = 'info') {
+      statusBox.textContent = message;
+      statusBox.className = `status show ${type}`;
+    }
+    function clearStatus() { statusBox.textContent = ''; statusBox.className = 'status'; }
+    function setProgress(value, visible = true) {
+      progress.classList.toggle('show', visible);
+      progressFill.style.width = `${Math.max(0, Math.min(100, value))}%`;
+    }
+    function humanSize(bytes) {
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    }
+    function loadImageFile(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const image = new Image();
+        image.onload = () => {
+          URL.revokeObjectURL(url);
+          if (!image.naturalWidth || !image.naturalHeight) return reject(new Error('The selected image is empty or unsupported.'));
+          if (image.naturalWidth * image.naturalHeight > MAX_SOURCE_PIXELS) return reject(new Error('This image is too large to process safely in the browser. Please use an image below 80 megapixels.'));
+          const canvas = document.createElement('canvas');
+          canvas.width = image.naturalWidth;
+          canvas.height = image.naturalHeight;
+          const context = canvas.getContext('2d', { alpha: false });
+          context.fillStyle = '#ffffff'; context.fillRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0);
+          resolve(canvas);
+        };
+        image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read this image. Try a JPG, PNG or WebP file.')); };
+        image.src = url;
+      });
+    }
+    async function loadPdfFile(file) {
+      if (!pdfjsLib) throw new Error('The PDF reader library did not load. Please refresh the page or upload a JPG, PNG or WebP image.');
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const pdf = await pdfjsLib.getDocument({ data: bytes, isEvalSupported: false }).promise;
+      const page = await pdf.getPage(1);
+      const baseViewport = page.getViewport({ scale: 1 });
+      const scale = Math.min(3, 3200 / Math.max(baseViewport.width, baseViewport.height));
+      const viewport = page.getViewport({ scale: Math.max(1, scale) });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(viewport.width);
+      canvas.height = Math.ceil(viewport.height);
+      if (canvas.width * canvas.height > MAX_SOURCE_PIXELS) throw new Error('The first PDF page is too large to render safely. Please use a smaller PDF.');
+      const context = canvas.getContext('2d', { alpha: false });
+      context.fillStyle = '#ffffff'; context.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: context, viewport }).promise;
+      return { canvas, pageCount: pdf.numPages };
+    }
+    async function handleFile(file) {
+      clearStatus();
+      if (!file) return;
+      if (file.size > MAX_FILE_BYTES) {
+        announce('File exceeds the 30 MB limit. Choose a smaller file.', 'error');
+        fileInput.value = '';
+        return;
+      }
+      try {
+        generateBtn.disabled = true;
+        downloadBtn.classList.remove('show');
+        if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
+        announce('Reading your file in this browser…', 'info');
+        let result;
+        let loadMessage = '';
+        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+          result = await loadPdfFile(file);
+          sourceCanvas = result.canvas;
+          loadMessage = result.pageCount > 1 ? `PDF loaded. This first release uses page 1 of ${result.pageCount}; the original file is not uploaded.` : 'PDF loaded. The original file is not uploaded.';
+        } else if (['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name)) {
+          sourceCanvas = await loadImageFile(file);
+          loadMessage = 'Image loaded. Processing stays in your browser.';
+        } else {
+          throw new Error('Unsupported file type. Choose a JPG, PNG, WebP image or PDF.');
+        }
+        currentFileName = file.name.replace(/\.[^.]+$/, '') || 'poster';
+        $('fileName').textContent = file.name;
+        $('fileMeta').textContent = `${humanSize(file.size)} · ${sourceCanvas.width.toLocaleString()} × ${sourceCanvas.height.toLocaleString()} px`;
+        $('fileRow').classList.add('show');
+        updatePlan();
+        generateBtn.disabled = !currentPlan;
+        announce(loadMessage, 'success');
+      } catch (error) {
+        sourceCanvas = null;
+        currentPlan = null;
+        $('fileRow').classList.remove('show');
+        $('planStats').hidden = true;
+        generateBtn.disabled = true;
+        drawEmptyPreview();
+        announce(error.message || 'Could not load this file.', 'error');
+      }
+    }
+
+    function getDimensions(preset, customW, customH, orientation) {
+      let dims;
+      if (preset === 'Custom') dims = [customW, customH];
+      else dims = [...POSTER_SIZES[preset]];
+      if (orientation === 'Landscape' && dims[1] > dims[0]) dims.reverse();
+      if (orientation === 'Portrait' && dims[0] > dims[1]) dims.reverse();
+      return dims;
+    }
+    function calculatePlan() {
+      if (!sourceCanvas) return null;
+      const posterPreset = $('posterSize').value;
+      const [posterW, posterH] = getDimensions(posterPreset, Number($('customW').value), Number($('customH').value), $('posterOrientation').value);
+      const [baseSheetW, baseSheetH] = PAPER_SIZES[$('paperSize').value];
+      let [sheetW, sheetH] = [baseSheetW, baseSheetH];
+      if ($('paperOrientation').value === 'Landscape') [sheetW, sheetH] = [sheetH, sheetW];
+      const margin = Number($('margin').value);
+      const overlap = Number($('overlap').value);
+      if (![posterW, posterH, sheetW, sheetH, margin, overlap].every(Number.isFinite)) throw new Error('Enter valid numeric dimensions.');
+      if (posterW < 50 || posterH < 50 || posterW > 3000 || posterH > 3000) throw new Error('Poster dimensions must be between 50 mm and 3,000 mm.');
+      if (margin < 0 || margin > 25) throw new Error('Margin must be between 0 and 25 mm.');
+      const printW = sheetW - 2 * margin;
+      const printH = sheetH - 2 * margin;
+      if (printW <= 20 || printH <= 20) throw new Error('The margins leave too little printable area.');
+      if (overlap < 0 || overlap > 25 || overlap >= Math.min(printW, printH)) throw new Error('Overlap must be between 0 and 25 mm and smaller than the printable sheet area.');
+      const stepX = printW - overlap;
+      const stepY = printH - overlap;
+      const columns = Math.max(1, Math.ceil((posterW - overlap) / stepX));
+      const rows = Math.max(1, Math.ceil((posterH - overlap) / stepY));
+      const pageCount = columns * rows;
+      if (pageCount > MAX_OUTPUT_PAGES) throw new Error(`This setup needs ${pageCount} pages. Reduce the poster size or use larger paper; the limit is ${MAX_OUTPUT_PAGES} pages.`);
+      const fitMode = $('fitMode').value;
+      const scale = fitMode === 'Cover' ? Math.max(posterW / sourceCanvas.width, posterH / sourceCanvas.height) : Math.min(posterW / sourceCanvas.width, posterH / sourceCanvas.height);
+      const imageW = sourceCanvas.width * scale;
+      const imageH = sourceCanvas.height * scale;
+      const imageX = (posterW - imageW) / 2;
+      const imageY = (posterH - imageH) / 2;
+      const sourcePpi = 25.4 / scale;
+      return { posterW, posterH, sheetW, sheetH, margin, overlap, printW, printH, stepX, stepY, columns, rows, pageCount, imageW, imageH, imageX, imageY, fitMode, sourcePpi };
+    }
+    function updatePlan() {
+      downloadBtn.classList.remove('show');
+      try {
+        currentPlan = calculatePlan();
+        $('customDimensions').hidden = $('posterSize').value !== 'Custom';
+        $('planStats').hidden = !currentPlan;
+        if (currentPlan) {
+          $('statPages').textContent = currentPlan.pageCount;
+          $('statGrid').textContent = `${currentPlan.columns} × ${currentPlan.rows}`;
+          $('statPoster').textContent = `${Math.round(currentPlan.posterW)} × ${Math.round(currentPlan.posterH)} mm`;
+          const dpi = Number($('quality').value);
+          const sourceWarning = currentPlan.sourcePpi < dpi ? ' The source image has fewer pixels than the selected output resolution, so upscaling will not add detail.' : '';
+          $('planNote').textContent = `Each sheet prints ${currentPlan.printW.toFixed(1)} × ${currentPlan.printH.toFixed(1)} mm of the poster. Overlap: ${currentPlan.overlap} mm. Estimated source resolution: ${Math.round(currentPlan.sourcePpi)} PPI; PDF output setting: ${dpi} DPI.${sourceWarning}`;
+          drawPreview(currentPlan);
+          generateBtn.disabled = false;
+        }
+        else generateBtn.disabled = true;
+        if (statusBox.classList.contains('error') || statusBox.classList.contains('success')) clearStatus();
+      } catch (error) {
+        currentPlan = null;
+        $('planStats').hidden = true;
+        generateBtn.disabled = true;
+        drawEmptyPreview();
+        if (sourceCanvas) announce(error.message, 'error');
+      }
+    }
+    function drawEmptyPreview() {
+      previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      previewCtx.fillStyle = '#f8fafc';
+      previewCtx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+      previewCtx.fillStyle = '#718398';
+      previewCtx.font = '16px system-ui';
+      previewCtx.textAlign = 'center';
+      previewCtx.fillText('Upload a file to see the tiled poster preview', previewCanvas.width / 2, previewCanvas.height / 2);
+    }
+    function drawPreview(plan) {
+      const w = previewCanvas.width, h = previewCanvas.height;
+      previewCtx.clearRect(0, 0, w, h);
+      previewCtx.fillStyle = '#f8fafc'; previewCtx.fillRect(0, 0, w, h);
+      const scale = Math.min((w - 70) / plan.posterW, (h - 70) / plan.posterH);
+      const pw = plan.posterW * scale, ph = plan.posterH * scale;
+      const ox = (w - pw) / 2, oy = (h - ph) / 2;
+      previewCtx.fillStyle = '#fff'; previewCtx.fillRect(ox, oy, pw, ph);
+      previewCtx.save(); previewCtx.beginPath(); previewCtx.rect(ox, oy, pw, ph); previewCtx.clip();
+      previewCtx.drawImage(sourceCanvas, ox + plan.imageX * scale, oy + plan.imageY * scale, plan.imageW * scale, plan.imageH * scale);
+      previewCtx.lineWidth = 2; previewCtx.strokeStyle = 'rgba(17,91,145,.86)'; previewCtx.setLineDash([7, 5]);
+      for (let r = 0; r < plan.rows; r++) for (let c = 0; c < plan.columns; c++) {
+        const x = ox + c * plan.stepX * scale, y = oy + r * plan.stepY * scale;
+        previewCtx.strokeRect(x, y, plan.printW * scale, plan.printH * scale);
+      }
+      previewCtx.restore();
+      previewCtx.strokeStyle = '#8ba1b5'; previewCtx.lineWidth = 1; previewCtx.setLineDash([]); previewCtx.strokeRect(ox, oy, pw, ph);
+    }
+    function canvasToJpegBytes(canvas, quality = .94) {
+      return new Promise((resolve, reject) => canvas.toBlob(async (blob) => {
+        if (!blob) return reject(new Error('Could not encode a poster tile. Try a lower output resolution.'));
+        resolve(new Uint8Array(await blob.arrayBuffer()));
+      }, 'image/jpeg', quality));
+    }
+    function drawCropMarks(page, x, y, width, height, margin, row, col, font) {
+      if (!$('cropMarks').checked || margin < 4) return;
+      const black = window.PDFLib.rgb(0.13, 0.18, 0.23);
+      const gap = .8 * PT_PER_MM, len = 2.5 * PT_PER_MM, line = .45;
+      const corners = [
+        [x, y, -1, -1], [x + width, y, 1, -1],
+        [x, y + height, -1, 1], [x + width, y + height, 1, 1]
+      ];
+      for (const [cx, cy, sx, sy] of corners) {
+        page.drawLine({ start: { x: cx + sx * gap, y: cy + sy * gap }, end: { x: cx + sx * (gap + len), y: cy + sy * gap }, thickness: line, color: black });
+        page.drawLine({ start: { x: cx + sx * gap, y: cy + sy * gap }, end: { x: cx + sx * gap, y: cy + sy * (gap + len) }, thickness: line, color: black });
+      }
+      if (margin >= 4) {
+        page.drawText(`Row ${row + 1} · Sheet ${col + 1}`, { x: 5 * PT_PER_MM, y: 1.5 * PT_PER_MM, size: 6, font, color: black });
+      }
+    }
+    async function generatePoster() {
+      if (!sourceCanvas || !currentPlan) return;
+      if (!window.PDFLib) { announce('The PDF export library did not load. Refresh the page and try again.', 'error'); return; }
+      generateBtn.disabled = true; downloadBtn.classList.remove('show'); clearStatus(); setProgress(0, true);
+      try {
+        const { PDFDocument, StandardFonts } = window.PDFLib;
+        const p = currentPlan;
+        const dpi = Number($('quality').value);
+        const pixelW = Math.ceil(p.printW * dpi / MM_PER_INCH);
+        const pixelH = Math.ceil(p.printH * dpi / MM_PER_INCH);
+        if (pixelW * pixelH > 18_000_000) throw new Error('The selected quality creates tiles that are too large for this browser. Choose 150 DPI.');
+        const output = await PDFDocument.create();
+        const font = await output.embedFont(StandardFonts.Helvetica);
+        const tileCanvas = document.createElement('canvas');
+        tileCanvas.width = pixelW; tileCanvas.height = pixelH;
+        const ctx = tileCanvas.getContext('2d', { alpha: false });
+        const pts = PT_PER_MM;
+        const pageW = p.sheetW * pts, pageH = p.sheetH * pts;
+        let done = 0;
+        for (let row = 0; row < p.rows; row++) {
+          for (let col = 0; col < p.columns; col++) {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, pixelW, pixelH);
+            const tileX = col * p.stepX, tileY = row * p.stepY;
+            const pxPerMm = dpi / MM_PER_INCH;
+            ctx.setTransform(pxPerMm, 0, 0, pxPerMm, -tileX * pxPerMm, -tileY * pxPerMm);
+            ctx.drawImage(sourceCanvas, p.imageX, p.imageY, p.imageW, p.imageH);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            const jpg = await canvasToJpegBytes(tileCanvas, .94);
+            const embedded = await output.embedJpg(jpg);
+            const page = output.addPage([pageW, pageH]);
+            const x = p.margin * pts, y = p.margin * pts;
+            page.drawImage(embedded, { x, y, width: p.printW * pts, height: p.printH * pts });
+            drawCropMarks(page, x, y, p.printW * pts, p.printH * pts, p.margin, row, col, font);
+            done++;
+            setProgress(done / p.pageCount * 100, true);
+            announce(`Creating print-ready PDF… ${done} of ${p.pageCount} pages`, 'info');
+            await new Promise(resolve => setTimeout(resolve, 0));
+          }
+        }
+        const pdfBytes = await output.save({ useObjectStreams: true });
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+        downloadUrl = URL.createObjectURL(blob);
+        downloadBtn.dataset.url = downloadUrl;
+        downloadBtn.dataset.filename = `${currentFileName || 'poster'}-${$('posterSize').value.toLowerCase()}-tiled.pdf`;
+        downloadBtn.classList.add('show');
+        announce(`Your tiled poster PDF is ready: ${p.pageCount} pages, ${humanSize(blob.size)}. Print every page at Actual size / 100% (do not use Fit or Scale to page).`, 'success');
+        setProgress(100, true);
+      } catch (error) {
+        console.error(error);
+        announce(error.message || 'PDF generation failed. Try reducing the poster size or output quality.', 'error');
+      } finally {
+        generateBtn.disabled = false;
+        setTimeout(() => setProgress(0, false), 1800);
+      }
+    }
+
+    fileInput.addEventListener('change', (event) => handleFile(event.target.files?.[0]));
+    uploadZone.addEventListener('click', () => fileInput.click());
+    uploadZone.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); fileInput.click(); } });
+    ['dragenter', 'dragover'].forEach(name => uploadZone.addEventListener(name, event => { event.preventDefault(); uploadZone.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(name => uploadZone.addEventListener(name, event => { event.preventDefault(); uploadZone.classList.remove('drag'); }));
+    uploadZone.addEventListener('drop', event => handleFile(event.dataTransfer.files?.[0]));
+    $('removeFile').addEventListener('click', () => {
+      sourceCanvas = null; currentPlan = null; currentFileName = ''; fileInput.value = '';
+      if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
+      $('fileRow').classList.remove('show'); $('planStats').hidden = true;
+      generateBtn.disabled = true; downloadBtn.classList.remove('show'); clearStatus(); drawEmptyPreview();
+    });
+    generateBtn.addEventListener('click', generatePoster);
+    downloadBtn.addEventListener('click', () => {
+      const a = document.createElement('a'); a.href = downloadBtn.dataset.url; a.download = downloadBtn.dataset.filename || 'poster.pdf';
+      document.body.appendChild(a); a.click(); a.remove();
+    });
+    ['posterSize','posterOrientation','paperSize','paperOrientation','margin','overlap','quality','fitMode','customW','customH','cropMarks'].forEach(id => $(id).addEventListener('change', updatePlan));
+    drawEmptyPreview();
+
+    // Keep the page from retaining large generated blobs after navigation.
+    window.addEventListener('pagehide', () => { if (downloadUrl) URL.revokeObjectURL(downloadUrl); });
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"WebApplication",
+    "name":"PDF Globe Poster Splitter",
+    "url":"https://pdf-globe.pages.dev/poster-splitter.html",
+    "applicationCategory":"DesignApplication",
+    "operatingSystem":"Any",
+    "browserRequirements":"Requires a modern browser with JavaScript enabled",
+    "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+    "description":"Create a tiled poster PDF from an image or the first page of a PDF."
+  }
+  </script>
+</head>
+<body>
+  <div class="topbar"><div class="wrap"><a class="brand" href="/">PDF <span>Globe</span></a><nav class="nav" aria-label="Main navigation"><a href="/">All PDF Tools</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a></nav></div></div>
+  <header class="hero wrap">
+    <div class="eyebrow">Free online print tool</div>
+    <h1>Print a Large Poster on Multiple A4 or A3 Pages</h1>
+    <p>Turn an image or the first page of a PDF into a tiled poster PDF. Choose your finished poster size, paper, overlap and print quality. Your file is processed in your browser.</p>
+  </header>
+  <main class="wrap">
+    <div class="layout">
+      <section>
+        <div class="card">
+          <h2>1. Upload your image or PDF</h2>
+          <div id="uploadZone" class="upload" role="button" tabindex="0" aria-label="Choose an image or PDF file">
+            <div class="symbol" aria-hidden="true">↥</div><strong>Drop a file here or browse your device</strong>
+            <p>JPG, PNG, WebP or PDF · Maximum file size 30 MB</p>
+            <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.pdf" aria-label="Choose file">
+          </div>
+          <div id="fileRow" class="file-row"><div><div id="fileName" class="file-name"></div><div id="fileMeta" class="file-meta"></div></div><button id="removeFile" class="btn secondary" type="button">Remove</button></div>
+          <div id="statusBox" class="status" role="status" aria-live="polite"></div>
+        </div>
+        <div class="card">
+          <h2>2. Set your poster and paper</h2>
+          <div class="form-grid">
+            <div class="field"><label for="posterSize">Finished poster size</label><select id="posterSize"><option value="A0">A0 – 841 × 1189 mm</option><option value="A1" selected>A1 – 594 × 841 mm</option><option value="A2">A2 – 420 × 594 mm</option><option value="A3">A3 – 297 × 420 mm</option><option value="A4">A4 – 210 × 297 mm</option><option value="Custom">Custom size</option></select></div>
+            <div class="field"><label for="posterOrientation">Poster orientation</label><select id="posterOrientation"><option>Portrait</option><option>Landscape</option></select></div>
+            <div id="customDimensions" class="field full" hidden><div class="form-grid"><div class="field"><label for="customW">Poster width (mm)</label><input id="customW" type="number" min="50" max="3000" value="600"></div><div class="field"><label for="customH">Poster height (mm)</label><input id="customH" type="number" min="50" max="3000" value="900"></div></div></div>
+            <div class="field"><label for="paperSize">Paper size</label><select id="paperSize"><option value="A4" selected>A4 – 210 × 297 mm</option><option value="A3">A3 – 297 × 420 mm</option><option value="Letter">US Letter – 8.5 × 11 in</option></select></div>
+            <div class="field"><label for="paperOrientation">Paper orientation</label><select id="paperOrientation"><option>Portrait</option><option>Landscape</option></select></div>
+            <div class="field"><label for="margin">Printer margin (mm)</label><input id="margin" type="number" min="0" max="25" step="0.5" value="4"><small>Check your printer's non-printable edge; increase this if needed.</small></div>
+            <div class="field"><label for="overlap">Tile overlap (mm)</label><input id="overlap" type="number" min="0" max="25" step="0.5" value="2"><small>Increase to 5–10 mm for easier joining; this may add sheets.</small></div>
+            <div class="field"><label for="quality">Output resolution</label><select id="quality"><option value="150" selected>150 DPI – standard poster</option><option value="200">200 DPI – higher detail</option></select></div>
+            <div class="field"><label for="fitMode">Fit image to poster</label><select id="fitMode"><option value="Contain" selected>Fit entire image (may leave white bands)</option><option value="Cover">Fill poster (may crop edges)</option></select></div>
+            <div class="field full"><label class="check"><input id="cropMarks" type="checkbox" checked> Add crop marks and sheet labels</label></div>
+          </div>
+          <button id="generateBtn" class="btn primary" type="button" disabled>Create tiled poster PDF</button>
+          <div id="progress" class="progress" aria-label="PDF creation progress"><span id="progressFill"></span></div>
+          <button id="downloadBtn" class="btn download" type="button">Download print-ready PDF</button>
+        </div>
+      </section>
+      <aside>
+        <div class="card">
+          <h2>Poster layout preview</h2>
+          <div class="preview-box"><canvas id="posterPreview" width="760" height="510" aria-label="Poster tiling preview"></canvas></div>
+          <div id="planStats" class="summary" hidden>
+            <div class="stat"><b id="statPages">—</b><span>PDF sheets</span></div>
+            <div class="stat"><b id="statGrid">—</b><span>Columns × rows</span></div>
+            <div class="stat"><b id="statPoster">—</b><span>Poster size</span></div>
+          </div>
+          <p id="planNote" class="hint">Upload a file to calculate the number of pages and preview the layout.</p>
+          <p class="hint">Important: in your printer dialog, choose <b>Actual size</b> or <b>100%</b>. Do not choose “Fit to page”.</p>
+        </div>
+        <div class="card">
+          <h2>How it works</h2>
+          <ol class="hint" style="padding-left:20px;line-height:1.8;margin:0"><li>Upload an image or PDF.</li><li>Choose your finished poster size and sheet paper.</li><li>Set the overlap and create your tiled PDF.</li><li>Print every page at 100%, then align the overlap and join the sheets.</li></ol>
+        </div>
+      </aside>
+    </div>
+    <section class="features" aria-label="Tool benefits">
+      <div class="feature"><b>Browser-based processing</b><p>Your selected file is handled locally in your browser and is not sent to the PDF Globe server.</p></div>
+      <div class="feature"><b>Multiple paper sizes</b><p>Create A0, A1, A2, A3 or custom posters using A4, A3 or US Letter sheets.</p></div>
+      <div class="feature"><b>Adjustable overlap</b><p>Add a shared edge between neighbouring sheets to help you align and assemble the poster.</p></div>
+    </section>
+    <article class="content">
+      <h2>How to print a large poster on A4 paper</h2>
+      <p>A tiled poster is a large design divided into smaller printable sheets. For example, an A1 poster can be divided across several A4 pages, printed on a regular home or office printer, and assembled into one larger display. This tool calculates the sheet grid and includes an adjustable overlap so adjacent pages share part of the image.</p>
+      <h2>Choose the right overlap and print scale</h2>
+      <p>An overlap of around 5–10 mm is a practical starting point for many projects, but the best value depends on your printer and how you plan to join the sheets. Always print at Actual Size or 100%. Printer settings such as “Fit”, “Shrink oversized pages” or “Scale to printable area” can change the final dimensions.</p>
+      <h2>Frequently asked questions</h2>
+      <div class="faq"><h3>Does the tool upload my file?</h3><p>No. Image decoding, PDF page rendering and poster generation happen in your browser. The page loads its PDF libraries from a public CDN, but the selected document is not sent to PDF Globe's server.</p></div>
+      <div class="faq"><h3>Can I upload a multi-page PDF?</h3><p>Yes, but this first release uses only page 1 of the uploaded PDF. Support for choosing other pages can be added in a later release.</p></div>
+      <div class="faq"><h3>Why are there white edges on some sheets?</h3><p>White space can come from printer margins or from the selected “Fit entire image” option. It can also appear on the final row or column because the poster edge does not always line up exactly with a full sheet.</p></div>
+      <div class="faq"><h3>What resolution should I choose?</h3><p>150 DPI is a reasonable starting point for many large posters. Choose 200 DPI when the source image has enough detail and your browser can handle the larger output.</p></div>
+    </article>
+  </main>
+  <footer class="footer"><div class="wrap"><span>© <span id="year"></span> PDF Globe · Free print and PDF tools</span><span><a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a> · <a href="/">More tools</a></span></div></footer>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</body>
+</html>
