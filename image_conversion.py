@@ -188,6 +188,11 @@ def register_image_routes(app, store_upload, download_response):
                                 first = first.convert("RGB")
                                 options.update(quality=quality)
                             elif fmt == "png":
+                                # Pillow's PNG encoder does not accept CMYK and several
+                                # other printer/scientific color modes. Convert them
+                                # deliberately rather than returning a generic 500.
+                                if first.mode in {"CMYK", "YCbCr", "LAB", "HSV", "F", "I"}:
+                                    first = first.convert("L" if first.mode == "F" else "RGB")
                                 options.update(optimize=True, compress_level=6)
                             elif fmt == "tiff":
                                 options.update(compression="tiff_lzw")

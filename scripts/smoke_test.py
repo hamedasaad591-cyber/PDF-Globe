@@ -158,6 +158,19 @@ def test_image_outputs() -> None:
             check(result.format == expected_format, f"PNG to {output_format.upper()} returned {result.format}, expected {expected_format}")
             check(result.width > 0 and result.height > 0, f"PNG to {output_format.upper()} returned empty image dimensions")
 
+    # Printer-oriented CMYK JPEGs must be normalized before PNG encoding.
+    cmyk_source = io.BytesIO()
+    Image.new("CMYK", (64, 48), (0, 100, 100, 0)).save(cmyk_source, format="JPEG")
+    response = client.post(
+        "/api/image/convert",
+        data={"output_format": "png"},
+        files=[("files", ("print-cmyk.jpg", cmyk_source.getvalue(), "image/jpeg"))],
+    )
+    check(response.status_code == 200, f"CMYK JPEG to PNG failed: {response.status_code} {response.text[:300]}")
+    with Image.open(io.BytesIO(response.content)) as result:
+        check(result.format == "PNG" and result.mode in {"RGB", "RGBA"} and result.size == (64, 48),
+              "CMYK JPEG to PNG did not return a valid RGB PNG")
+
     # Animated GIF and multi-page TIFF exports must retain all source frames.
     animated_frames = [
         Image.new("RGB", (64, 48), (220, 30, 30)),
