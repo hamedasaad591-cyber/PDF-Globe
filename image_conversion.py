@@ -171,7 +171,8 @@ def register_image_routes(app, store_upload, download_response):
                                 options.update(sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])
                             elif fmt == "gif":
                                 frames = [f.convert("P", palette=Image.Palette.ADAPTIVE) for f in frames]
-                                options.update(save_all=len(frames) > 1, append_images=frames[1:], duration=durations, loop=0, optimize=True, disposal=2)
+                                gif_duration = durations if len(frames) > 1 else (durations[0] if durations else 100)
+                                options.update(save_all=len(frames) > 1, append_images=frames[1:], duration=gif_duration, loop=0, optimize=True, disposal=2)
                                 first = frames[0]
                             elif fmt == "bmp":
                                 first = first.convert("RGB")
