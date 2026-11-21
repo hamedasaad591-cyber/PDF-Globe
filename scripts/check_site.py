@@ -1,6 +1,8 @@
 from pathlib import Path
 import re
+import subprocess
 import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 STATIC = ROOT / "static"
@@ -272,3 +274,29 @@ require("image-compressor.js?v=20261121-image-tools-4" in image_ar and "image-co
 require("imageTools:'أدوات الصور'" in image_js and "imageTools:'Image tools'" in image_js, "image tools navigation labels are missing")
 require("الذكاء الاصطناعي" in image_js and "super-resolution" in image_js, "image resize and enhancement limitations are not disclosed")
 print("PASS: image conversion, resizing, compression and enhancement are separate task modes.")
+
+
+# Check every executable inline script in the two standalone print tools.
+for relative in ("static/saffha/index.html", "static/poster-splitter.html"):
+    html = (ROOT / relative).read_text(encoding="utf-8")
+    script_number = 0
+    for match in re.finditer(r"<script\\b([^>]*)>([\\s\\S]*?)</script\\s*>", html, re.IGNORECASE):
+        attributes, source = match.groups()
+        if re.search(r"\\bsrc\\s*=", attributes, re.IGNORECASE):
+            continue
+        script_type = re.search(r"""\\btype\\s*=\\s*["']([^"']+)["']""", attributes, re.IGNORECASE)
+        if script_type and script_type.group(1).lower() not in ("text/javascript", "application/javascript", "module"):
+            continue
+        if not source.strip():
+            continue
+        script_number += 1
+        with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8", delete=False) as temp:
+            temp.write(source)
+            temp_path = Path(temp.name)
+        try:
+            checked = subprocess.run(["node", "--check", str(temp_path)], capture_output=True, text=True)
+            require(checked.returncode == 0, f"{relative} inline script {script_number} has invalid JavaScript: {checked.stderr[-800:]}")
+        finally:
+            temp_path.unlink(missing_ok=True)
+    require(script_number > 0, f"{relative} contains no executable inline JavaScript to check")
+print("PASS: inline JavaScript syntax in Saffha and Poster Splitter.")
