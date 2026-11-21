@@ -531,16 +531,29 @@
         drawPreview();
       }
       function addFiles(incoming) {
-        const acceptable = Array.from(incoming || []).filter(function (file) {
+        const input = Array.from(incoming || []);
+        const acceptable = input.filter(function (file) {
           return ["image/png", "image/jpeg", "image/webp"].includes(file.type);
         });
-        const rejected = (incoming ? incoming.length : 0) - acceptable.length;
+        const rejectedType = input.length - acceptable.length;
+        const rejectedLarge = acceptable.filter(function (file) { return file.size > 15 * 1024 * 1024; }).length;
+        const eligible = acceptable.filter(function (file) { return file.size <= 15 * 1024 * 1024; });
         const remaining = Math.max(0, 12 - selectedFiles.length);
-        const additions = acceptable.slice(0, remaining);
+        let bytesUsed = selectedFiles.reduce(function (sum, file) { return sum + file.size; }, 0);
+        const additions = [];
+        eligible.forEach(function (file) {
+          if (selectedFiles.length + additions.length >= 12) return;
+          if (bytesUsed + file.size > 45 * 1024 * 1024) return;
+          additions.push(file);
+          bytesUsed += file.size;
+        });
         selectedFiles = selectedFiles.concat(additions);
         renderFiles();
-        if (rejected > 0) setStatus("تم تجاهل " + rejected + " ملفاً. الصيغ المدعومة هي PNG وJPG وWEBP.", "info");
-        else if (acceptable.length > remaining) setStatus("يمكن إضافة 12 صورة كحد أقصى في النسخة التجريبية.", "info");
+        const messages = [];
+        if (rejectedType > 0) messages.push("تم تجاهل " + rejectedType + " ملفاً غير مدعوم.");
+        if (rejectedLarge > 0) messages.push("تم تجاهل " + rejectedLarge + " صورة يتجاوز حجمها 15 ميجابايت.");
+        if (eligible.length > additions.length) messages.push("الحد الأقصى 12 صورة أو 45 ميجابايت إجمالاً.");
+        if (messages.length) setStatus(messages.join(" "), "info");
       }
       fileInput.addEventListener("change", function (event) {
         addFiles(event.target.files);
