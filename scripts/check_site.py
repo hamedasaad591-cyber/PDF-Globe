@@ -193,7 +193,7 @@ for locale, prefix in (("ar", ""), ("en", "en/")):
     require('app.js?v=20261121-illustrated-home-10' in page, f"{locale} homepage JS cache version was not refreshed")
     require('style.css?v=20261121-illustrated-home-10' in page, f"{locale} homepage CSS cache version was not refreshed")
     for key in ("jump_pdf", "jump_print", "jump_poster", "jump_measure", "jump_translate", "jump_image"):
-        require(re.search(rf'<b data-i18n="{key}">\\s*[^<]+\\s*</b>', page) is not None,
+        require(re.search(rf'<b data-i18n="{key}">\s*[^<]+\s*</b>', page) is not None,
                 f"{locale} homepage category label {key} has no HTML fallback text")
     require(page.count('<span class="tool-icon ') == 24, f"{locale} homepage does not contain 24 tool illustration slots")
     require(page.count('<use href="/tool-icons.svg#') >= 30, f"{locale} homepage category or tool illustrations are missing")
