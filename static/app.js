@@ -74,11 +74,11 @@
   });
 
   const toolMeta = {
-    merge:{title:'tool_merge',desc:'desc_merge',accept:'.pdf',multiple:true},split:{title:'tool_split',desc:'desc_split',accept:'.pdf'},compress:{title:'tool_compress',desc:'desc_compress',accept:'.pdf'},rotate:{title:'tool_rotate',desc:'desc_rotate',accept:'.pdf'},delete:{title:'tool_delete',desc:'desc_delete',accept:'.pdf'},reorder:{title:'tool_reorder',desc:'desc_reorder',accept:'.pdf'},'pdf-word':{title:'tool_pdfword',desc:'desc_pdfword',accept:'.pdf'},'word-pdf':{title:'tool_wordpdf',desc:'desc_wordpdf',accept:'.doc,.docx,.odt,.rtf'},'image-pdf':{title:'tool_imagepdf',desc:'desc_imagepdf',accept:'.jpg,.jpeg,.jfif,.png,.webp,.avif,.heic,.heif,.bmp,.gif,.tif,.tiff,.ico,.tga,.ppm,.pgm,.pbm,.pcx',multiple:true},'pdf-image':{title:'tool_pdfimage',desc:'desc_pdfimage',accept:'.pdf'},watermark:{title:'tool_watermark',desc:'desc_watermark',accept:'.pdf'},numbers:{title:'tool_numbers',desc:'desc_numbers',accept:'.pdf'},sign:{title:'tool_sign',desc:'desc_sign',accept:'.pdf'},protect:{title:'tool_protect',desc:'desc_protect',accept:'.pdf'},unlock:{title:'tool_unlock',desc:'desc_unlock',accept:'.pdf'},repair:{title:'tool_repair',desc:'desc_repair',accept:'.pdf'},ocr:{title:'tool_ocr',desc:'desc_ocr',accept:'.pdf,.png,.jpg,.jpeg,.webp'},translate:{title:'tool_translate',desc:'desc_translate',accept:'.pdf'},
-    'excel-pdf':{title:'tool_excelpdf',desc:'desc_excelpdf',accept:'.xlsx,.xls,.xlsm,.ods,.csv'},
-    'powerpoint-pdf':{title:'tool_powerpointpdf',desc:'desc_powerpointpdf',accept:'.pptx,.ppt,.ppsx,.odp'},
-    'dicom-pdf':{title:'tool_dicompdf',desc:'desc_dicompdf',accept:'.dcm,.dicom,.ima',multiple:true},
-    'dwg-pdf':{title:'tool_dwgpfd',desc:'desc_dwgpfd',accept:'.dwg'}
+    merge:{title:'tool_merge',desc:'desc_merge',accept:'.pdf',multiple:true},split:{title:'tool_split',desc:'desc_split',accept:'.pdf'},compress:{title:'tool_compress',desc:'desc_compress',accept:'.pdf'},rotate:{title:'tool_rotate',desc:'desc_rotate',accept:'.pdf'},delete:{title:'tool_delete',desc:'desc_delete',accept:'.pdf'},reorder:{title:'tool_reorder',desc:'desc_reorder',accept:'.pdf'},'pdf-word':{title:'tool_pdfword',desc:'desc_pdfword',accept:'.pdf'},'word-pdf':{title:'tool_wordpdf',desc:'desc_wordpdf',accept:'.doc,.docx,.odt,.rtf'},'image-pdf':{title:'tool_imagepdf',desc:'desc_imagepdf',accept:'.jpg,.jpeg,.jfif,.png,.webp,.avif,.heic,.heif,.bmp,.gif,.tif,.tiff,.ico,.tga,.ppm,.pgm,.pbm,.pcx',multiple:true,maxFiles:20,maxTotalMB:120},'pdf-image':{title:'tool_pdfimage',desc:'desc_pdfimage',accept:'.pdf'},watermark:{title:'tool_watermark',desc:'desc_watermark',accept:'.pdf'},numbers:{title:'tool_numbers',desc:'desc_numbers',accept:'.pdf'},sign:{title:'tool_sign',desc:'desc_sign',accept:'.pdf'},protect:{title:'tool_protect',desc:'desc_protect',accept:'.pdf'},unlock:{title:'tool_unlock',desc:'desc_unlock',accept:'.pdf'},repair:{title:'tool_repair',desc:'desc_repair',accept:'.pdf'},ocr:{title:'tool_ocr',desc:'desc_ocr',accept:'.pdf,.png,.jpg,.jpeg,.webp'},translate:{title:'tool_translate',desc:'desc_translate',accept:'.pdf'},
+    'excel-pdf':{title:'tool_excelpdf',desc:'desc_excelpdf',accept:'.xlsx,.xls,.xlsm,.ods,.csv',maxMB:25},
+    'powerpoint-pdf':{title:'tool_powerpointpdf',desc:'desc_powerpointpdf',accept:'.pptx,.ppt,.ppsx,.odp',maxMB:25},
+    'dicom-pdf':{title:'tool_dicompdf',desc:'desc_dicompdf',accept:'.dcm,.dicom,.ima',multiple:true,maxFiles:60,maxTotalMB:120},
+    'dwg-pdf':{title:'tool_dwgpfd',desc:'desc_dwgpfd',accept:'.dwg',maxMB:25}
   };
   const LANGS = [['ar','العربية / Arabic'],['en','English'],['fr','Français'],['es','Español'],['de','Deutsch'],['it','Italiano'],['pt','Português'],['tr','Türkçe'],['ur','اردو'],['hi','हिन्दी'],['zh','中文'],['ja','日本語'],['ko','한국어'],['ru','Русский'],['nl','Nederlands'],['pl','Polski'],['sv','Svenska'],['fa','فارسی'],['id','Bahasa Indonesia'],['ms','Bahasa Melayu'],['uk','Українська'],['el','Ελληνικά'],['he','עברית'],['vi','Tiếng Việt']];
   let translationLanguages = LANGS;
@@ -201,7 +201,7 @@
     $('#fileList').classList.add('hidden');$('#fileList').innerHTML='';
     $('#resultBox').classList.add('hidden');$('#progressWrap').classList.add('hidden');
     $('#runTool').disabled=true;
-    $('#acceptedFiles').textContent=`${meta.accept.replaceAll('.', '').toUpperCase()} · ${currentLang==='ar'?'حتى 50 MB للملف':'up to 50 MB per file'}`;
+    $('#acceptedFiles').textContent=`${meta.accept.replaceAll('.', '').toUpperCase()} · ${currentLang==='ar'?'حتى':'up to'} ${meta.maxMB||50} MB ${currentLang==='ar'?'للملف':'per file'}`;
     renderOptions(id);
     $('#workspaceSection').classList.add('visible');
     if(scroll) $('#workspaceSection').scrollIntoView({behavior:'smooth',block:'start'});
@@ -219,6 +219,8 @@
     const incoming=meta.multiple?files:files.slice(0,1);
     selectedFiles=[];
     if(!incoming.length){renderFileList();$('#runTool').disabled=true;return;}
+    if(meta.maxFiles && incoming.length>meta.maxFiles){fileInput.value='';renderFileList();$('#runTool').disabled=true;toast(currentLang==='ar'?`الحد الأقصى ${meta.maxFiles} ملفاً في العملية الواحدة`:`Maximum ${meta.maxFiles} files per operation`);return;}
+    if(meta.maxTotalMB && incoming.reduce((sum,file)=>sum+file.size,0)>meta.maxTotalMB*1024*1024){fileInput.value='';renderFileList();$('#runTool').disabled=true;toast(currentLang==='ar'?`إجمالي الملفات يجب ألا يتجاوز ${meta.maxTotalMB} MB`:`Total selected files must not exceed ${meta.maxTotalMB} MB`);return;}
     const allowed=meta.accept.split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
     const invalid=incoming.find(f=>!allowed.some(ext=>f.name.toLowerCase().endsWith(ext)));
     if(invalid){
@@ -228,12 +230,13 @@
       toast(currentLang==='ar'?'نوع الملف غير مدعوم لهذه الأداة: '+invalid.name:'Unsupported file type for this tool: '+invalid.name);
       return;
     }
-    const oversized=incoming.find(f=>f.size>50*1024*1024);
+    const perFileLimit=(meta.maxMB||50)*1024*1024;
+    const oversized=incoming.find(f=>f.size>perFileLimit);
     if(oversized){
       fileInput.value='';
       renderFileList();
       $('#runTool').disabled=true;
-      toast(`${oversized.name}: ${currentLang==='ar'?'الحد الأقصى 50 MB':'maximum 50 MB'}`);
+      toast(`${oversized.name}: ${currentLang==='ar'?'الحد الأقصى '+(meta.maxMB||50)+' MB':'maximum '+(meta.maxMB||50)+' MB'}`);
       return;
     }
     selectedFiles=incoming;
