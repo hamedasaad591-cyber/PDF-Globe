@@ -25,7 +25,7 @@ jobs:
       - name: Install PDF and office system tools
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libreoffice-writer libreoffice-calc libreoffice-impress qpdf
       - name: Check Python syntax
-        run: python -m py_compile main.py office_conversion.py image_conversion.py dicom_conversion.py dwg_conversion.py scripts/check_site.py scripts/smoke_test.py
+        run: python -m py_compile main.py office_conversion.py image_conversion.py dicom_conversion.py dwg_conversion.py scripts/check_site.py scripts/smoke_test.py scripts/deployed_smoke_test.py
       - name: Check JavaScript syntax
         run: node --check static/app.js && node --check static/unit-converter.js && node --check static/image-compressor.js && node --check static/office-converter.js && node --check scripts/browser_smoke_test.js
       - name: Check tool and page wiring
@@ -36,3 +36,10 @@ jobs:
         run: npm install --no-save playwright@1.53.0 && npx playwright install --with-deps chromium
       - name: Browser smoke-test client-side tools
         run: node scripts/browser_smoke_test.js
+      - name: Download real DWG test fixture
+        run: curl -fsSL https://raw.githubusercontent.com/LibreDWG/libredwg/27e828d212852b8cd08c1cd5d2721e5b738ca8a9/test/test-data/2000/Line.dwg -o /tmp/pdf-globe-line.dwg
+      - name: Verify deployed Render API and real DWG conversion
+        env:
+          PDF_GLOBE_API_URL: https://pdf-globe.onrender.com
+          PDF_GLOBE_DWG_FIXTURE: /tmp/pdf-globe-line.dwg
+        run: python scripts/deployed_smoke_test.py
