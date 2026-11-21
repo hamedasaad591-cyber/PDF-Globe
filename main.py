@@ -1156,8 +1156,8 @@ def create_structured_editable_docx(src: Path, out: Path) -> dict:
 
 
 @app.post("/api/pdf/to-word")
-async def pdf_to_word(file: UploadFile = File(...), mode: str = Form("structured")):
-    mode = (mode or "layout").strip().lower()
+async def pdf_to_word(file: UploadFile = File(...), mode: str = Form("hybrid")):
+    mode = (mode or "hybrid").strip().lower()
     if mode not in {"layout", "editable", "hybrid", "structured"}:
         raise HTTPException(status_code=400, detail="اختر طريقة التحويل: هجين، أو الحفاظ على شكل الصفحات، أو استخراج النص القابل للتحرير")
     with tempfile.TemporaryDirectory(prefix="pdfglobe-") as td:
