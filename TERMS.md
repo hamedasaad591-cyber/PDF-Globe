@@ -1,6 +1,6 @@
 # PDF Globe Terms of Use
 
-**Last updated: 6 November 2026**  
+**Last updated: 21 November 2026**  
 **Contact:** hamedasaad591@gmail.com  
 **Website:** https://pdf-globe.pages.dev/
 
@@ -8,7 +8,7 @@ These terms apply to access to and use of PDF Globe and its document tools. By u
 
 ## 1. The Service
 
-PDF Globe provides browser-based and server-based tools for PDF and document operations, including file organization, conversion, compression, OCR, password operations, repair attempts, and machine translation. Features, supported formats, limits, and providers may change.
+PDF Globe provides browser-based and server-based tools for PDF and document operations, including file organization, conversion, compression, OCR, password operations, repair attempts, machine translation, and Saffha print-sheet layout. Features, supported formats, limits, and providers may change.
 
 ## 2. Files and permissions
 
@@ -20,7 +20,7 @@ Some tools process files in the browser. Other tools transmit the selected file 
 
 ## 4. File size, quotas, and availability
 
-Server-side uploads are currently limited to 50 MB per file, subject to change. Browser tools may be limited by device memory, browser capabilities, file complexity, or available storage. Translation and other third-party features are subject to provider quotas, rate limits, outages, and pricing. The Service is currently offered free of charge, but this does not mean every feature is unlimited. Reasonable limits may be imposed and features or providers may be changed or paused to protect the Service.
+Server-side uploads are currently limited to 50 MB per file, subject to change. Browser tools may be limited by device memory, browser capabilities, file complexity, or available storage. The Saffha beta accepts up to 12 images, with a maximum of 15 MB per image and 45 MB combined. Translation and other third-party features are subject to provider quotas, rate limits, outages, and pricing. The Service is currently offered free of charge, but this does not mean every feature is unlimited. Reasonable limits may be imposed and features or providers may be changed or paused to protect the Service.
 
 ## 5. Accuracy and output review
 
