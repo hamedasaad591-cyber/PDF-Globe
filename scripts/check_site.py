@@ -180,3 +180,22 @@ for locale, prefix in (("ar", ""), ("en", "en/")):
 require("directory-group" in (STATIC / "style.css").read_text(encoding="utf-8"), "Homepage directory styles are missing")
 require("$('#categories').addEventListener" not in app, "Old category filter is still wired to the removed category strip")
 require("data-tool-group" in app and "visibleCount" in app, "Global search does not show/hide directory groups")
+
+
+# Homepage illustrated navigation: never ship blank category labels or icon-less cards.
+icons_file = (STATIC / "tool-icons.svg").read_text(encoding="utf-8")
+for icon_id in ("merge", "split", "compress", "pdf-word", "pdf-excel", "pdf-powerpoint",
+                "saffha", "poster", "units", "ocr", "translate", "image-compress",
+                "wm-pdf", "wm-print", "wm-poster", "wm-units", "wm-translate", "wm-image"):
+    require(f'<symbol id="{icon_id}"' in icons_file, f"homepage illustration {icon_id} is missing")
+for locale, prefix in (("ar", ""), ("en", "en/")):
+    page = (STATIC / prefix / "index.html").read_text(encoding="utf-8")
+    require('app.js?v=20261121-illustrated-home-10' in page, f"{locale} homepage JS cache version was not refreshed")
+    require('style.css?v=20261121-illustrated-home-10' in page, f"{locale} homepage CSS cache version was not refreshed")
+    for key in ("jump_pdf", "jump_print", "jump_poster", "jump_measure", "jump_translate", "jump_image"):
+        require(re.search(rf'<b data-i18n="{key}">\\s*[^<]+\\s*</b>', page) is not None,
+                f"{locale} homepage category label {key} has no HTML fallback text")
+    require(page.count('<span class="tool-icon ') == 24, f"{locale} homepage does not contain 24 tool illustration slots")
+    require(page.count('<use href="/tool-icons.svg#') >= 30, f"{locale} homepage category or tool illustrations are missing")
+require("Illustrated tool directory" in (STATIC / "style.css").read_text(encoding="utf-8"),
+        "Illustrated homepage tool directory styles are missing")
