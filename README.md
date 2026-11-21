@@ -17,6 +17,7 @@ A responsive, multilingual PDF workspace with browser-side processing and a smal
 - Attempt PDF repair by rewriting the document
 - OCR for PDF scans and images (Tesseract.js in the browser)
 - Translate selectable PDF text and export it as DOCX
+- Saffha: arrange PNG/JPEG/WEBP images on A4 or A3 with exact dimensions, margins, gaps, copy counts and crop marks, then export a print-ready PDF locally in the browser
 
 Most PDF actions run locally in the visitor's browser. Server-side conversion tools temporarily receive an uploaded file to perform the requested task. Temporary directories are deleted after each request. Translation text is sent to the configured translation provider (LibreTranslate when configured; otherwise the MyMemory public API fallback). See `PRIVACY.md` before operating this service publicly.
 
