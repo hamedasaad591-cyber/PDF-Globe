@@ -88,7 +88,7 @@
     const amount=Number($('amount').value);
     if($('amount').value===''||!Number.isFinite(amount)){ $('resultValue').textContent='—';$('resultFormula').textContent='';return; }
     const cat=$('category').value,from=$('fromUnit').value,to=$('toUnit').value;
-    if(cat==='temperature'&&currentLang==='ar'&&amount<-273.15&&from==='c'){ $('resultValue').textContent='—';$('resultFormula').textContent=t('invalid');return; }
+    if((cat==='temperature'&&toTemperature(amount,from)<0)||(cat!=='temperature'&&amount<0)){ $('resultValue').textContent='—';$('resultFormula').textContent=t('invalid');return; }
     const value=convert(amount,cat,from,to,$('ingredient').value);
     $('resultValue').textContent=pretty(value)+' '+t(to);
     $('resultFormula').textContent=pretty(amount)+' '+t(from)+' = '+pretty(value)+' '+t(to);
@@ -123,7 +123,7 @@
     $('scaleFactor').textContent='× '+pretty(factor);
     $('recipeRows').querySelectorAll('.recipe-row').forEach(row=>{
       const amount=Number(row.querySelector('.ingredient-amount').value);
-      row.querySelector('output').textContent=Number.isFinite(amount)?pretty(amount*factor)+' '+row.querySelector('select').value:'—';
+      row.querySelector('output').textContent=Number.isFinite(amount)?pretty(amount*factor)+' '+t(row.querySelector('select').value):'—';
     });
   }
   async function copy(text){
@@ -148,7 +148,7 @@
     $('recipeRows').querySelectorAll('.recipe-row').forEach(row=>{
       const name=row.querySelector('.ingredient-name').value.trim()||t('sample');
       const amount=Number(row.querySelector('.ingredient-amount').value);
-      if(Number.isFinite(amount)&&amount>=0)lines.push(name+': '+pretty(amount*factor)+' '+row.querySelector('select').value);
+      if(Number.isFinite(amount)&&amount>=0)lines.push(name+': '+pretty(amount*factor)+' '+t(row.querySelector('select').value));
     });
     if(lines.length===1){alert(t('noRows'));return;}
     copy(lines.join('\n'));
@@ -158,8 +158,8 @@
   populateUnits('kg','g');
   $('category').value='mass';
   $('ingredient').value='water';
-  addRecipeRow('',250,'g');
-  addRecipeRow('',1,'cup');
-  addRecipeRow('',2,'tbsp');
+  addRecipeRow(t('ing_flour'),250,'g');
+  addRecipeRow(t('ing_water'),1,'cup');
+  addRecipeRow(t('ing_sugar'),2,'tbsp');
   setTextLanguage();
 })();
