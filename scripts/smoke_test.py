@@ -233,7 +233,7 @@ def test_image_outputs() -> None:
         check(len(archive.namelist()) == 2, "Batch image ZIP does not contain both converted images")
 
     # The server-side per-image limit must match the 25 MB advertised by the UI.
-    with patch.object(image_conversion, "MAX_IMAGE_FILE_BYTES", 100):
+    with patch.object(image_conversion, "MAX_IMAGE_FILE_BYTES", 1):
         response = client.post(
             "/api/image/convert",
             data={"output_format": "png"},
