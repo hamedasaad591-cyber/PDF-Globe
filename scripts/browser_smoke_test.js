@@ -64,6 +64,26 @@ async function readPdfResult(page){
     return {filename:link.download,size:bytes.length,pages:pdf.getPageCount(),header:String.fromCharCode(...bytes.slice(0,5))};
   });
 }
+async function runNewToolCards(page,base){
+  await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+  await page.waitForFunction(()=>!!document.querySelector('.tool-card[data-tool="excel-pdf"]'),null,{timeout:30000});
+  const tools=[
+    ['excel-pdf','.xlsx'],
+    ['powerpoint-pdf','.pptx'],
+    ['dicom-pdf','.dcm'],
+    ['dwg-pdf','.dwg']
+  ];
+  for(const [id,expected] of tools){
+    await page.locator('.tool-card[data-tool="'+id+'"]').click();
+    const state=await page.evaluate(()=>({
+      visible:document.querySelector('#workspaceSection').classList.contains('visible'),
+      accept:document.querySelector('#fileInput').accept,
+      title:document.querySelector('#workspaceTitle').textContent
+    }));
+    assert(state.visible&&state.accept.includes(expected),id+' card did not open its workspace: '+JSON.stringify(state));
+    console.log('PASS homepage card '+id+' opens the correct upload workspace');
+  }
+}
 async function runPdfTool(page,base,tool,files,configure,expectedPages){
   await page.goto(base+'/?tool='+encodeURIComponent(tool),{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>!!window.PDFLib&&!!document.querySelector('#workspaceSection.visible'),null,{timeout:60000});
@@ -190,6 +210,7 @@ async function runImageModes(page,base){
     const page=await context.newPage();page.setDefaultTimeout(60000);
     await page.goto(base+'/',{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>!!window.PDFLib,null,{timeout:60000});
+    await runNewToolCards(page,base);
     const pdf=await makePdf(page,2);const png=await makePng(page);
     const single={name:'one-page.pdf',mimeType:'application/pdf',buffer:await makePdf(page,1)};
     const two={name:'two-pages.pdf',mimeType:'application/pdf',buffer:pdf};
