@@ -798,3 +798,29 @@ body.homepage .directory-group .tool-card:hover{background:#fff}
  body.homepage .category-jump-card{min-height:101px}
  body.homepage .directory-group{padding-inline:12px}
 }
+
+
+/* New specialized conversion category and stronger tool clarity */
+body.homepage #special-tools{
+  --section-accent:#5470bd;--section-wash:rgba(84,112,189,.14);
+  border-color:rgba(84,112,189,.24);
+  background:
+    radial-gradient(ellipse at 100% 0%,rgba(108,143,214,.17),transparent 27rem),
+    radial-gradient(ellipse at 0% 100%,rgba(112,195,205,.09),transparent 25rem),
+    linear-gradient(145deg,#fff 0%,#f2f6ff 100%);
+}
+body.homepage .special-notice{
+  position:relative;z-index:1;margin:14px 0 0;padding:11px 14px;
+  border:1px solid rgba(90,116,176,.18);border-radius:12px;
+  background:rgba(255,255,255,.7);color:#64728e;font-size:10px;line-height:1.9;
+}
+body.homepage #special-tools .directory-index{
+  background:linear-gradient(145deg,#5b76c6,#344f91);
+}
+body.homepage .category-jump-card:nth-child(7){--jump:#5672bd;--jump-bg:#eef3ff}
+@media(max-width:1100px){
+ body.homepage .category-jump-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:760px){
+ body.homepage .category-jump-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
