@@ -25,7 +25,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=20261121-ui-refresh-1">
+  <link rel="stylesheet" href="/style.css?v=20261121-featured-home-2">
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -37,12 +37,13 @@
       <span class="brand-mark"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M11 4h12l8 8v23H11z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M23 4v9h8M16 21h10M16 27h10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="9" cy="29" r="5" fill="#39c6a5" stroke="#fff" stroke-width="1.5"/></svg></span>
       <span class="brand-name">PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span>
     </a>
-    <nav class="desktop-nav" aria-label="Main navigation"><a href="#tools" data-i18n="nav_tools">الأدوات</a><a href="/saffha/" data-i18n="saffha_nav">صفّها</a><a href="#how" data-i18n="nav_how">كيف يعمل</a><a href="#privacy" data-i18n="nav_privacy">الخصوصية</a></nav>
+    <nav class="desktop-nav" aria-label="Main navigation"><a href="#tools" data-i18n="nav_tools">الأدوات</a><a href="/saffha/" data-i18n="saffha_nav">صفّها</a><a href="/poster-splitter.html" data-i18n="poster_nav">تقسيم البوسترات</a><a href="#how" data-i18n="nav_how">كيف يعمل</a><a href="#privacy" data-i18n="nav_privacy">الخصوصية</a></nav>
     <details class="mobile-menu" id="mobileMenu">
       <summary aria-label="فتح القائمة" title="القائمة"><span class="menu-lines" aria-hidden="true"><i></i><i></i><i></i></span></summary>
       <nav class="mobile-menu-panel" aria-label="Mobile navigation">
         <a href="#tools" data-i18n="nav_tools">الأدوات</a>
         <a href="/saffha/" data-i18n="saffha_nav">صفّها</a>
+        <a href="/poster-splitter.html" data-i18n="poster_nav">تقسيم البوسترات</a>
         <a href="#how" data-i18n="nav_how">كيف يعمل</a>
         <a href="/about.html" data-i18n="footer_about">من نحن</a>
         <a href="/contact.html" data-i18n="footer_contact">تواصل معنا</a>
@@ -77,6 +78,31 @@
       </div>
     </section>
 
+    <section class="featured-tools wrap" aria-labelledby="featuredToolsTitle">
+      <div class="featured-tools-head">
+        <div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="featured_tools_kicker">أدواتنا المميزة</span></div>
+        <h2 id="featuredToolsTitle" data-i18n="featured_tools_title">ابدأ بأكثر الأدوات استخداماً</h2>
+        <p data-i18n="featured_tools_desc">ثلاث أدوات واضحة في مقدمة الموقع لتصل إلى مهمتك مباشرة.</p>
+      </div>
+      <div class="featured-grid">
+        <a class="featured-card featured-saffha" href="/saffha/">
+          <span class="featured-icon" aria-hidden="true">▦</span>
+          <span class="featured-copy"><strong data-i18n="saffha_card_title">صفّها — التوزيعات والملصقات</strong><small data-i18n="saffha_card_desc">رتّب الصور على A4 أو A3 بمقاسات دقيقة، وأنشئ PDF جاهزاً للطباعة.</small></span>
+          <span class="featured-cta" data-i18n="featured_card_cta">افتح الأداة ↗</span>
+        </a>
+        <a class="featured-card featured-poster" href="/poster-splitter.html">
+          <span class="featured-icon" aria-hidden="true">▧</span>
+          <span class="featured-copy"><strong data-i18n="poster_card_title">تقسيم البوسترات الكبيرة</strong><small data-i18n="poster_card_desc">قسّم الملصق الكبير إلى صفحات A4 أو A3 واطبعه بسهولة.</small></span>
+          <span class="featured-cta" data-i18n="featured_card_cta">افتح الأداة ↗</span>
+        </a>
+        <a class="featured-card featured-word" href="/?tool=pdf-word#workspaceSection">
+          <span class="featured-icon" aria-hidden="true">W</span>
+          <span class="featured-copy"><strong data-i18n="word_card_title">تحويل PDF إلى Word</strong><small data-i18n="word_card_desc">ارفع ملف PDF وحوّله إلى Word بخطوة واحدة ومعالجة ذكية للصفحات.</small></span>
+          <span class="featured-cta" data-i18n="featured_card_cta">افتح الأداة ↗</span>
+        </a>
+      </div>
+    </section>
+
     <section class="quick-stats wrap">
       <div><strong>20</strong><span data-i18n="stat_tools">أداة مفيدة</span></div><i></i><div><strong>6</strong><span data-i18n="stat_ui">لغات للواجهة</span></div><i></i><div><strong>0</strong><span data-i18n="stat_signup">حساب مطلوب للبدء</span></div>    </section>
 
@@ -90,11 +116,6 @@
         <button class="category" data-category="security" data-i18n="cat_security">الحماية</button>
         <button class="category" data-category="ocr" data-i18n="cat_ocr">استخراج النص والترجمة</button>
       </div>
-      <a class="saffha-feature" href="/saffha/" aria-label="افتح أداة صفّها لتجهيز الصور والتوزيعات للطباعة">
-        <span class="saffha-feature-icon" aria-hidden="true">▦</span>
-        <span class="saffha-feature-copy"><strong data-i18n="saffha_feature_title">صفّها — جهّز التوزيعات والملصقات للطباعة</strong><small data-i18n="saffha_feature_desc">رتّب صورك على ورق A4 أو A3 بمقاسات دقيقة، وصدّر PDF جاهزاً للطباعة.</small></span>
-        <span class="saffha-feature-cta" data-i18n="saffha_feature_cta">جرّب الأداة ↗</span>
-      </a>
       <div class="tool-grid" id="toolGrid">
         <button class="tool-card" data-tool="merge" data-category="organize"><span class="tool-icon tint-blue">▤</span><b data-i18n="tool_merge">دمج PDF</b><small data-i18n="desc_merge">اجمع عدة ملفات في ملف واحد.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="split" data-category="organize"><span class="tool-icon tint-cyan">⫶</span><b data-i18n="tool_split">تقسيم واستخراج الصفحات</b><small data-i18n="desc_split">اختر الصفحات التي تريدها.</small><span class="tool-arrow">↗</span></button>
@@ -164,6 +185,6 @@
   <footer class="footer"><div class="wrap footer-inner"><a class="brand" href="#home"><span class="brand-mark small-mark">PDF</span><span class="brand-name">PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><span data-i18n="footer_note">أدوات الملفات للجميع، أينما كانوا.</span><span class="footer-links"><a href="/about.html" data-i18n="footer_about">من نحن</a><a href="/contact.html" data-i18n="footer_contact">تواصل معنا</a><a href="/privacy.html" data-i18n="footer_privacy">الخصوصية</a><a href="/terms.html" data-i18n="footer_terms">الشروط</a></span><span>© <span id="year"></span> PDF Globe</span></div><p class="footer-disclaimer wrap" data-i18n="disclaimer">هذه المنصة أداة مساعدة. راجع نتائج التحويل والترجمة قبل الاعتماد الرسمي، فقد تختلف الجودة بحسب الملف واللغة.</p></footer>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/api-config.js"></script>
-  <script src="/app.js?v=20261121-ui-refresh-1"></script>
+  <script src="/app.js?v=20261121-featured-home-2"></script>
 </body>
 </html>
