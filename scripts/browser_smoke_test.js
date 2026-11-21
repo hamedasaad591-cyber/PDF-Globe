@@ -122,7 +122,16 @@ async function runPoster(page,base,png){
   await page.goto(base+'/poster-splitter.html',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>!!window.PDFLib&&!!document.querySelector('#generateBtn'),null,{timeout:60000});
   await page.locator('#fileInput').setInputFiles({name:'poster-sample.png',mimeType:'image/png',buffer:png});
-  await page.waitForFunction(()=>!document.querySelector('#generateBtn').disabled,null,{timeout:30000});
+  await page.waitForFunction(()=>{
+    const button=document.querySelector('#generateBtn');
+    const status=document.querySelector('#statusBox');
+    return button && !button.disabled || status && status.classList.contains('show') && status.classList.contains('error');
+  },null,{timeout:30000});
+  const ready=await page.locator('#generateBtn').isEnabled();
+  if(!ready){
+    const message=await page.locator('#statusBox').textContent();
+    throw new Error('Poster Splitter could not prepare the source file: '+message);
+  }
   await page.locator('#generateBtn').click();
   await page.waitForFunction(()=>document.querySelector('#downloadBtn').classList.contains('show'),null,{timeout:90000});
   const downloadPromise=page.waitForEvent('download',{timeout:60000});
