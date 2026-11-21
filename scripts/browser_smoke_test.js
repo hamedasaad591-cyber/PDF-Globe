@@ -154,7 +154,7 @@ async function runUnitConverter(page,base){
   await page.locator('#toUnit').selectOption('cm');
   const result=await page.locator('#resultFormula').textContent();
   const normalized=result.replace(/[٠-٩]/g,d=>String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
-  assert(normalized.includes('200')&&normalized.includes('cm'),'Unit converter result is unexpected: '+result);
+  assert(normalized.includes('200')&&normalized.toLowerCase().includes('centimeter'),'Unit converter result is unexpected: '+result);
   await page.locator('#originalServings').fill('4');
   await page.locator('#targetServings').fill('8');
   const factor=await page.locator('#scaleFactor').textContent();
