@@ -137,14 +137,45 @@ def test_pdf_outputs(source_pdf: bytes) -> None:
 
 def test_image_outputs() -> None:
     source = image_fixture()
-    response = client.post(
-        "/api/image/convert",
-        data={"output_format": "webp", "quality": "86"},
-        files=[("files", ("smoke.png", source, "image/png"))],
-    )
-    check(response.status_code == 200, f"PNG to WebP failed: {response.status_code} {response.text[:300]}")
-    with Image.open(io.BytesIO(response.content)) as result:
-        check(result.format == "WEBP" and result.size == (32, 24), "PNG to WebP produced an invalid image")
+
+    # Exercise every advertised output format, not only the common WebP/PDF paths.
+    output_formats = {
+        "jpg": "JPEG", "jpeg": "JPEG", "png": "PNG", "webp": "WEBP",
+        "avif": "AVIF", "heic": "HEIF", "bmp": "BMP", "gif": "GIF",
+        "tiff": "TIFF", "ico": "ICO",
+    }
+    for output_format, expected_format in output_formats.items():
+        response = client.post(
+            "/api/image/convert",
+            data={"output_format": output_format, "quality": "86"},
+            files=[("files", ("smoke.png", source, "image/png"))],
+        )
+        check(response.status_code == 200, f"PNG to {output_format.upper()} failed: {response.status_code} {response.text[:300]}")
+        with Image.open(io.BytesIO(response.content)) as result:
+            check(result.format == expected_format, f"PNG to {output_format.upper()} returned {result.format}, expected {expected_format}")
+            check(result.width > 0 and result.height > 0, f"PNG to {output_format.upper()} returned empty image dimensions")
+
+    # Exercise every accepted input extension via a common PNG output.
+    source_inputs = [
+        (".jpg", "JPEG", "RGB"), (".jpeg", "JPEG", "RGB"), (".jfif", "JPEG", "RGB"),
+        (".png", "PNG", "RGB"), (".webp", "WEBP", "RGB"), (".avif", "AVIF", "RGB"),
+        (".heic", "HEIF", "RGB"), (".heif", "HEIF", "RGB"), (".bmp", "BMP", "RGB"),
+        (".gif", "GIF", "RGB"), (".tif", "TIFF", "RGB"), (".tiff", "TIFF", "RGB"),
+        (".ico", "ICO", "RGBA"), (".tga", "TGA", "RGB"), (".ppm", "PPM", "RGB"),
+        (".pgm", "PGM", "L"), (".pbm", "PBM", "1"), (".pcx", "PCX", "RGB"),
+    ]
+    for extension, source_format, mode in source_inputs:
+        color = 1 if mode == "1" else (120 if mode == "L" else (210, 55, 95, 255) if mode == "RGBA" else (210, 55, 95))
+        generated = io.BytesIO()
+        Image.new(mode, (64, 48), color).save(generated, format=source_format)
+        response = client.post(
+            "/api/image/convert",
+            data={"output_format": "png"},
+            files=[("files", (f"smoke{extension}", generated.getvalue(), "application/octet-stream"))],
+        )
+        check(response.status_code == 200, f"Input {extension} to PNG failed: {response.status_code} {response.text[:300]}")
+        with Image.open(io.BytesIO(response.content)) as result:
+            check(result.format == "PNG" and result.size == (64, 48), f"Input {extension} did not produce a valid 64x48 PNG")
 
     response = client.post(
         "/api/image/convert",
@@ -167,8 +198,7 @@ def test_image_outputs() -> None:
     with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
         check(len(archive.namelist()) == 2, "Batch image ZIP does not contain both converted images")
 
-    print("PASS image format conversion, image-to-PDF, and batch ZIP downloads")
-
+    print("PASS all 18 input image extensions and all 10 image output formats, image-to-PDF, and batch ZIP downloads")
 
 def test_dicom_output() -> None:
     data = dicom_fixture()
