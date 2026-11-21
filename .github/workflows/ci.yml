@@ -23,6 +23,6 @@ jobs:
       - name: Check Python syntax
         run: python -m py_compile main.py scripts/check_site.py
       - name: Check JavaScript syntax
-        run: node --check static/app.js
+        run: node --check static/app.js && node --check static/unit-converter.js
       - name: Check tool and page wiring
         run: python scripts/check_site.py
