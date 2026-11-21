@@ -6,6 +6,9 @@
   <meta name="description" content="Free PDF tools to merge, split, compress, convert and translate documents, plus Saffha for arranging labels and handouts on A4 or A3. أدوات PDF وتجهيز الطباعة المجانية.">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="https://pdf-globe.pages.dev/">
+  <link rel="alternate" hreflang="ar" href="https://pdf-globe.pages.dev/">
+  <link rel="alternate" hreflang="en" href="https://pdf-globe.pages.dev/en/">
+  <link rel="alternate" hreflang="x-default" href="https://pdf-globe.pages.dev/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="PDF Globe — Free PDF & Print Tools">
   <meta property="og:description" content="Free online PDF tools, poster splitting and Saffha print layout for arranging labels and handouts on A4 and A3.">
@@ -25,11 +28,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=20261121-featured-home-2">
-  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <link rel="stylesheet" href="/style.css?v=20261121-global-home-1">
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.0.5/dist/tesseract.min.js"" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -159,7 +162,7 @@
 
     <section class="workspace-section" id="workspaceSection">
       <div class="workspace wrap">
-        <div class="workspace-head"><div><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="workspace_kicker">منطقة المعالجة</span></div><h2 id="workspaceTitle" data-i18n="choose_tool">اختر أداة للبدء</h2><p id="workspaceDescription" data-i18n="choose_tool_hint">اضغط على إحدى الأدوات أعلاه، ثم أضف الملف واتبع التعليمات.</p></div><button id="closeWorkspace" class="close-btn" aria-label="Close">×</button></div>
+        <div class="workspace-head"><div><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="workspace_kicker">منطقة المعالجة</span></div><h2 id="workspaceTitle" data-i18n="choose_tool">اختر أداة للبدء</h2><p id="workspaceDescription" data-i18n="choose_tool_hint">اضغط على إحدى الأدوات أعلاه، ثم أضف الملف واتبع التعليمات.</p><p id="apiStatus" class="api-status" role="status" aria-live="polite">جارٍ التحقق من خادم المعالجة...</p></div><button id="closeWorkspace" class="close-btn" aria-label="Close">×</button></div>
         <div class="workspace-body">
           <div class="upload-area" id="uploadArea">
             <input id="fileInput" type="file" hidden>
@@ -184,7 +187,7 @@
   </main>
   <footer class="footer"><div class="wrap footer-inner"><a class="brand" href="#home"><span class="brand-mark small-mark">PDF</span><span class="brand-name">PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><span data-i18n="footer_note">أدوات الملفات للجميع، أينما كانوا.</span><span class="footer-links"><a href="/about.html" data-i18n="footer_about">من نحن</a><a href="/contact.html" data-i18n="footer_contact">تواصل معنا</a><a href="/privacy.html" data-i18n="footer_privacy">الخصوصية</a><a href="/terms.html" data-i18n="footer_terms">الشروط</a></span><span>© <span id="year"></span> PDF Globe</span></div><p class="footer-disclaimer wrap" data-i18n="disclaimer">هذه المنصة أداة مساعدة. راجع نتائج التحويل والترجمة قبل الاعتماد الرسمي، فقد تختلف الجودة بحسب الملف واللغة.</p></footer>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="/api-config.js"></script>
-  <script src="/app.js?v=20261121-featured-home-2"></script>
+  <script src="/api-config.js" defer></script>
+  <script src="/app.js?v=20261121-global-home-1" defer></script>
 </body>
 </html>
