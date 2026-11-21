@@ -12,11 +12,12 @@
 <meta property="og:type" content="website"><meta property="og:title" content="Compress & Resize Images — PDF Globe">
 <meta property="og:description" content="Compress images and convert them to JPG, PNG or WebP with quality and dimension controls.">
 <meta property="og:url" content="https://pdf-globe.pages.dev/en/image-compressor.html">
-<link rel="stylesheet" href="/image-compressor.css?v=20261121-image-suite-3">
+<link rel="stylesheet" href="/image-compressor.css?v=20261121-image-tools-4">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"PDF Globe Image Compressor","applicationCategory":"MultimediaApplication","operatingSystem":"Any","url":"https://pdf-globe.pages.dev/en/image-compressor.html","description":"Free browser-based image compressor and resizer for JPG, PNG, WebP, AVIF, HEIC, BMP, GIF, TIFF and ICO images.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<style>.options-grid .field[hidden]{display:none!important}</style>
 </head>
 <body>
-<header class="img-header"><a class="img-brand" href="/en/"><span class="img-logo">PDF</span><span>PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><nav><a href="/en/" data-t="home">Home</a><a href="/en/#tools" data-t="pdfTools">PDF tools</a><a href="/en/unit-converter.html" data-t="unitTool">Unit converter</a></nav><select id="pageLanguage" aria-label="Language"><option value="ar">العربية</option><option value="en" selected>English</option></select></header>
+<header class="img-header"><a class="img-brand" href="/en/"><span class="img-logo">PDF</span><span>PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><nav><a href="/en/" data-t="home">Home</a><a href="/en/#tools" data-t="pdfTools">PDF tools</a><a href="/en/#image-tools" data-t="imageTools">Unit converter</a></nav><select id="pageLanguage" aria-label="Language"><option value="ar">العربية</option><option value="en" selected>English</option></select></header>
 <main class="img-shell">
 <section class="img-hero"><span class="eyebrow" data-t="eyebrow">Multi-format conversion & enhancement</span><h1 data-t="heading">Compress & Resize Images</h1><p data-t="intro">Reduce image file sizes or resize dimensions with control over quality and format. Useful for websites, sharing and print.</p><div class="img-tags"><span data-t="tag1">No sign-up required</span><span data-t="tag2">Temporary processing with cleanup after conversion</span><span data-t="tag3">JPG · PNG · WebP · AVIF · HEIC · BMP · GIF · TIFF · ICO</span></div></section>
 <section class="img-card">
@@ -35,7 +36,7 @@
 <label class="field"><span data-t="brightness">Brightness</span><div class="range-line"><input id="brightness" type="range" min="-50" max="50" step="1" value="0"><output id="brightnessValue">0</output></div></label>
 <label class="field"><span data-t="background">Transparent-image background when exporting JPG</span><input id="background" type="color" value="#ffffff"></label>
 </div>
-<div class="action-row"><button type="button" id="compressImages" class="primary-btn" disabled data-t="compress">Compress images</button><span id="status" role="status" aria-live="polite" data-t="waiting">Choose images to begin.</span></div>
+<div class="action-row"><button type="button" id="compressImages" class="primary-btn" disabled data-t="action">Compress images now</button><span id="status" role="status" aria-live="polite" data-t="waiting">Choose images to begin.</span></div>
 <div id="results" class="results" hidden><div class="results-head"><h2 data-t="resultsTitle">Processed images</h2><button id="downloadAll" type="button" class="secondary-btn" data-t="downloadAll">Download all results</button></div><div id="resultGrid" class="result-grid"></div></div>
 <p class="privacy-note" data-t="privacyNote">Privacy: processing happens locally in your browser using Canvas. Images are uploaded to the processing server for conversion and enhancement. Files are handled in a temporary request folder and removed when processing ends.</p>
 </section>
@@ -44,5 +45,5 @@
 <p class="back-home"><a href="/en/" data-t="backHome">← Back to PDF Globe</a></p>
 </main><footer class="img-footer"><span>© <span id="year"></span> PDF Globe</span><a href="/privacy.html" data-t="privacy">Privacy</a><a href="/terms.html" data-t="terms">Terms</a></footer>
 <script src="/api-config.js" defer></script>
-<script src="/image-compressor.js?v=20261121-image-suite-3" defer></script>
+<script src="/image-compressor.js?v=20261121-image-tools-4" defer></script>
 </body></html>

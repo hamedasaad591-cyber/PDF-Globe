@@ -12,11 +12,12 @@
 <meta property="og:type" content="website"><meta property="og:title" content="ضغط الصور وتغيير حجمها — PDF Globe">
 <meta property="og:description" content="اضغط الصور وحوّلها إلى JPG أو PNG أو WebP مع خيارات الجودة والأبعاد.">
 <meta property="og:url" content="https://pdf-globe.pages.dev/image-compressor.html">
-<link rel="stylesheet" href="/image-compressor.css?v=20261121-image-suite-3">
+<link rel="stylesheet" href="/image-compressor.css?v=20261121-image-tools-4">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"PDF Globe Image Compressor","applicationCategory":"MultimediaApplication","operatingSystem":"Any","url":"https://pdf-globe.pages.dev/image-compressor.html","description":"Free browser-based image compressor and resizer for JPG, PNG, WebP, AVIF, HEIC, BMP, GIF, TIFF and ICO images.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+<style>.options-grid .field[hidden]{display:none!important}</style>
 </head>
 <body>
-<header class="img-header"><a class="img-brand" href="/"><span class="img-logo">PDF</span><span>PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><nav><a href="/" data-t="home">الرئيسية</a><a href="/#tools" data-t="pdfTools">أدوات PDF</a><a href="/unit-converter.html" data-t="unitTool">محول الوحدات</a></nav><select id="pageLanguage" aria-label="Language"><option value="ar">العربية</option><option value="en">English</option></select></header>
+<header class="img-header"><a class="img-brand" href="/"><span class="img-logo">PDF</span><span>PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><nav><a href="/" data-t="home">الرئيسية</a><a href="/#tools" data-t="pdfTools">أدوات PDF</a><a href="/#image-tools" data-t="imageTools">محول الوحدات</a></nav><select id="pageLanguage" aria-label="Language"><option value="ar">العربية</option><option value="en">English</option></select></header>
 <main class="img-shell">
 <section class="img-hero"><span class="eyebrow" data-t="eyebrow">تحويل وتحسين الصور — معالجة آمنة</span><h1 data-t="heading">ضغط الصور وتغيير حجمها</h1><p data-t="intro">قلّل حجم صورك أو غيّر أبعادها مع التحكم في الجودة والصيغة. مناسبة للمواقع والمشاركة والطباعة.</p><div class="img-tags"><span data-t="tag1">لا حاجة للتسجيل</span><span data-t="tag2">رفع مؤقت للمعالجة ثم حذف الملفات المؤقتة</span><span data-t="tag3">JPG · PNG · WebP · AVIF · HEIC · BMP · GIF · TIFF · ICO</span></div></section>
 <section class="img-card">
@@ -35,7 +36,7 @@
 <label class="field"><span data-t="brightness">السطوع</span><div class="range-line"><input id="brightness" type="range" min="-50" max="50" step="1" value="0"><output id="brightnessValue">0</output></div></label>
 <label class="field"><span data-t="background">خلفية الشفافية عند التحويل إلى JPG</span><input id="background" type="color" value="#ffffff"></label>
 </div>
-<div class="action-row"><button type="button" id="compressImages" class="primary-btn" disabled data-t="compress">ضغط الصور الآن</button><span id="status" role="status" aria-live="polite" data-t="waiting">اختر الصور لتبدأ.</span></div>
+<div class="action-row"><button type="button" id="compressImages" class="primary-btn" disabled data-t="action">Compress images now</button><span id="status" role="status" aria-live="polite" data-t="waiting">اختر الصور لتبدأ.</span></div>
 <div id="results" class="results" hidden><div class="results-head"><h2 data-t="resultsTitle">الصور بعد المعالجة</h2><button id="downloadAll" type="button" class="secondary-btn" data-t="downloadAll">تنزيل كل النتائج</button></div><div id="resultGrid" class="result-grid"></div></div>
 <p class="privacy-note" data-t="privacyNote">خصوصيتك: تتم المعالجة داخل متصفحك باستخدام Canvas. تُرفع الصور إلى خادم المعالجة لتحويل الصيغ والتحسين، وتُحفظ مؤقتاً داخل مساحة الطلب ثم تُحذف بعد انتهاء المعالجة.</p>
 </section>
@@ -44,5 +45,5 @@
 <p class="back-home"><a href="/" data-t="backHome">← العودة إلى PDF Globe</a></p>
 </main><footer class="img-footer"><span>© <span id="year"></span> PDF Globe</span><a href="/privacy.html" data-t="privacy">الخصوصية</a><a href="/terms.html" data-t="terms">الشروط</a></footer>
 <script src="/api-config.js" defer></script>
-<script src="/image-compressor.js?v=20261121-image-suite-3" defer></script>
+<script src="/image-compressor.js?v=20261121-image-tools-4" defer></script>
 </body></html>

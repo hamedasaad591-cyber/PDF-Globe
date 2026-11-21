@@ -824,3 +824,12 @@ body.homepage .category-jump-card:nth-child(7){--jump:#5672bd;--jump-bg:#eef3ff}
 @media(max-width:760px){
  body.homepage .category-jump-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* Improved directory spacing and responsive category shortcut grid */
+.category-jump-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.category-jump-card{min-height:118px;padding:16px;border-radius:17px}
+.image-tool-grid .tool-card{min-height:174px}
+.image-tool-grid .tool-icon{width:43px;height:43px}
+@media(max-width:980px){.category-jump-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:680px){.category-jump-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.image-tool-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:390px){.category-jump-grid,.image-tool-grid{grid-template-columns:1fr}}

@@ -209,11 +209,11 @@ for icon_id in ("merge", "split", "compress", "pdf-word", "pdf-excel", "pdf-powe
 for locale, prefix in (("ar", ""), ("en", "en/")):
     page = (STATIC / prefix / "index.html").read_text(encoding="utf-8")
     require('app.js?v=20261121-converters-15' in page, f"{locale} homepage JS cache version was not refreshed")
-    require('style.css?v=20261121-converters-11' in page, f"{locale} homepage CSS cache version was not refreshed")
+    require('style.css?v=20261121-layout-12' in page, f"{locale} homepage CSS cache version was not refreshed")
     for key in ("jump_pdf", "jump_print", "jump_poster", "jump_measure", "jump_translate", "jump_image"):
         require(re.search(rf'<b data-i18n="{key}">\s*[^<]+\s*</b>', page) is not None,
                 f"{locale} homepage category label {key} has no HTML fallback text")
-    require(page.count('<span class="tool-icon ') == 28, f"{locale} homepage does not contain 28 tool illustration slots")
+    require(page.count('<span class="tool-icon ') == 31, f"{locale} homepage does not contain 28 tool illustration slots")
     require(page.count('<use href="/tool-icons.svg#') >= 30, f"{locale} homepage category or tool illustrations are missing")
 require("Illustrated tool directory" in (STATIC / "style.css").read_text(encoding="utf-8"),
         "Illustrated homepage tool directory styles are missing")
@@ -227,7 +227,7 @@ image_backend = (ROOT / "image_conversion.py").read_text(encoding="utf-8")
 for locale, page in (("ar", image_page_ar), ("en", image_page_en)):
     for control in ("outputFormat", "width", "height", "keepAspect", "quality", "sharpen", "contrast", "brightness", "background"):
         require(f'id="{control}"' in page, f"{locale} image converter control is missing: {control}")
-    require('image-compressor.js?v=20261121-image-suite-3' in page, f"{locale} image converter JS cache tag is stale")
+    require('image-compressor.js?v=20261121-image-tools-4' in page, f"{locale} image converter JS cache tag is stale")
     require("api-config.js" in page, f"{locale} image converter API configuration is missing")
 require("/api/image/convert" in image_js, "image studio does not call the image conversion API")
 for fmt in ("webp", "jpeg", "png", "avif", "heic", "bmp", "gif", "tiff", "ico", "pdf"):
@@ -238,7 +238,7 @@ for dependency in ("pydicom==", "pillow-heif==", "Pillow==13.0.0", "ezdxf=="):
 print("PASS: Excel/PowerPoint to PDF, DICOM/DWG routes, and extended image conversion controls.")
 
 for page in (home, english_home):
-    require("<strong>28</strong>" in page, "homepage tool count must reflect 28 available tools")
+    require("<strong>31</strong>" in page, "homepage tool count must reflect 31 available tools")
 
 
 # NodeList iteration must use querySelectorAll ($$ helper), not querySelector ($).
@@ -249,3 +249,21 @@ for selector in ('.mobile-menu-panel a', '.tool-card', '.tool-subgroup', '[data-
 for selector in ("$$('.mobile-menu-panel a', mobileMenu).forEach", "$$('.tool-card').forEach", "$$('.tool-subgroup').forEach", "$$('[data-tool-group]').forEach"):
     require(selector in app, f"querySelectorAll iteration missing: {selector}")
 require("$$('.tool-card[data-tool]').forEach" in app, "homepage tool card click handlers are not registered")
+
+
+# The image section exposes four distinct, query-configured workflows.
+for locale, prefix in (("ar", ""), ("en", "en/")):
+    page = (STATIC / prefix / "index.html").read_text(encoding="utf-8")
+    section = re.search(r'<section class="directory-group" id="image-tools" data-tool-group>([\s\S]*?)</section>', page)
+    require(section is not None, f"{locale} image section is missing")
+    image_section = section.group(1)
+    for mode in ("convert", "resize", "compress", "enhance"):
+        require(f"image-compressor.html?mode={mode}" in image_section, f"{locale} image task is missing: {mode}")
+    require(image_section.count('class="tool-card directory-tool-card"') == 4, f"{locale} image section must show four independent cards")
+for mode in ("convert", "resize", "compress", "enhance"):
+    require(f"'{mode}'" in image_js, f"image task mode is not supported: {mode}")
+require("function configureMode()" in image_js and "MODE_COPY[MODE]" in image_js, "image task settings or labels are not mode-specific")
+require("image-compressor.js?v=20261121-image-tools-4" in image_ar and "image-compressor.js?v=20261121-image-tools-4" in image_en, "image tool script cache was not refreshed")
+require("imageTools:'أدوات الصور'" in image_js and "imageTools:'Image tools'" in image_js, "image tools navigation labels are missing")
+require("الذكاء الاصطناعي" in image_js and "super-resolution" in image_js, "image resize and enhancement limitations are not disclosed")
+print("PASS: image conversion, resizing, compression and enhancement are separate task modes.")
