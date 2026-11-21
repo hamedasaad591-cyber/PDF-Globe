@@ -125,6 +125,15 @@ async def health():
         "cloudflare_configured": bool(CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN),
         "libreoffice": bool(shutil.which("libreoffice")),
         "qpdf": bool(shutil.which("qpdf")),
+        "capabilities": {
+            "compress_pdf": True,
+            "pdf_to_word": True,
+            "word_to_pdf": bool(shutil.which("libreoffice")),
+            "protect_pdf": bool(shutil.which("qpdf")),
+            "unlock_pdf": bool(shutil.which("qpdf")),
+            "repair_pdf": True,
+            "translate": True,
+        },
     }
 
 
