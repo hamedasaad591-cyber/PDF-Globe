@@ -10,7 +10,7 @@ This notice describes the current PDF Globe website and application implementati
 
 ### Browser-based tools
 
-Merge, split/extract pages, rotate, delete/reorder pages, watermarks, page numbers, signatures, images-to-PDF, PDF-to-images, and OCR are designed to process content in the visitor's browser. These browser-based operations do not intentionally upload the selected file to the PDF Globe API. The browser may download software libraries, fonts, or OCR language data from third-party content delivery networks; OCR recognition itself runs in the browser.
+Merge, split/extract pages, rotate, delete/reorder pages, watermarks, page numbers, signatures, images-to-PDF, PDF-to-images, and OCR are designed to process content in the visitor's browser. Saffha also arranges PNG/JPEG/WEBP images locally in the browser and creates an A4/A3 PDF without intentionally uploading the selected images to the PDF Globe API. Its beta currently allows up to 12 images, 15 MB per image and 45 MB combined. These browser-based operations do not intentionally upload the selected file to the PDF Globe API. The browser may download software libraries, fonts, or OCR language data from third-party content delivery networks; OCR recognition itself runs in the browser.
 
 ### Server-based tools
 
