@@ -14,7 +14,7 @@ def register_office_routes(app, store_upload, download_response, require_binary)
         home.mkdir(exist_ok=True)
         env = os.environ.copy()
         env["HOME"] = str(home)
-        env["SAL_USE_VCLPLUGIN"] = "gen"
+        env["SAL_USE_VCLPLUGIN"] = "svp"
         try:
             result = subprocess.run(
                 [office, "-env:UserInstallation=" + profile.as_uri(), "--headless",
