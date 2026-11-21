@@ -65,7 +65,7 @@ for route, source in (
     require(route in source, f"specialized converter route missing: {route}")
 require("register_office_routes(app" in backend and "register_image_routes(app" in backend, "converter route registration is missing")
 require("register_dicom_routes(app" in backend and "register_dwg_routes(app" in backend, "specialized route registration is missing")
-require("--disable-bindings --disable-docs --disable-write" in (ROOT / "Dockerfile").read_text(encoding="utf-8"), "DWG builder still compiles unused bindings/docs/write support")
+require("--disable-bindings --disable-docs --disable-write --disable-json" in (ROOT / "Dockerfile").read_text(encoding="utf-8"), "DWG builder still compiles unused bindings/docs/write/JSON support")
 require("BackgroundPolicy.WHITE" in dwg_backend, "DWG PDF export is not configured for a white print background")
 
 # The public frontend must point to the configured API host, never a secret-bearing URL.
