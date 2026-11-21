@@ -129,3 +129,38 @@ require("grid-template-columns:1fr" in image_css, "image compressor mobile layou
 
 print(f"PASS: {len(cards)} homepage tools registered; {len(client_tools)} browser tools dispatched; {len(expected_server)} server tools mapped.")
 print("PASS: API routes, public API configuration, Arabic/English homepages, hreflang, sitemap and deferred scripts.")
+
+
+# PDF to Excel and PowerPoint are independent bilingual tools backed by real API routes.
+requirements_text = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+require("openpyxl==" in requirements_text and "python-pptx==" in requirements_text, "Excel/PowerPoint conversion dependencies are missing")
+require('@app.post("/api/pdf/to-excel")' in backend and "page.find_tables" in backend, "PDF to Excel table extraction route is missing")
+require('@app.post("/api/pdf/to-powerpoint")' in backend and "Presentation()" in backend and "add_picture" in backend, "PDF to PowerPoint route is missing")
+for locale, prefix, excel_url, ppt_url in (
+    ("ar", "", "/pdf-to-excel.html", "/pdf-to-powerpoint.html"),
+    ("en", "en/", "/en/pdf-to-excel.html", "/en/pdf-to-powerpoint.html"),
+):
+    home_page = (STATIC / (prefix + "index.html")).read_text(encoding="utf-8")
+    grid_match = re.search(r'<div class="tool-grid" id="toolGrid">([\s\S]*?)</div>', home_page)
+    require(grid_match is not None, f"{locale} homepage tool grid is missing")
+    grid = grid_match.group(1)
+    require(f'href="{excel_url}"' in grid and f'href="{ppt_url}"' in grid, f"{locale} homepage Excel/PowerPoint cards are missing from the tool grid")
+    require(f'href="/{prefix}image-compressor.html"' in grid, f"{locale} image compressor card is outside the tool grid")
+    for filename, url, kind in (
+        ("pdf-to-excel.html", excel_url, "excel"),
+        ("pdf-to-powerpoint.html", ppt_url, "powerpoint"),
+    ):
+        page = (STATIC / prefix / filename).read_text(encoding="utf-8")
+        canonical = "https://pdf-globe.pages.dev" + url
+        require(f'<html lang="{locale}"' in page, f"{locale} {kind} page has the wrong locale")
+        require(f'rel="canonical" href="{canonical}"' in page, f"{locale} {kind} canonical is incorrect")
+        require(f'data-converter="{kind}"' in page and "office-converter.js?v=" in page, f"{locale} {kind} converter wiring is missing")
+        require('id="fileInput"' in page and 'id="convertButton"' in page, f"{locale} {kind} upload controls are missing")
+        require('hreflang="ar"' in page and 'hreflang="en"' in page, f"{locale} {kind} language alternates are missing")
+        require(canonical in sitemap and canonical in sitemap_all, f"{locale} {kind} page is missing from a sitemap")
+office_js = (STATIC / "office-converter.js").read_text(encoding="utf-8")
+office_css = (STATIC / "office-converter.css").read_text(encoding="utf-8")
+require("/api/pdf/to-excel" in office_js and "/api/pdf/to-powerpoint" in office_js, "office converter frontend endpoints are missing")
+require("FormData" in office_js and "application/pdf" in office_js, "office converter frontend does not upload PDF files")
+require("office-drop" in office_css and "@media" in office_css, "office converter responsive styles are missing")
+print("PASS: PDF to Excel and PDF to PowerPoint routes, bilingual pages, homepage cards and sitemap entries.")

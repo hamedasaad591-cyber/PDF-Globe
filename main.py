@@ -12,6 +12,10 @@ from pathlib import Path
 from typing import Optional
 
 import fitz  # PyMuPDF
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+from pptx import Presentation
+from pptx.util import Inches
 import httpx
 from docx import Document
 from docx.shared import Pt, RGBColor
@@ -133,6 +137,8 @@ async def health():
             "unlock_pdf": bool(shutil.which("qpdf")),
             "repair_pdf": True,
             "translate": True,
+            "pdf_to_excel": True,
+            "pdf_to_powerpoint": True,
         },
     }
 
@@ -1259,6 +1265,227 @@ async def word_to_pdf(file: UploadFile = File(...)):
             raise HTTPException(status_code=422, detail="فشل تحويل Word إلى PDF: " + (result.stderr[-600:] or result.stdout[-600:]))
         return download_response(out, out.name, "application/pdf")
 
+
+
+
+@app.post("/api/pdf/to-excel")
+async def pdf_to_excel(file: UploadFile = File(...)):
+    """Extract detected PDF tables into an XLSX workbook.
+
+    Pages without detected tables contribute selectable text to a separate
+    worksheet. Scanned/image-only pages require OCR before this conversion.
+    """
+    with tempfile.TemporaryDirectory(prefix="pdfglobe-") as td:
+        folder = Path(td)
+        src = await store_upload(file, folder, {".pdf"})
+        out = folder / f"{safe_name(file.filename)}_converted.xlsx"
+        pdf = None
+        try:
+            pdf = fitz.open(src)
+            if pdf.is_encrypted:
+                raise HTTPException(status_code=423, detail="الملف محمي بكلمة مرور. أزل الحماية أولاً")
+            if pdf.page_count == 0:
+                raise HTTPException(status_code=422, detail="ملف PDF لا يحتوي على صفحات")
+            if pdf.page_count > 80:
+                raise HTTPException(status_code=413, detail="تحويل Excel يدعم حتى 80 صفحة في المرة الواحدة")
+
+            workbook = Workbook()
+            guide = workbook.active
+            guide.title = "Read me"
+            guide.append(["PDF Globe — PDF to Excel"])
+            guide.append(["Source file", Path(file.filename or "document.pdf").name])
+            guide.append(["Pages", pdf.page_count])
+            guide.append(["How this workbook was created", "Detected PDF tables are placed in separate worksheets. Selectable text from pages without detected tables is placed in the Text by page worksheet."])
+            guide.append(["Important", "PDFs do not always contain real table structure. Check the extracted columns and values before relying on them."])
+            guide.append(["Scanned PDFs", "Image-only pages require OCR before their text can be extracted."])
+            table_count = 0
+            text_rows = []
+
+            for page_number, page in enumerate(pdf, start=1):
+                detected = []
+                try:
+                    finder = page.find_tables()
+                    detected = list(finder.tables)
+                except Exception:
+                    detected = []
+                if not detected:
+                    try:
+                        finder = page.find_tables(strategy="text")
+                        detected = list(finder.tables)
+                    except Exception:
+                        detected = []
+
+                if detected:
+                    for table_number, table in enumerate(detected, start=1):
+                        rows = table.extract() or []
+                        header = getattr(table, "header", None)
+                        if getattr(header, "external", False):
+                            header_names = getattr(header, "names", None)
+                            if header_names and any(str(value or "").strip() for value in header_names):
+                                rows = [list(header_names)] + rows
+                        cleaned_rows = [
+                            [str(value).strip() if value is not None else "" for value in row]
+                            for row in rows
+                        ]
+                        max_columns = max((len(row) for row in cleaned_rows), default=0)
+                        if max_columns == 0:
+                            continue
+                        sheet = workbook.create_sheet(f"Page {page_number} Table {table_number}"[:31])
+                        for row in cleaned_rows:
+                            sheet.append(row + [""] * (max_columns - len(row)))
+                        table_count += 1
+                        for cell in sheet[1]:
+                            cell.font = Font(bold=True, color="FFFFFF")
+                            cell.fill = PatternFill(fill_type="solid", fgColor="3658A5")
+                            cell.alignment = Alignment(vertical="center", wrap_text=True)
+                        sheet.freeze_panes = "A2"
+                        if sheet.max_row > 1:
+                            sheet.auto_filter.ref = sheet.dimensions
+                        for column_index in range(1, sheet.max_column + 1):
+                            column_letter = sheet.cell(1, column_index).column_letter
+                            longest = max(
+                                (len(str(sheet.cell(row_index, column_index).value or "")) for row_index in range(1, sheet.max_row + 1)),
+                                default=10,
+                            )
+                            sheet.column_dimensions[column_letter].width = min(max(longest + 2, 12), 42)
+                        for data_row in sheet.iter_rows(min_row=2):
+                            for cell in data_row:
+                                cell.alignment = Alignment(vertical="top", wrap_text=True)
+                else:
+                    page_text = page.get_text("text", sort=True)
+                    for line_number, line in enumerate(page_text.splitlines(), start=1):
+                        cleaned = line.strip()
+                        if cleaned:
+                            text_rows.append([page_number, line_number, cleaned])
+
+            if text_rows:
+                text_sheet = workbook.create_sheet("Text by page")
+                text_sheet.append(["PDF page", "Line", "Extracted text"])
+                for row in text_rows:
+                    text_sheet.append(row)
+                for cell in text_sheet[1]:
+                    cell.font = Font(bold=True, color="FFFFFF")
+                    cell.fill = PatternFill(fill_type="solid", fgColor="3658A5")
+                text_sheet.freeze_panes = "A2"
+                text_sheet.auto_filter.ref = text_sheet.dimensions
+                text_sheet.column_dimensions["A"].width = 12
+                text_sheet.column_dimensions["B"].width = 10
+                text_sheet.column_dimensions["C"].width = 90
+                for row in text_sheet.iter_rows(min_row=2):
+                    row[2].alignment = Alignment(vertical="top", wrap_text=True)
+
+            guide.append(["Tables detected", table_count])
+            guide.append(["Text lines extracted from pages without tables", len(text_rows)])
+            if table_count == 0 and not text_rows:
+                guide.append(["Result", "No selectable text or tables were found. This PDF may contain scanned images; run OCR first."])
+            guide.column_dimensions["A"].width = 34
+            guide.column_dimensions["B"].width = 100
+            for row in guide.iter_rows():
+                for cell in row:
+                    cell.alignment = Alignment(vertical="top", wrap_text=True)
+            for cell in guide[1]:
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.fill = PatternFill(fill_type="solid", fgColor="3658A5")
+            # Force all untrusted PDF-derived text to remain literal strings, never Excel formulas.
+            for worksheet in workbook.worksheets:
+                for row in worksheet.iter_rows():
+                    for cell in row:
+                        if isinstance(cell.value, str):
+                            cell.data_type = "s"
+            workbook.save(out)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"تعذر تحويل PDF إلى Excel: {str(exc)[:250]}")
+        finally:
+            if pdf is not None:
+                pdf.close()
+
+        return download_response(
+            out,
+            out.name,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+
+@app.post("/api/pdf/to-powerpoint")
+async def pdf_to_powerpoint(file: UploadFile = File(...)):
+    """Create one PowerPoint slide image for each PDF page.
+
+    This preserves page appearance, but text and objects inside each page image
+    are not individually editable PowerPoint elements.
+    """
+    with tempfile.TemporaryDirectory(prefix="pdfglobe-") as td:
+        folder = Path(td)
+        src = await store_upload(file, folder, {".pdf"})
+        out = folder / f"{safe_name(file.filename)}_converted.pptx"
+        pdf = None
+        try:
+            pdf = fitz.open(src)
+            if pdf.is_encrypted:
+                raise HTTPException(status_code=423, detail="الملف محمي بكلمة مرور. أزل الحماية أولاً")
+            if pdf.page_count == 0:
+                raise HTTPException(status_code=422, detail="ملف PDF لا يحتوي على صفحات")
+            if pdf.page_count > 40:
+                raise HTTPException(status_code=413, detail="تحويل PowerPoint يدعم حتى 40 صفحة في المرة الواحدة")
+
+            first_rect = pdf[0].rect
+            first_ratio = max(0.5, min(2.5, first_rect.width / max(first_rect.height, 1)))
+            if first_ratio >= 1:
+                slide_width = 13.333
+                slide_height = slide_width / first_ratio
+                if slide_height > 10:
+                    slide_height = 10
+                    slide_width = slide_height * first_ratio
+            else:
+                slide_height = 10
+                slide_width = slide_height * first_ratio
+
+            presentation = Presentation()
+            presentation.slide_width = Inches(slide_width)
+            presentation.slide_height = Inches(slide_height)
+            blank_layout = presentation.slide_layouts[6]
+            slide_ratio = slide_width / slide_height
+
+            for page in pdf:
+                pixmap = page.get_pixmap(dpi=110, colorspace=fitz.csRGB, alpha=False)
+                image_bytes = BytesIO(pixmap.tobytes("jpeg", jpg_quality=90))
+                image_ratio = pixmap.width / max(pixmap.height, 1)
+                if image_ratio > slide_ratio:
+                    picture_width = slide_width
+                    picture_height = slide_width / image_ratio
+                    left = 0
+                    top = (slide_height - picture_height) / 2
+                else:
+                    picture_height = slide_height
+                    picture_width = slide_height * image_ratio
+                    left = (slide_width - picture_width) / 2
+                    top = 0
+                slide = presentation.slides.add_slide(blank_layout)
+                slide.shapes.add_picture(
+                    image_bytes,
+                    Inches(left),
+                    Inches(top),
+                    width=Inches(picture_width),
+                    height=Inches(picture_height),
+                )
+
+            presentation.core_properties.title = "PDF Globe — PDF to PowerPoint"
+            presentation.core_properties.subject = "Each PDF page is placed on a slide as an image to preserve its appearance."
+            presentation.save(out)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=422, detail=f"تعذر تحويل PDF إلى PowerPoint: {str(exc)[:250]}")
+        finally:
+            if pdf is not None:
+                pdf.close()
+
+        return download_response(
+            out,
+            out.name,
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        )
 
 @app.post("/api/pdf/protect")
 async def protect_pdf(file: UploadFile = File(...), password: str = Form(...)):
