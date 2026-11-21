@@ -208,7 +208,7 @@ for icon_id in ("merge", "split", "compress", "pdf-word", "pdf-excel", "pdf-powe
     require(f'<symbol id="{icon_id}"' in icons_file, f"homepage illustration {icon_id} is missing")
 for locale, prefix in (("ar", ""), ("en", "en/")):
     page = (STATIC / prefix / "index.html").read_text(encoding="utf-8")
-    require('app.js?v=20261121-converters-14' in page, f"{locale} homepage JS cache version was not refreshed")
+    require('app.js?v=20261121-converters-15' in page, f"{locale} homepage JS cache version was not refreshed")
     require('style.css?v=20261121-converters-11' in page, f"{locale} homepage CSS cache version was not refreshed")
     for key in ("jump_pdf", "jump_print", "jump_poster", "jump_measure", "jump_translate", "jump_image"):
         require(re.search(rf'<b data-i18n="{key}">\s*[^<]+\s*</b>', page) is not None,
@@ -241,14 +241,11 @@ for page in (home, english_home):
     require("<strong>28</strong>" in page, "homepage tool count must reflect 28 available tools")
 
 
-# NodeList iteration must use $$ (querySelectorAll), never $ (querySelector).
-require("$('.mobile-menu-panel a', mobileMenu).forEach" not in app, "mobile menu click binding calls forEach on a single Element")
-require("$('.tool-card').forEach" not in app, "homepage card rendering calls forEach on a single Element")
-require("$('.tool-subgroup').forEach" not in app, "homepage subgroup rendering calls forEach on a single Element")
-require("$('[data-tool-group]').forEach" not in app, "homepage category rendering calls forEach on a single Element")
+# NodeList iteration must use querySelectorAll ($$ helper), not querySelector ($).
+for selector in ('.mobile-menu-panel a', '.tool-card', '.tool-subgroup', '[data-tool-group]'):
+    escaped = re.escape(selector)
+    pattern = rf"(?<!\\$)\\$\\(\\s*['\\\"]{escaped}['\\\"](?:\\s*,\\s*mobileMenu)?\\s*\\)\\.forEach"
+    require(re.search(pattern, app) is None, f"single Element used with forEach for selector {selector}")
+for selector in ("$$('.mobile-menu-panel a', mobileMenu).forEach", "$$('.tool-card').forEach", "$$('.tool-subgroup').forEach", "$$('[data-tool-group]').forEach"):
+    require(selector in app, f"querySelectorAll iteration missing: {selector}")
 require("$$('.tool-card[data-tool]').forEach" in app, "homepage tool card click handlers are not registered")
-
-require("$$('.mobile-menu-panel a', mobileMenu).forEach" in app, "mobile menu link iteration must use querySelectorAll")
-require("$$('.tool-card').forEach" in app, "homepage tool rendering must iterate all cards")
-require("$$('.tool-subgroup').forEach" in app, "homepage subgroup rendering must iterate all subgroups")
-require("$$('[data-tool-group]').forEach" in app, "homepage group rendering must iterate all groups")
