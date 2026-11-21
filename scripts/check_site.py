@@ -104,5 +104,28 @@ require("fetch(" not in unit_js and "XMLHttpRequest" not in unit_js, "unit conve
 require("unit-converter.html" in sitemap and "unit-converter.html" in sitemap_all, "unit converter pages are missing from a sitemap")
 require('.field[hidden]{display:none!important}' in unit_css, "non-cooking ingredient selector visibility rule is missing")
 
+# Image compression/resizing is a separate browser-only tool.
+image_ar = (STATIC / "image-compressor.html").read_text(encoding="utf-8")
+image_en = (STATIC / "en" / "image-compressor.html").read_text(encoding="utf-8")
+image_js = (STATIC / "image-compressor.js").read_text(encoding="utf-8")
+image_css = (STATIC / "image-compressor.css").read_text(encoding="utf-8")
+require('data-static-tool="true"' in home and 'href="/image-compressor.html"' in home, "Arabic image compressor card is missing")
+require('data-static-tool="true"' in english_home and 'href="/en/image-compressor.html"' in english_home, "English image compressor card is missing")
+require('tool_imagecompress:' in app and 'desc_imagecompress:' in app, "image compressor homepage localization is missing")
+for page, locale, canonical in (
+    (image_ar, "ar", "https://pdf-globe.pages.dev/image-compressor.html"),
+    (image_en, "en", "https://pdf-globe.pages.dev/en/image-compressor.html"),
+):
+    require(f'<html lang="{locale}"' in page, f"{locale} image compressor page has the wrong locale")
+    require(f'rel="canonical" href="{canonical}"' in page, f"{locale} image compressor canonical is incorrect")
+    require('image-compressor.js?v=' in page and ' defer></script>' in page, f"{locale} image compressor script is missing or not deferred")
+    require('hreflang="ar"' in page and 'hreflang="en"' in page, f"{locale} image compressor page is missing language alternates")
+require("canvas.toBlob" in image_js or "canvas.toBlob" in image_js.replace(" ",""), "image compressor does not export processed images")
+require("createImageBitmap" in image_js and "image/jpeg" in image_js and "image/webp" in image_js, "image format support is incomplete")
+require("fetch(" not in image_js and "XMLHttpRequest" not in image_js, "image compressor should not upload images to a server")
+require("function invalidateResults()" in image_js, "image compressor must clear stale results when settings change")
+require("image-compressor.html" in sitemap and "image-compressor.html" in sitemap_all, "image compressor pages are missing from a sitemap")
+require("grid-template-columns:1fr" in image_css, "image compressor mobile layout is missing")
+
 print(f"PASS: {len(cards)} homepage tools registered; {len(client_tools)} browser tools dispatched; {len(expected_server)} server tools mapped.")
 print("PASS: API routes, public API configuration, Arabic/English homepages, hreflang, sitemap and deferred scripts.")
