@@ -1,6 +1,6 @@
 # PDF Globe Privacy Policy
 
-**Last updated: 6 November 2026**  
+**Last updated: 21 November 2026**  
 **Contact:** hamedasaad591@gmail.com  
 **Website:** https://pdf-globe.pages.dev/
 
