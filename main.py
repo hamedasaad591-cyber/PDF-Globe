@@ -1258,10 +1258,14 @@ async def word_to_pdf(file: UploadFile = File(...)):
     with tempfile.TemporaryDirectory(prefix="pdfglobe-") as td:
         folder = Path(td)
         src = await store_upload(file, folder, {".docx", ".doc", ".odt", ".rtf"})
+        env = os.environ.copy()
+        env["HOME"] = str(folder / "lo-home")
+        Path(env["HOME"]).mkdir(exist_ok=True)
+        env["SAL_USE_VCLPLUGIN"] = "svp"
         try:
             result = subprocess.run(
                 [office, "-env:UserInstallation=file://" + str(folder / "lo-profile"), "--headless", "--convert-to", "pdf", "--outdir", str(folder), str(src)],
-                capture_output=True, text=True, timeout=90,
+                capture_output=True, text=True, timeout=90, env=env,
             )
         except subprocess.TimeoutExpired:
             raise HTTPException(status_code=504, detail="انتهت مهلة التحويل. جرّب ملفاً أصغر")
