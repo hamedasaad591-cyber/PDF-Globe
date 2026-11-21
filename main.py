@@ -139,6 +139,11 @@ async def health():
             "translate": True,
             "pdf_to_excel": True,
             "pdf_to_powerpoint": True,
+            "excel_to_pdf": bool(shutil.which("libreoffice")),
+            "powerpoint_to_pdf": bool(shutil.which("libreoffice")),
+            "dicom_to_pdf": True,
+            "dwg_to_pdf": bool(shutil.which("dwg2dxf")),
+            "image_conversion": True,
         },
     }
 
@@ -1830,5 +1835,16 @@ async def languages():
         {"code": "el", "name": "Greek"}, {"code": "he", "name": "Hebrew"}, {"code": "vi", "name": "Vietnamese"}
     ]}
 
+
+# Extra format converters are registered after the shared upload/download helpers.
+from office_conversion import register_office_routes
+from image_conversion import register_image_routes
+from dicom_conversion import register_dicom_routes
+from dwg_conversion import register_dwg_routes
+
+register_office_routes(app, store_upload, download_response, require_binary)
+register_image_routes(app, store_upload, download_response)
+register_dicom_routes(app, store_upload, download_response)
+register_dwg_routes(app, store_upload, download_response, require_binary, safe_name)
 
 app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
