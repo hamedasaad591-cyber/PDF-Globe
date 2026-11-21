@@ -13,7 +13,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Unit & Measurement Converter — PDF Globe">
   <meta property="og:description" content="Free unit converter and cooking measurement and recipe calculator.">
-  <meta property="og:url" content="https://pdf-globe.pages.dev/unit-converter.html">
+  <meta property="og:url" content="https://pdf-globe.pages.dev/en/unit-converter.html">
   <meta name="theme-color" content="#f7f8fc">
   <link rel="stylesheet" href="/unit-converter.css?v=20261121-units-1">
   <script type="application/ld+json">
@@ -58,9 +58,9 @@
         <span data-t="result">Result</span>
         <strong id="resultValue">—</strong>
         <span id="resultFormula" class="result-formula"></span>
-        <button id="copyResult" class="copy-button" type="button" data-t="copy">نسخ Result</button>
+        <button id="copyResult" class="copy-button" type="button" data-t="copy">Copy result</button>
       </div>
-      <p class="small-note" id="converterNote" data-t="note">التحويلات تقريبية عند الحاجة، وتُعرض Result بدقة Fromاسبة للاستخدام اليومي.</p>
+      <p class="small-note" id="converterNote" data-t="note">Conversions are rounded for practical everyday use. Results may be approximate where measurement standards vary.</p>
     </section>
 
     <section class="converter-card recipe-card">
@@ -71,7 +71,7 @@
         <div class="scale-summary"><span data-t="scaleFactor">Scaling factor</span><strong id="scaleFactor">× 2</strong></div>
       </div>
       <div class="recipe-table-wrap">
-        <div class="recipe-head"><span data-t="ingredientName">Ingredient</span><span data-t="quantity">Quantity</span><span data-t="unit">Unit</span><span data-t="newQuantity">Quantity الجديدة</span><span></span></div>
+        <div class="recipe-head"><span data-t="ingredientName">Ingredient</span><span data-t="quantity">Quantity</span><span data-t="unit">Unit</span><span data-t="newQuantity">New quantity</span><span></span></div>
         <div id="recipeRows"></div>
       </div>
       <div class="recipe-actions"><button type="button" id="addIngredient" class="secondary-button" data-t="addIngredient">+ Add ingredient</button><button type="button" id="copyRecipe" class="primary-button" data-t="copyRecipe">Copy scaled recipe</button></div>
@@ -79,18 +79,18 @@
     </section>
 
     <section class="info-grid">
-      <article><span class="info-icon">⚖</span><h3 data-t="info1Title">Weight and cooking measures</h3><p data-t="info1Text">حوّل بين الغرام والكيلوغرام والرطل والأونصة، وبين الغرامات والأكواب والملاعق وفق نوع Ingredient.</p></article>
+      <article><span class="info-icon">⚖</span><h3 data-t="info1Title">Weight and cooking measures</h3><p data-t="info1Text">Convert milligrams, grams, kilograms, pounds and ounces, plus ingredient-aware grams-to-cups and spoon measures.</p></article>
       <article><span class="info-icon">↔</span><h3 data-t="info2Title">Everyday unit categories</h3><p data-t="info2Text">Length, area, volume, temperature, speed, time, energy, pressure and digital storage units.</p></article>
-      <article><span class="info-icon">🥣</span><h3 data-t="info3Title">Ingredient-aware cooking</h3><p data-t="info3Text">اختر الدقيق أو السكر أو الزبدة أو الأرز أو العسل وغيرها لتحويل الحجم To وزن تقريبي Fromاسب للمكوّن.</p></article>
+      <article><span class="info-icon">🥣</span><h3 data-t="info3Title">Ingredient-aware cooking</h3><p data-t="info3Text">Choose flour, sugar, butter, rice, honey and other ingredients to estimate volume-to-weight conversions.</p></article>
     </section>
 
     <section class="faq-section">
       <h2 data-t="faqHeading">Frequently asked questions</h2>
       <details><summary data-t="faq1q">How many grams are in a kilogram?</summary><p data-t="faq1a">One kilogram equals exactly 1,000 grams.</p></details>
-      <details><summary data-t="faq2q">Does one cup weigh the same for every ingredient?</summary><p data-t="faq2a">لا. الكوب وحدة حجم، بينما الغرام وحدة وزن؛ لذلك يختلف الوزن حسب كثافة Ingredient وطريقة تعبئته. تستخدم الأداة كثافات تقريبية للمكونات الشائعة.</p></details>
-      <details><summary data-t="faq3q">هل تُرفع بياناتي To الخادم؟</summary><p data-t="faq3a">لا. عمليات التحويل وحساب الوصفات تتم محلياً داخل متصفحك ولا تحتاج To رفع ملفات أو إنشاء حساب.</p></details>
+      <details><summary data-t="faq2q">Does one cup weigh the same for every ingredient?</summary><p data-t="faq2a">No. A cup measures volume while grams measure mass. Weight changes with ingredient density and packing. This tool uses approximate densities for common ingredients.</p></details>
+      <details><summary data-t="faq3q">Are my values sent to a server?</summary><p data-t="faq3a">No. Unit conversions and recipe scaling run locally in your browser. No file upload or account is required.</p></details>
     </section>
-    <p class="back-link"><a href="/" data-t="backHome">← العودة To PDF Globe</a></p>
+    <p class="back-link"><a href="/" data-t="backHome">← Back to PDF Globe</a></p>
   </main>
   <footer class="unit-footer"><span>© <span id="year"></span> PDF Globe</span><span data-t="footer">Free practical tools for everyone.</span><a href="/privacy.html" data-t="privacy">Privacy</a></footer>
   <script src="/unit-converter.js?v=20261121-units-1" defer></script>
