@@ -19,6 +19,8 @@ from openpyxl import Workbook, load_workbook
 from PIL import Image
 from pptx import Presentation
 from pydicom.dataset import FileDataset, FileMetaDataset
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from pydicom.uid import (
     ExplicitVRLittleEndian,
     SecondaryCaptureImageStorage,
