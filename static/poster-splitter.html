@@ -345,6 +345,7 @@
     });
     ['posterSize','posterOrientation','paperSize','paperOrientation','margin','overlap','quality','fitMode','customW','customH','cropMarks'].forEach(id => $(id).addEventListener('change', updatePlan));
     drawEmptyPreview();
+    document.documentElement.dataset.posterReady = 'true';
 
     // Keep the page from retaining large generated blobs after navigation.
     window.addEventListener('pagehide', () => { if (downloadUrl) URL.revokeObjectURL(downloadUrl); });
