@@ -35,6 +35,7 @@
   let translationLanguages = LANGS;
   let currentLang = 'ar';
   let apiHealth = null;
+  let translationSupportsAuto = false;
   let currentTool = null;
   let selectedFiles = [];
   let category = 'all';
@@ -75,7 +76,7 @@
     updateApiStatus();
     if(currentTool) openTool(currentTool,false);
   }
-  $('#uiLanguage').addEventListener('change',e=>applyLanguage(e.target.value));
+  $('#uiLanguage').addEventListener('change',e=>{const lang=e.target.value;const englishPage=window.location.pathname==='/en/'||window.location.pathname==='/en';if(lang==='en'&&!englishPage){window.location.assign('/en/');return;}if(lang==='ar'&&englishPage){window.location.assign('/');return;}applyLanguage(lang);});
   const mobileMenu = $('#mobileMenu');
   if (mobileMenu) $('.mobile-menu-panel a', mobileMenu).forEach(link => {
     link.addEventListener('click', () => mobileMenu.removeAttribute('open'));
@@ -100,7 +101,7 @@
   $('#closeWorkspace').addEventListener('click',()=>$('#workspaceSection').classList.remove('visible'));
 
   function field(label,html,full=false,help=''){return `<div class="option-field ${full?'full':''}"><label>${label}</label>${html}${help?`<small class="option-help">${help}</small>`:''}</div>`;}
-  function languageOptions(selected,allowAuto=false){return (allowAuto?`<option value="auto">${t('opt_auto')}</option>`:'')+translationLanguages.map(([code,name])=>`<option value="${code}" ${selected===code?'selected':''}>${name}</option>`).join('');}
+  function languageOptions(selected,allowAuto=false){return (allowAuto&&translationSupportsAuto?`<option value="auto">${t('opt_auto')}</option>`:'')+translationLanguages.map(([code,name])=>`<option value="${code}" ${selected===code?'selected':''}>${name}</option>`).join('');}
   function renderOptions(id){
     const p=$('#optionsPanel');let html='';
     if(['split','delete'].includes(id)) html+=field(t('opt_pages'),`<input id="pageSpec" placeholder="1-3,5,8-10">`,true,t('opt_pages_hint'));
@@ -335,6 +336,6 @@
     openTool(requestedTool, false);
   }
   // Show API readiness in browser console for operators, without exposing secrets.
-  fetch(apiUrl('/api/health'),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('API unavailable');return r.json();}).then(data=>{apiHealth=data;document.documentElement.dataset.apiReady=data.ok?'true':'false';updateApiStatus();}).catch(()=>{apiHealth={ok:false};document.documentElement.dataset.apiReady='false';updateApiStatus();});
+  fetch(apiUrl('/api/health'),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('API unavailable');return r.json();}).then(data=>{apiHealth=data;translationSupportsAuto=String(data.translation_provider||'').startsWith('LibreTranslate');document.documentElement.dataset.apiReady=data.ok?'true':'false';updateApiStatus();if(currentTool==='translate')renderOptions('translate');}).catch(()=>{apiHealth={ok:false};document.documentElement.dataset.apiReady='false';updateApiStatus();});
   fetch(apiUrl('/api/languages')).then(r=>r.json()).then(data=>{if(Array.isArray(data.languages)&&data.languages.length){translationLanguages=data.languages.map(x=>[x.code,x.name||x.code]);if(currentTool==='translate')renderOptions('translate');}}).catch(()=>{});
 })();
