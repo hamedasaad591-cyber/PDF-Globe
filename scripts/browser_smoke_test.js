@@ -146,9 +146,8 @@ async function runPoster(page,base,png){
 }
 
 async function runUnitConverter(page,base){
-  await page.goto(base+'/unit-converter.html',{waitUntil:'domcontentloaded'});
+  await page.goto(base+'/en/unit-converter.html',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelectorAll('#category option').length>=10,null,{timeout:30000});
-  await page.locator('#pageLanguage').selectOption('en');
   await page.locator('#category').selectOption('length');
   await page.locator('#amount').fill('2');
   await page.locator('#fromUnit').selectOption('m');
