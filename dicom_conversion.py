@@ -9,6 +9,12 @@ from fastapi import File, Form, HTTPException, UploadFile
 from PIL import Image
 
 
+MAX_DICOM_FRAME_PIXELS = 12_000_000
+MAX_DICOM_TOTAL_PIXELS = 30_000_000
+MAX_DICOM_TOTAL_SAMPLE_VALUES = 40_000_000
+MAX_DICOM_PAGES = 200
+
+
 def _dicom_to_rgb(frame, dataset):
     from pydicom.pixels.processing import (
         apply_color_lut,
@@ -91,6 +97,9 @@ def register_dicom_routes(app, store_upload, download_response):
             root = Path(td)
             inputs = []
             total_bytes = 0
+            estimated_pages = 0
+            estimated_pixels = 0
+            estimated_sample_values = 0
 
             for index, upload in enumerate(files):
                 sub = root / f"source-{index:03d}"
@@ -104,8 +113,25 @@ def register_dicom_routes(app, store_upload, download_response):
                     frame_count = int(getattr(dataset, "NumberOfFrames", 1) or 1)
                     if frame_count < 1 or frame_count > 150:
                         raise HTTPException(status_code=413, detail="الحد الأقصى 150 إطاراً لكل ملف DICOM")
+                    rows = int(getattr(dataset, "Rows", 0) or 0)
+                    cols = int(getattr(dataset, "Columns", 0) or 0)
+                    samples = int(getattr(dataset, "SamplesPerPixel", 1) or 1)
+                    if not 1 <= rows <= 8192 or not 1 <= cols <= 8192:
+                        raise HTTPException(status_code=413, detail="أبعاد صورة DICOM يجب أن تكون بين 1 و8192 بكسل")
+                    if samples not in {1, 3, 4}:
+                        raise HTTPException(status_code=415, detail="عدد قنوات ألوان DICOM غير مدعوم")
+                    frame_pixels = rows * cols
+                    if frame_pixels > MAX_DICOM_FRAME_PIXELS:
+                        raise HTTPException(status_code=413, detail="إطار DICOM الواحد يتجاوز حد 12 مليون بكسل")
+                    estimated_pages += frame_count
+                    estimated_pixels += frame_pixels * frame_count
+                    estimated_sample_values += frame_pixels * frame_count * samples
+                    if estimated_pages > MAX_DICOM_PAGES:
+                        raise HTTPException(status_code=413, detail="الحد الأقصى 200 صفحة DICOM في الطلب الواحد")
+                    if estimated_pixels > MAX_DICOM_TOTAL_PIXELS or estimated_sample_values > MAX_DICOM_TOTAL_SAMPLE_VALUES:
+                        raise HTTPException(status_code=413, detail="تجاوزت سلسلة DICOM حد المعالجة الآمن البالغ 30 مليون بكسل أو 40 مليون قيمة لونية")
                     instance_number = int(getattr(dataset, "InstanceNumber", index + 1) or index + 1)
-                    inputs.append((instance_number, index, src, frame_count))
+                    inputs.append((instance_number, index, src, frame_count, rows, cols, samples))
                 except HTTPException:
                     raise
                 except Exception as exc:
@@ -120,15 +146,16 @@ def register_dicom_routes(app, store_upload, download_response):
             page_count = 0
             pixel_total = 0
             try:
-                for _, _, src, expected_frames in inputs:
+                for _, _, src, expected_frames, expected_rows, expected_cols, expected_samples in inputs:
                     try:
                         dataset = pydicom.dcmread(src, force=True)
                         if not hasattr(dataset, "PixelData"):
                             raise HTTPException(status_code=415, detail="ملف DICOM لا يحتوي على Pixel Data")
                         rows = int(dataset.Rows)
                         cols = int(dataset.Columns)
-                        if not 1 <= rows <= 8192 or not 1 <= cols <= 8192:
-                            raise HTTPException(status_code=413, detail="أبعاد صورة DICOM تتجاوز 8192×8192")
+                        samples = int(getattr(dataset, "SamplesPerPixel", 1) or 1)
+                        if (rows, cols, samples) != (expected_rows, expected_cols, expected_samples):
+                            raise HTTPException(status_code=422, detail="بيانات أبعاد DICOM تغيرت بين الفحص والمعالجة")
                         pixel_array = dataset.pixel_array
 
                         if pixel_array.ndim == 2:
@@ -139,12 +166,14 @@ def register_dicom_routes(app, store_upload, download_response):
                             frames = [pixel_array[i] for i in range(pixel_array.shape[0])]
                         else:
                             raise HTTPException(status_code=422, detail="ترتيب Pixel Data في الملف غير مدعوم")
+                        if len(frames) != expected_frames:
+                            raise HTTPException(status_code=422, detail="عدد إطارات Pixel Data لا يطابق بيانات DICOM الوصفية")
 
-                        for frame in frames[:expected_frames]:
+                        for frame in frames:
                             page_count += 1
                             pixel_total += rows * cols
-                            if page_count > 200 or pixel_total > 120_000_000:
-                                raise HTTPException(status_code=413, detail="الحد الأقصى 200 صفحة أو 120 مليون بكسل إجمالاً")
+                            if page_count > MAX_DICOM_PAGES or pixel_total > MAX_DICOM_TOTAL_PIXELS:
+                                raise HTTPException(status_code=413, detail="تجاوزت السلسلة حد 200 صفحة أو 30 مليون بكسل إجمالاً")
                             image = _dicom_to_rgb(frame, dataset)
                             image.thumbnail((2400, 2400), Image.Resampling.LANCZOS)
                             buffer = io.BytesIO()

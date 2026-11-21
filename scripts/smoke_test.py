@@ -29,6 +29,7 @@ from pydicom.uid import (
 )
 
 import main
+import image_conversion
 
 
 client = TestClient(main.app)
@@ -62,7 +63,7 @@ def image_fixture() -> bytes:
     return buffer.getvalue()
 
 
-def dicom_fixture() -> bytes:
+def dicom_fixture(rows: int = 2, columns: int = 2) -> bytes:
     with tempfile.TemporaryDirectory(prefix="pdfglobe-dicom-test-") as td:
         path = Path(td) / "smoke.dcm"
         meta = FileMetaDataset()
@@ -76,8 +77,8 @@ def dicom_fixture() -> bytes:
         dataset.StudyInstanceUID = generate_uid()
         dataset.SeriesInstanceUID = generate_uid()
         dataset.Modality = "OT"
-        dataset.Rows = 2
-        dataset.Columns = 2
+        dataset.Rows = rows
+        dataset.Columns = columns
         dataset.SamplesPerPixel = 1
         dataset.PhotometricInterpretation = "MONOCHROME2"
         dataset.BitsAllocated = 8
@@ -109,6 +110,8 @@ def test_pdf_outputs(source_pdf: bytes) -> None:
     response = client.post("/api/pdf/compress", files=payload)
     check(response.status_code == 200, f"PDF compression failed: {response.status_code} {response.text[:300]}")
     assert_pdf(response.content, "compressed PDF")
+    check(response.headers.get("content-length") == str(len(response.content)), "streamed PDF response is missing a correct Content-Length")
+    check("attachment;" in response.headers.get("content-disposition", ""), "streamed PDF response is missing download headers")
 
     response = client.post("/api/pdf/repair", files=payload)
     check(response.status_code == 200, f"PDF repair failed: {response.status_code} {response.text[:300]}")
@@ -229,7 +232,16 @@ def test_image_outputs() -> None:
     with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
         check(len(archive.namelist()) == 2, "Batch image ZIP does not contain both converted images")
 
-    print("PASS all 18 input image extensions and all 10 image output formats, image-to-PDF, and batch ZIP downloads")
+    # Force a tiny test budget to prove rejection occurs before image pixel decoding.
+    with patch.object(image_conversion, "MAX_BATCH_INPUT_PIXELS", 100):
+        response = client.post(
+            "/api/image/convert",
+            data={"output_format": "png"},
+            files=[("files", ("oversized-by-budget.png", source, "image/png"))],
+        )
+    check(response.status_code == 413, "image conversion did not enforce the decoded-pixel budget")
+
+    print("PASS all 18 input image extensions and all 10 image output formats, image-to-PDF, batch ZIP and pixel-budget rejection")
 
 def test_dicom_output() -> None:
     data = dicom_fixture()
@@ -246,7 +258,18 @@ def test_dicom_output() -> None:
     )
     check(response.status_code == 200, f"DICOM to PDF failed: {response.status_code} {response.text[:300]}")
     assert_pdf(response.content, "DICOM to PDF")
-    print("PASS DICOM consent gate and DICOM-to-PDF output")
+
+    # A mismatched, oversized header must be rejected from metadata alone,
+    # before pydicom attempts to decompress or allocate its PixelData array.
+    oversized = dicom_fixture(rows=4096, columns=4096)
+    response = client.post(
+        "/api/dicom/to-pdf",
+        data={"consent": "true"},
+        files=[("files", ("oversized.dcm", oversized, "application/dicom"))],
+    )
+    check(response.status_code == 413, "DICOM metadata preflight did not reject an oversized frame")
+
+    print("PASS DICOM consent, DICOM-to-PDF output and pre-decode pixel-budget rejection")
 
 
 def test_office_outputs() -> None:

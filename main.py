@@ -7,7 +7,9 @@ from io import BytesIO
 import shutil
 import subprocess
 import tempfile
+import time
 import unicodedata
+from urllib.parse import quote
 from pathlib import Path
 from typing import Optional
 
@@ -24,13 +26,16 @@ from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_ROW_HEIGHT_RULE, WD_T
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
+from starlette.background import BackgroundTask
 from fastapi.staticfiles import StaticFiles
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
 MAX_UPLOAD_MB = int(os.getenv("MAX_UPLOAD_MB", "50"))
 MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024
+DOWNLOAD_DIR = Path(tempfile.gettempdir()) / "pdf-globe-downloads"
+DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 LIBRETRANSLATE_URL = os.getenv("LIBRETRANSLATE_URL", "").rstrip("/")
 LIBRETRANSLATE_API_KEY = os.getenv("LIBRETRANSLATE_API_KEY", "")
 CLOUDFLARE_ACCOUNT_ID = os.getenv("CLOUDFLARE_ACCOUNT_ID", "").strip()
@@ -106,10 +111,70 @@ async def store_upload(upload: UploadFile, folder: Path, allowed_suffixes: Optio
 
 
 
-def download_response(path: Path, filename: str, media_type: str) -> Response:
-    # Read into memory before TemporaryDirectory is cleaned up after the request.
-    data = path.read_bytes()
-    return Response(content=data, media_type=media_type, headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+def _iter_download(path: Path):
+    """Yield bounded chunks so large generated files do not need to fit in RAM."""
+    with path.open("rb") as stream:
+        while True:
+            chunk = stream.read(1024 * 1024)
+            if not chunk:
+                break
+            yield chunk
+
+
+def _cleanup_download(path: str) -> None:
+    try:
+        Path(path).unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def download_response(path: Path, filename: str, media_type: str) -> StreamingResponse:
+    """Stage a temporary output outside its request folder and stream it to the client.
+
+    The response background task removes the staged file after the client finishes
+    receiving it. Moving (rather than reading/copying) the file avoids a second
+    in-memory copy and keeps generated files available after TemporaryDirectory exits.
+    """
+    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    now = time.time()
+    for stale in DOWNLOAD_DIR.glob("pdfglobe-*"):
+        try:
+            if now - stale.stat().st_mtime > 2 * 60 * 60:
+                stale.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+    suffix = path.suffix or ".bin"
+    descriptor, staged_name = tempfile.mkstemp(prefix="pdfglobe-", suffix=suffix, dir=DOWNLOAD_DIR)
+    os.close(descriptor)
+    staged_path = Path(staged_name)
+    try:
+        try:
+            os.replace(path, staged_path)
+        except OSError:
+            shutil.copyfile(path, staged_path)
+
+        size = staged_path.stat().st_size
+        display_name = Path(filename or "download").name
+        ascii_name = re.sub(r"[^A-Za-z0-9._-]+", "_", display_name).strip("._") or "download"
+        headers = {
+            "Content-Disposition": (
+                f'attachment; filename="{ascii_name}"; '
+                f"filename*=UTF-8''{quote(display_name, safe='')}"
+            ),
+            "Content-Length": str(size),
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        }
+        return StreamingResponse(
+            _iter_download(staged_path),
+            media_type=media_type,
+            headers=headers,
+            background=BackgroundTask(_cleanup_download, str(staged_path)),
+        )
+    except Exception:
+        _cleanup_download(str(staged_path))
+        raise
 
 
 def require_binary(name: str, install_hint: str) -> str:

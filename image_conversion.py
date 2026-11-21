@@ -9,7 +9,15 @@ from PIL import Image, ImageEnhance, ImageOps, UnidentifiedImageError
 from pillow_heif import register_heif_opener
 
 register_heif_opener()
-Image.MAX_IMAGE_PIXELS = 50_000_000
+
+# Keep the combined decoded-image working set within the memory budget of the
+# small Render instance. The per-frame check is performed before source.copy()
+# so oversized images are rejected before their full pixel buffer is allocated.
+MAX_IMAGE_PIXELS_PER_FRAME = 25_000_000
+MAX_BATCH_INPUT_PIXELS = 35_000_000
+MAX_BATCH_OUTPUT_PIXELS = 40_000_000
+MAX_BATCH_FRAMES = 240
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS_PER_FRAME
 
 
 def register_image_routes(app, store_upload, download_response):
@@ -61,7 +69,9 @@ def register_image_routes(app, store_upload, download_response):
             output_dir.mkdir()
             converted = []
             total_bytes = 0
-            total_pixels = 0
+            total_input_pixels = 0
+            total_output_pixels = 0
+            total_processed_frames = 0
 
             for index, upload in enumerate(files, start=1):
                 ext = Path(upload.filename or "").suffix.lower()
@@ -81,16 +91,23 @@ def register_image_routes(app, store_upload, download_response):
                             raise HTTPException(status_code=413, detail="الصورة المتحركة تتجاوز 120 إطاراً")
                         preserve_frames = fmt in {"gif", "tiff"} and frame_count > 1
                         frame_indexes = range(frame_count) if preserve_frames else range(1)
+                        if total_processed_frames + len(frame_indexes) > MAX_BATCH_FRAMES:
+                            raise HTTPException(status_code=413, detail=f"الحد الأقصى للدفعة هو {MAX_BATCH_FRAMES} إطاراً صورياً")
                         frames = []
                         durations = []
 
                         for frame_index in frame_indexes:
                             source.seek(frame_index)
+                            source_width, source_height = source.size
+                            original_pixels = int(source_width) * int(source_height)
+                            total_input_pixels += original_pixels
+                            total_processed_frames += 1
+                            if original_pixels > MAX_IMAGE_PIXELS_PER_FRAME:
+                                raise HTTPException(status_code=413, detail="الصورة الواحدة تتجاوز حد المعالجة الآمن البالغ 25 مليون بكسل")
+                            if total_input_pixels > MAX_BATCH_INPUT_PIXELS:
+                                raise HTTPException(status_code=413, detail="تجاوزت الدفعة حد المعالجة البالغ 35 مليون بكسل أصلي إجمالاً")
+                            # Copy/decode only after the dimensions have passed the pixel budget.
                             frame = ImageOps.exif_transpose(source.copy())
-                            original_pixels = frame.width * frame.height
-                            total_pixels += original_pixels
-                            if original_pixels > 50_000_000 or total_pixels > 120_000_000:
-                                raise HTTPException(status_code=413, detail="تجاوزت الصور الحد الآمن البالغ 120 مليون بكسل إجمالاً")
 
                             if width or height:
                                 sw = width / frame.width if width else float("inf")
@@ -101,11 +118,15 @@ def register_image_routes(app, store_upload, download_response):
                                 else:
                                     new_size = (width or frame.width, height or frame.height)
                                 new_pixels = new_size[0] * new_size[1]
-                                total_pixels += new_pixels
-                                if new_pixels > 50_000_000 or total_pixels > 160_000_000:
-                                    raise HTTPException(status_code=413, detail="الأبعاد الناتجة تتجاوز حد المعالجة الآمن")
+                                if new_pixels > MAX_IMAGE_PIXELS_PER_FRAME:
+                                    raise HTTPException(status_code=413, detail="أبعاد الصورة الناتجة تتجاوز حد 25 مليون بكسل")
                                 if new_size != frame.size:
                                     frame = frame.resize(new_size, Image.Resampling.LANCZOS)
+
+                            output_pixels = frame.width * frame.height
+                            total_output_pixels += output_pixels
+                            if total_output_pixels > MAX_BATCH_OUTPUT_PIXELS:
+                                raise HTTPException(status_code=413, detail="تجاوزت الصور الناتجة حد المعالجة البالغ 40 مليون بكسل إجمالاً")
 
                             if brightness:
                                 frame = ImageEnhance.Brightness(frame).enhance(1 + brightness / 100.0)
@@ -188,7 +209,7 @@ def register_image_routes(app, store_upload, download_response):
 
                 except HTTPException:
                     raise
-                except (UnidentifiedImageError, OSError, ValueError) as exc:
+                except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as exc:
                     raise HTTPException(status_code=415, detail=f"تعذر فتح أو تحويل {upload.filename or index}. تحقق من الصيغة وأن الملف غير تالف.") from exc
                 except Exception as exc:
                     raise HTTPException(status_code=422, detail=f"فشل تحويل {upload.filename or index}: {str(exc)[:160]}") from exc
