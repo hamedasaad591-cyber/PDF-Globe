@@ -76,6 +76,14 @@
     updateApiStatus();
     if(currentTool) openTool(currentTool,false);
   }
+  function refreshTranslationOptions(){
+    const selectedSource=$('#sourceLang')?.value || 'en';
+    renderOptions('translate');
+    const sourceSelect=$('#sourceLang');
+    if(sourceSelect && [...sourceSelect.options].some(option=>option.value===selectedSource)){
+      sourceSelect.value=selectedSource;
+    }
+  }
   $('#uiLanguage').addEventListener('change',e=>{const lang=e.target.value;const englishPage=window.location.pathname==='/en/'||window.location.pathname==='/en';if(lang==='en'&&!englishPage){window.location.assign('/en/');return;}if(lang==='ar'&&englishPage){window.location.assign('/');return;}applyLanguage(lang);});
   const mobileMenu = $('#mobileMenu');
   if (mobileMenu) $('.mobile-menu-panel a', mobileMenu).forEach(link => {
@@ -336,6 +344,6 @@
     openTool(requestedTool, false);
   }
   // Show API readiness in browser console for operators, without exposing secrets.
-  fetch(apiUrl('/api/health'),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('API unavailable');return r.json();}).then(data=>{apiHealth=data;translationSupportsAuto=String(data.translation_provider||'').startsWith('LibreTranslate');document.documentElement.dataset.apiReady=data.ok?'true':'false';updateApiStatus();if(currentTool==='translate')renderOptions('translate');}).catch(()=>{apiHealth={ok:false};document.documentElement.dataset.apiReady='false';updateApiStatus();});
-  fetch(apiUrl('/api/languages')).then(r=>r.json()).then(data=>{if(Array.isArray(data.languages)&&data.languages.length){translationLanguages=data.languages.map(x=>[x.code,x.name||x.code]);if(currentTool==='translate')renderOptions('translate');}}).catch(()=>{});
+  fetch(apiUrl('/api/health'),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('API unavailable');return r.json();}).then(data=>{apiHealth=data;translationSupportsAuto=String(data.translation_provider||'').startsWith('LibreTranslate');document.documentElement.dataset.apiReady=data.ok?'true':'false';updateApiStatus();if(currentTool==='translate')refreshTranslationOptions();}).catch(()=>{apiHealth={ok:false};document.documentElement.dataset.apiReady='false';updateApiStatus();});
+  fetch(apiUrl('/api/languages')).then(r=>r.json()).then(data=>{if(Array.isArray(data.languages)&&data.languages.length){translationLanguages=data.languages.map(x=>[x.code,x.name||x.code]);if(currentTool==='translate')refreshTranslationOptions();}}).catch(()=>{});
 })();
