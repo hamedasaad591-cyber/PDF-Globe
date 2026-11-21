@@ -30,7 +30,7 @@ def register_dwg_routes(app, store_upload, download_response, require_binary, sa
             try:
                 import ezdxf
                 from ezdxf import recover
-                from ezdxf.addons.drawing import Frontend, RenderContext
+                from ezdxf.addons.drawing import Frontend, RenderContext, config as drawing_config
                 from ezdxf.addons.drawing import layout as drawing_layout
                 from ezdxf.addons.drawing import pymupdf as drawing_pdf
 
@@ -50,7 +50,7 @@ def register_dwg_routes(app, store_upload, download_response, require_binary, sa
                 try:
                     for name, layout_object in targets:
                         backend = drawing_pdf.PyMuPdfBackend()
-                        Frontend(RenderContext(doc), backend).draw_layout(layout_object)
+                        Frontend(RenderContext(doc), backend, config=drawing_config.Configuration(background_policy=drawing_config.BackgroundPolicy.WHITE)).draw_layout(layout_object)
                         if str(name).casefold() == "model":
                             page_definition = drawing_layout.Page(0, 0)
                         else:
