@@ -77,7 +77,7 @@ def register_dwg_routes(app, store_upload, download_response, require_binary, sa
             except Exception as exc:
                 raise HTTPException(
                     status_code=422,
-                    detail="تعذر رسم محتوى DWG إلى PDF. قد يحتوي الملف على مجسمات ثلاثية الأبعاد أو عناصر AutoCAD متقدمة غير مدعومة.",
+                    detail="تعذر رسم محتوى DWG إلى PDF. قد يحتوي الملف على عناصر غير مدعومة. التفاصيل: " + str(exc)[:320],
                 ) from exc
 
             return download_response(output, output.name, "application/pdf")
