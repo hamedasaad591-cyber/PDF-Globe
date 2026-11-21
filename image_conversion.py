@@ -14,6 +14,7 @@ register_heif_opener()
 # small Render instance. The per-frame check is performed before source.copy()
 # so oversized images are rejected before their full pixel buffer is allocated.
 MAX_IMAGE_PIXELS_PER_FRAME = 25_000_000
+MAX_IMAGE_FILE_BYTES = 25 * 1024 * 1024
 MAX_BATCH_INPUT_PIXELS = 35_000_000
 MAX_BATCH_OUTPUT_PIXELS = 40_000_000
 MAX_BATCH_FRAMES = 240
@@ -54,7 +55,7 @@ def register_image_routes(app, store_upload, download_response):
         if fmt not in output_formats:
             raise HTTPException(status_code=415, detail="صيغة الإخراج غير مدعومة")
         if not (0 <= width <= 10000 and 0 <= height <= 10000):
-            raise HTTPException(status_code=400, detail="أبعاد الإخراج يجب أن تكون بين 1 و10000 بكسل")
+            raise HTTPException(status_code=400, detail="أدخل أبعاداً بين 0 و10000 بكسل؛ الصفر يعني إبقاء البعد الأصلي")
         if not 1 <= quality <= 100 or not 0 <= sharpen <= 100 or not 0 <= contrast <= 100 or not -50 <= brightness <= 50:
             raise HTTPException(status_code=400, detail="إعدادات الجودة والتحسين غير صالحة")
         try:
@@ -77,10 +78,15 @@ def register_image_routes(app, store_upload, download_response):
                 ext = Path(upload.filename or "").suffix.lower()
                 if ext not in input_exts:
                     raise HTTPException(status_code=415, detail=f"صيغة الصورة غير مدعومة: {ext or 'بدون امتداد'}")
+                if upload.size is not None and upload.size > MAX_IMAGE_FILE_BYTES:
+                    raise HTTPException(status_code=413, detail="حد حجم الصورة الواحدة هو 25 MB")
                 sub = root / f"input-{index:02d}"
                 sub.mkdir()
                 src = await store_upload(upload, sub, input_exts)
-                total_bytes += src.stat().st_size
+                file_bytes = src.stat().st_size
+                if file_bytes > MAX_IMAGE_FILE_BYTES:
+                    raise HTTPException(status_code=413, detail="حد حجم الصورة الواحدة هو 25 MB")
+                total_bytes += file_bytes
                 if total_bytes > 120 * 1024 * 1024:
                     raise HTTPException(status_code=413, detail="الحد الإجمالي لصور الدفعة هو 120 MB")
 
