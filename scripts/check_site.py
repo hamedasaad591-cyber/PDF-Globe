@@ -25,7 +25,7 @@ meta = set()
 for match in re.finditer(r"(?:^|,)\s*(?:'([^']+)'|([A-Za-z][A-Za-z0-9-]*))\s*:\s*\{", meta_block):
     meta.add(match.group(1) or match.group(2))
 require(cards == meta, f"homepage cards and toolMeta differ; cards-only={sorted(cards-meta)}, registry-only={sorted(meta-cards)}")
-require(len(cards) == 18, f"expected 18 core PDF tools, found {len(cards)}")
+require(len(cards) == 22, f"expected 22 registered homepage tools, found {len(cards)}")
 
 # All browser-side tools listed by the run button must have client-side handlers.
 runner = re.search(r"const client=\[([^\]]+)\]", app)
@@ -40,17 +40,31 @@ for tool in client_tools:
 server_fn = re.search(r"async function runServerTool\(id\)\{([\s\S]*?)\n  \$\('#runTool'\)", app)
 require(server_fn is not None, "server-side tool function is missing")
 server_body = server_fn.group(1)
-expected_server = {"compress", "pdf-word", "word-pdf", "repair", "protect", "unlock", "translate"}
+expected_server = {"compress", "pdf-word", "word-pdf", "repair", "protect", "unlock", "translate", "excel-pdf", "powerpoint-pdf", "dicom-pdf", "dwg-pdf"}
 for tool in expected_server:
     require(f"id==='{tool}'" in server_body, f"server tool has no implementation branch: {tool}")
     require(tool in cards, f"server tool is not represented by a homepage card: {tool}")
 
+office_backend = (ROOT / "office_conversion.py").read_text(encoding="utf-8")
+image_backend = (ROOT / "image_conversion.py").read_text(encoding="utf-8")
+dicom_backend = (ROOT / "dicom_conversion.py").read_text(encoding="utf-8")
+dwg_backend = (ROOT / "dwg_conversion.py").read_text(encoding="utf-8")
 for route in (
     "/api/pdf/compress", "/api/pdf/to-word", "/api/word/to-pdf",
     "/api/pdf/protect", "/api/pdf/unlock", "/api/pdf/repair",
     "/api/translate", "/api/translate/docx", "/api/health", "/api/languages",
 ):
     require(route in backend, f"backend route missing: {route}")
+for route, source in (
+    ("/api/office/excel-to-pdf", office_backend),
+    ("/api/office/powerpoint-to-pdf", office_backend),
+    ("/api/image/convert", image_backend),
+    ("/api/dicom/to-pdf", dicom_backend),
+    ("/api/cad/dwg-to-pdf", dwg_backend),
+):
+    require(route in source, f"specialized converter route missing: {route}")
+require("register_office_routes(app" in backend and "register_image_routes(app" in backend, "converter route registration is missing")
+require("register_dicom_routes(app" in backend and "register_dwg_routes(app" in backend, "specialized route registration is missing")
 
 # The public frontend must point to the configured API host, never a secret-bearing URL.
 require("https://pdf-globe.onrender.com" in api_config, "public API base URL is missing")
@@ -174,8 +188,8 @@ for locale, prefix in (("ar", ""), ("en", "en/")):
     for category_id in ("pdf-tools", "print-tools", "poster-tools", "measure-tools", "translation-tools", "image-tools"):
         require(f'id="{category_id}" data-tool-group' in page, f"{locale} homepage is missing directory group {category_id}")
     require('id="toolSearch"' in page and 'id="noResults"' in page, f"{locale} homepage global tool search is missing")
-    require(page.count('class="category-jump-card"') == 6, f"{locale} homepage should expose six category shortcuts")
-    require(page.count('data-tool="') == 18, f"{locale} homepage core PDF tools are duplicated or missing")
+    require(page.count('class="category-jump-card"') == 7, f"{locale} homepage should expose seven category shortcuts")
+    require(page.count('data-tool="') == 22, f"{locale} homepage tools are duplicated or missing")
     require('href="/saffha/"' in page and 'href="/poster-splitter.html"' in page, f"{locale} handout or poster tool link is missing")
 require("directory-group" in (STATIC / "style.css").read_text(encoding="utf-8"), "Homepage directory styles are missing")
 require("$('#categories').addEventListener" not in app, "Old category filter is still wired to the removed category strip")
@@ -186,16 +200,36 @@ require("data-tool-group" in app and "visibleCount" in app, "Global search does 
 icons_file = (STATIC / "tool-icons.svg").read_text(encoding="utf-8")
 for icon_id in ("merge", "split", "compress", "pdf-word", "pdf-excel", "pdf-powerpoint",
                 "saffha", "poster", "units", "ocr", "translate", "image-compress",
-                "wm-pdf", "wm-print", "wm-poster", "wm-units", "wm-translate", "wm-image"):
+                "wm-pdf", "wm-print", "wm-poster", "wm-units", "wm-translate", "wm-image",
+                "wm-special", "excel-pdf", "powerpoint-pdf", "dicom-pdf", "dwg-pdf"):
     require(f'<symbol id="{icon_id}"' in icons_file, f"homepage illustration {icon_id} is missing")
 for locale, prefix in (("ar", ""), ("en", "en/")):
     page = (STATIC / prefix / "index.html").read_text(encoding="utf-8")
-    require('app.js?v=20261121-illustrated-home-10' in page, f"{locale} homepage JS cache version was not refreshed")
-    require('style.css?v=20261121-illustrated-home-10' in page, f"{locale} homepage CSS cache version was not refreshed")
+    require('app.js?v=20261121-converters-11' in page, f"{locale} homepage JS cache version was not refreshed")
+    require('style.css?v=20261121-converters-11' in page, f"{locale} homepage CSS cache version was not refreshed")
     for key in ("jump_pdf", "jump_print", "jump_poster", "jump_measure", "jump_translate", "jump_image"):
         require(re.search(rf'<b data-i18n="{key}">\s*[^<]+\s*</b>', page) is not None,
                 f"{locale} homepage category label {key} has no HTML fallback text")
-    require(page.count('<span class="tool-icon ') == 24, f"{locale} homepage does not contain 24 tool illustration slots")
+    require(page.count('<span class="tool-icon ') == 28, f"{locale} homepage does not contain 28 tool illustration slots")
     require(page.count('<use href="/tool-icons.svg#') >= 30, f"{locale} homepage category or tool illustrations are missing")
 require("Illustrated tool directory" in (STATIC / "style.css").read_text(encoding="utf-8"),
         "Illustrated homepage tool directory styles are missing")
+
+
+# The expanded image studio must expose real server-backed formats and controls.
+image_page_ar = (STATIC / "image-compressor.html").read_text(encoding="utf-8")
+image_page_en = (STATIC / "en" / "image-compressor.html").read_text(encoding="utf-8")
+image_js = (STATIC / "image-compressor.js").read_text(encoding="utf-8")
+image_backend = (ROOT / "image_conversion.py").read_text(encoding="utf-8")
+for locale, page in (("ar", image_page_ar), ("en", image_page_en)):
+    for control in ("outputFormat", "width", "height", "keepAspect", "quality", "sharpen", "contrast", "brightness", "background"):
+        require(f'id="{control}"' in page, f"{locale} image converter control is missing: {control}")
+    require('image-compressor.js?v=20261121-image-suite-3' in page, f"{locale} image converter JS cache tag is stale")
+    require("api-config.js" in page, f"{locale} image converter API configuration is missing")
+require("/api/image/convert" in image_js, "image studio does not call the image conversion API")
+for fmt in ("webp", "jpeg", "png", "avif", "heic", "bmp", "gif", "tiff", "ico", "pdf"):
+    require(f'"{fmt}"' in image_backend or f"'{fmt}'" in image_backend, f"image output format is missing: {fmt}")
+requirements_text = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+for dependency in ("pydicom==", "pillow-heif==", "Pillow==13.0.0", "ezdxf=="):
+    require(dependency in requirements_text, f"backend dependency is missing: {dependency}")
+print("PASS: Excel/PowerPoint to PDF, DICOM/DWG routes, and extended image conversion controls.")

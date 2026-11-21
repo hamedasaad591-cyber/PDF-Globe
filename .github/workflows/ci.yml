@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: "22"
       - name: Check Python syntax
-        run: python -m py_compile main.py scripts/check_site.py
+        run: python -m py_compile main.py office_conversion.py image_conversion.py dicom_conversion.py dwg_conversion.py scripts/check_site.py
       - name: Check JavaScript syntax
         run: node --check static/app.js && node --check static/unit-converter.js && node --check static/image-compressor.js && node --check static/office-converter.js
       - name: Check tool and page wiring
