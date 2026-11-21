@@ -1,7 +1,7 @@
 FROM debian:bookworm-slim AS dwg-builder
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git ca-certificates build-essential autoconf automake libtool pkg-config \
-    gettext texinfo flex bison libxml2-dev zlib1g-dev libreadline-dev \
+    gettext texinfo flex bison python3 libxml2-dev zlib1g-dev libreadline-dev \
     && rm -rf /var/lib/apt/lists/*
 RUN git clone --depth 1 https://github.com/LibreDWG/libredwg.git /tmp/libredwg \
     && cd /tmp/libredwg \
