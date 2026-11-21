@@ -188,6 +188,7 @@ async function runImageModes(page,base){
     await runPdfTool(page,base,'watermark',[two],p=>p.locator('#watermarkText').fill('PDF GLOBE TEST'),2);
     await runPdfTool(page,base,'numbers',[two],null,2);
     await runPdfTool(page,base,'sign',[two],async p=>{
+      await p.locator('#signaturePad').scrollIntoViewIfNeeded();
       const box=await p.locator('#signaturePad').boundingBox();assert(!!box,'Signature canvas is not visible');
       await p.mouse.move(box.x+25,box.y+30);await p.mouse.down();
       await p.mouse.move(box.x+100,box.y+80,{steps:6});await p.mouse.up();
