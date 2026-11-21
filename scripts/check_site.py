@@ -40,7 +40,7 @@ for tool in client_tools:
 server_fn = re.search(r"async function runServerTool\(id\)\{([\s\S]*?)\n  \$\('#runTool'\)", app)
 require(server_fn is not None, "server-side tool function is missing")
 server_body = server_fn.group(1)
-expected_server = {"compress", "pdf-word", "word-pdf", "repair", "protect", "unlock", "translate", "excel-pdf", "powerpoint-pdf", "dicom-pdf", "dwg-pdf"}
+expected_server = {"compress", "pdf-word", "word-pdf", "image-pdf", "repair", "protect", "unlock", "translate", "excel-pdf", "powerpoint-pdf", "dicom-pdf", "dwg-pdf"}
 for tool in expected_server:
     require(f"id==='{tool}'" in server_body, f"server tool has no implementation branch: {tool}")
     require(tool in cards, f"server tool is not represented by a homepage card: {tool}")
@@ -134,9 +134,10 @@ for page, locale, canonical in (
     require(f'rel="canonical" href="{canonical}"' in page, f"{locale} image compressor canonical is incorrect")
     require('image-compressor.js?v=' in page and ' defer></script>' in page, f"{locale} image compressor script is missing or not deferred")
     require('hreflang="ar"' in page and 'hreflang="en"' in page, f"{locale} image compressor page is missing language alternates")
-require("canvas.toBlob" in image_js or "canvas.toBlob" in image_js.replace(" ",""), "image compressor does not export processed images")
-require("createImageBitmap" in image_js and "image/jpeg" in image_js and "image/webp" in image_js, "image format support is incomplete")
-require("fetch(" not in image_js and "XMLHttpRequest" not in image_js, "image compressor should not upload images to a server")
+require("/api/image/convert" in image_js, "image compressor does not call the image conversion API")
+require("new FormData()" in image_js and "form.append(" in image_js, "image compressor does not submit image files to the server")
+require("output_format" in image_js and "sharpen" in image_js and "brightness" in image_js, "image processing controls are not wired to the API")
+require("مؤقت" in image_js or "Temporary" in image_js, "image converter upload behavior is not disclosed")
 require("function invalidateResults()" in image_js, "image compressor must clear stale results when settings change")
 require("image-compressor.html" in sitemap and "image-compressor.html" in sitemap_all, "image compressor pages are missing from a sitemap")
 require("grid-template-columns:1fr" in image_css, "image compressor mobile layout is missing")
