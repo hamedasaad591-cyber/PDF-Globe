@@ -119,19 +119,22 @@ async function runSaffha(page,base,png){
   console.log('PASS Saffha PDF: '+download.suggestedFilename()+', '+bytes.length+' bytes');
 }
 async function runPoster(page,base,png){
+  const pageErrors=[];
+  page.on('pageerror',error=>pageErrors.push(error.message));
   await page.goto(base+'/poster-splitter.html',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>!!window.PDFLib&&!!document.querySelector('#generateBtn'),null,{timeout:60000});
+  await page.locator('#posterSize').selectOption('A4');
   await page.locator('#fileInput').setInputFiles({name:'poster-sample.png',mimeType:'image/png',buffer:png});
-  await page.waitForFunction(()=>{
-    const button=document.querySelector('#generateBtn');
-    const status=document.querySelector('#statusBox');
-    return button && !button.disabled || status && status.classList.contains('show') && status.classList.contains('error');
-  },null,{timeout:30000});
-  const ready=await page.locator('#generateBtn').isEnabled();
-  if(!ready){
-    const message=await page.locator('#statusBox').textContent();
-    throw new Error('Poster Splitter could not prepare the source file: '+message);
-  }
+  await page.waitForTimeout(1200);
+  const state=await page.evaluate(()=>({
+    enabled:!document.querySelector('#generateBtn').disabled,
+    status:document.querySelector('#statusBox').textContent,
+    statusClass:document.querySelector('#statusBox').className,
+    fileRow:document.querySelector('#fileRow').className,
+    filename:document.querySelector('#fileName').textContent,
+    hasPdfLib:!!window.PDFLib
+  }));
+  if(!state.enabled)throw new Error('Poster Splitter did not enable generation: '+JSON.stringify(state)+'; page errors: '+pageErrors.join(' | '));
   await page.locator('#generateBtn').click();
   await page.waitForFunction(()=>document.querySelector('#downloadBtn').classList.contains('show'),null,{timeout:90000});
   const downloadPromise=page.waitForEvent('download',{timeout:60000});
@@ -141,6 +144,7 @@ async function runPoster(page,base,png){
   assert(bytes.length>500,'Poster splitter PDF output is unexpectedly small');
   console.log('PASS Poster Splitter PDF: '+download.suggestedFilename()+', '+bytes.length+' bytes');
 }
+
 async function runUnitConverter(page,base){
   await page.goto(base+'/unit-converter.html',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.querySelectorAll('#category option').length>=10,null,{timeout:30000});
