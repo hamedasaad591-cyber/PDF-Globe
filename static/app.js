@@ -28,8 +28,57 @@
     ur: {nav_tools:'ٹولز',nav_how:'طریقہ کار',nav_privacy:'رازداری',get_started:'شروع کریں',eyebrow:'ہر جگہ ہر شخص کے لیے فائل ٹولز',hero_title:'آپ کی فائلوں کی ہر ضرورت<br><em>ایک جگہ۔</em>',hero_text:'PDF فائلوں کو تبدیل، ترمیم، ضم، کمپریس اور ترجمہ کریں۔',explore_tools:'ٹولز دیکھیں',free_note:'سروس کی حدود میں مفت استعمال',global_note:'تمام ممالک اور زبانوں کے صارفین کے لیے',tools_kicker:'ورک اسپیس',tools_title:'اپنے کام کے لیے ٹول منتخب کریں',tools_subtitle:'PDF اور دستاویزات کے ضروری ٹولز۔',search_tools:'ٹول تلاش کریں...',cat_all:'تمام ٹولز',cat_organize:'PDF ترتیب',cat_convert:'تبدیل کریں',cat_edit:'ترمیم',cat_security:'حفاظت',cat_ocr:'OCR اور ترجمہ',saffha_nav:'صفّها',poster_nav:'پوسٹر تقسیم کریں',featured_tools_kicker:'نمایاں ٹولز',featured_tools_title:'اہم ٹولز سے آغاز کریں',featured_tools_desc:'ہوم پیج کے اوپر تین آسان شارٹ کٹس۔',saffha_card_title:'صفّها — لیبلز اور ہینڈ آؤٹس',saffha_card_desc:'تصاویر کو A4 یا A3 پر درست سائز میں ترتیب دیں اور پرنٹ کے لیے PDF بنائیں۔',poster_card_title:'بڑے پوسٹر کو تقسیم کریں',poster_card_desc:'بڑے پوسٹر کو آسان پرنٹنگ کے لیے A4 یا A3 صفحات میں تقسیم کریں۔',word_card_title:'PDF کو Word میں تبدیل کریں',word_card_desc:'PDF اپ لوڈ کریں اور اسمارٹ صفحہ پراسیسنگ کے ساتھ ایک مرحلے میں Word بنائیں۔',featured_card_cta:'ٹول کھولیں ↗',saffha_feature_title:'صفّها — لیبلز اور ہینڈ آؤٹس پرنٹ کے لیے تیار کریں',saffha_feature_desc:'تصاویر کو درست سائز کے ساتھ A4 یا A3 پر ترتیب دیں اور پرنٹ کے لیے تیار PDF حاصل کریں۔',saffha_feature_cta:'ٹول کھولیں ↗',workspace_kicker:'فائل پراسیسنگ',choose_tool:'شروع کرنے کے لیے ٹول منتخب کریں',choose_tool_hint:'اوپر سے ٹول منتخب کریں، فائل شامل کریں اور ہدایات پر عمل کریں۔',drop_title:'فائلیں یہاں چھوڑیں',drop_subtitle:'یا اپنے آلے سے منتخب کریں',browse_files:'فائل منتخب کریں',run_tool:'چلائیں',how_kicker:'شروع سے آخر تک آسان',how_title:'تین آسان مراحل',step1_title:'ٹول منتخب کریں',step2_title:'فائل شامل کریں',step3_title:'نتیجہ ڈاؤن لوڈ کریں',privacy_title:'آپ کی فائلوں کی رازداری اہم ہے',footer_note:'ہر جگہ ہر شخص کے لیے فائل ٹولز۔',footer_about:'ہمارے بارے میں',footer_contact:'رابطہ',footer_privacy:'رازداری',footer_terms:'شرائط',download:'فائل ڈاؤن لوڈ کریں',done:'کام مکمل ہوگیا۔'
     }
   };
+    Object.assign(I18N.ar, {
+    tool_excelpdf:'تحويل Excel إلى PDF',
+    desc_excelpdf:'حوّل ملفات XLSX وXLS وODS وCSV إلى ملف PDF جاهز للطباعة.',
+    tool_powerpointpdf:'تحويل PowerPoint إلى PDF',
+    desc_powerpointpdf:'حوّل عروض PPTX وPPT وPPSX وODP إلى PDF مع الحفاظ على الشرائح.',
+    tool_dicompdf:'تحويل DICOM إلى PDF',
+    desc_dicompdf:'حوّل ملفات DCM وDICOM الطبية متعددة الصفحات أو الإطارات إلى PDF.',
+    tool_dwgpfd:'تحويل AutoCAD DWG إلى PDF',
+    desc_dwgpfd:'حوّل رسومات DWG ثنائية الأبعاد وتخطيطات الطباعة إلى PDF.',
+    jump_special:'صيغ طبية وهندسية',
+    jump_special_desc:'تحويل DICOM وDWG إلى PDF',
+    special_group_kicker:'ملفات متخصصة',
+    special_group_title:'تحويل الملفات الطبية والهندسية',
+    special_group_desc:'أدوات مخصصة لتحويل صور DICOM الطبية ورسومات AutoCAD إلى مستند PDF.',
+    opt_dicom_consent:'أوافق على رفع ملفات DICOM إلى الخادم مؤقتاً لمعالجة الصور وتحويلها إلى PDF.',
+    dicom_consent_required:'يجب تأكيد موافقتك قبل معالجة ملفات DICOM.',
+    dicom_output_note:'تم تضمين بيانات الصور في PDF فقط. قد تظهر بيانات أو أسماء مطبوعة داخل صورة الفحص نفسها.',
+    dicom_privacy_warning:'تنبيه خصوصية: قد تحتوي ملفات DICOM على أسماء وبيانات صحية حساسة. لا ترفعها إلا إذا كان لديك إذن باستخدامها.',
+    dwg_limit_note:'محرك DWG يدعم الرسومات ثنائية الأبعاد الشائعة؛ بعض عناصر AutoCAD المتقدمة أو ثلاثية الأبعاد قد لا تظهر.',
+    excel_pdf_note:'التحويل يستخدم إعدادات الطباعة في ورقة العمل؛ راجع اتجاه الصفحة والهوامش قبل التحويل.',
+    powerpoint_pdf_note:'كل شريحة تتحول إلى صفحة PDF. راجع الخطوط والوسائط المضمنة بعد التحويل.'
+  });
+  Object.assign(I18N.en, {
+    tool_excelpdf:'Excel to PDF',
+    desc_excelpdf:'Convert XLSX, XLS, ODS and CSV spreadsheets into print-ready PDF.',
+    tool_powerpointpdf:'PowerPoint to PDF',
+    desc_powerpointpdf:'Convert PPTX, PPT, PPSX and ODP presentations into PDF slides.',
+    tool_dicompdf:'DICOM to PDF',
+    desc_dicompdf:'Convert multi-file and multi-frame DCM/DICOM medical images into PDF pages.',
+    tool_dwgpfd:'AutoCAD DWG to PDF',
+    desc_dwgpfd:'Convert supported 2D DWG drawings and paper layouts into PDF.',
+    jump_special:'Medical & CAD files',
+    jump_special_desc:'Convert DICOM and DWG to PDF',
+    special_group_kicker:'Specialized file types',
+    special_group_title:'Medical & CAD file conversion',
+    special_group_desc:'Dedicated tools for converting DICOM medical images and AutoCAD drawings into PDF.',
+    opt_dicom_consent:'I agree to upload DICOM files temporarily to the server so their image data can be converted to PDF.',
+    dicom_consent_required:'You must confirm consent before processing DICOM files.',
+    dicom_output_note:'The PDF contains rendered image pixels only. Names or other labels burned into the scan image may still be visible.',
+    dicom_privacy_warning:'Privacy warning: DICOM files may contain names and sensitive medical information. Upload them only when you have permission.',
+    dwg_limit_note:'The DWG engine targets common 2D drawings. Some advanced or 3D AutoCAD entities may not render.',
+    excel_pdf_note:'Conversion uses the worksheet print settings. Review page orientation and margins before conversion.',
+    powerpoint_pdf_note:'Each slide becomes a PDF page. Review fonts and embedded media after conversion.'
+  });
+
   const toolMeta = {
-    merge:{title:'tool_merge',desc:'desc_merge',accept:'.pdf',multiple:true},split:{title:'tool_split',desc:'desc_split',accept:'.pdf'},compress:{title:'tool_compress',desc:'desc_compress',accept:'.pdf'},rotate:{title:'tool_rotate',desc:'desc_rotate',accept:'.pdf'},delete:{title:'tool_delete',desc:'desc_delete',accept:'.pdf'},reorder:{title:'tool_reorder',desc:'desc_reorder',accept:'.pdf'},'pdf-word':{title:'tool_pdfword',desc:'desc_pdfword',accept:'.pdf'},'word-pdf':{title:'tool_wordpdf',desc:'desc_wordpdf',accept:'.doc,.docx,.odt,.rtf'},'image-pdf':{title:'tool_imagepdf',desc:'desc_imagepdf',accept:'.jpg,.jpeg,.png,.webp',multiple:true},'pdf-image':{title:'tool_pdfimage',desc:'desc_pdfimage',accept:'.pdf'},watermark:{title:'tool_watermark',desc:'desc_watermark',accept:'.pdf'},numbers:{title:'tool_numbers',desc:'desc_numbers',accept:'.pdf'},sign:{title:'tool_sign',desc:'desc_sign',accept:'.pdf'},protect:{title:'tool_protect',desc:'desc_protect',accept:'.pdf'},unlock:{title:'tool_unlock',desc:'desc_unlock',accept:'.pdf'},repair:{title:'tool_repair',desc:'desc_repair',accept:'.pdf'},ocr:{title:'tool_ocr',desc:'desc_ocr',accept:'.pdf,.png,.jpg,.jpeg,.webp'},translate:{title:'tool_translate',desc:'desc_translate',accept:'.pdf'}
+    merge:{title:'tool_merge',desc:'desc_merge',accept:'.pdf',multiple:true},split:{title:'tool_split',desc:'desc_split',accept:'.pdf'},compress:{title:'tool_compress',desc:'desc_compress',accept:'.pdf'},rotate:{title:'tool_rotate',desc:'desc_rotate',accept:'.pdf'},delete:{title:'tool_delete',desc:'desc_delete',accept:'.pdf'},reorder:{title:'tool_reorder',desc:'desc_reorder',accept:'.pdf'},'pdf-word':{title:'tool_pdfword',desc:'desc_pdfword',accept:'.pdf'},'word-pdf':{title:'tool_wordpdf',desc:'desc_wordpdf',accept:'.doc,.docx,.odt,.rtf'},'image-pdf':{title:'tool_imagepdf',desc:'desc_imagepdf',accept:'.jpg,.jpeg,.png,.webp',multiple:true},'pdf-image':{title:'tool_pdfimage',desc:'desc_pdfimage',accept:'.pdf'},watermark:{title:'tool_watermark',desc:'desc_watermark',accept:'.pdf'},numbers:{title:'tool_numbers',desc:'desc_numbers',accept:'.pdf'},sign:{title:'tool_sign',desc:'desc_sign',accept:'.pdf'},protect:{title:'tool_protect',desc:'desc_protect',accept:'.pdf'},unlock:{title:'tool_unlock',desc:'desc_unlock',accept:'.pdf'},repair:{title:'tool_repair',desc:'desc_repair',accept:'.pdf'},ocr:{title:'tool_ocr',desc:'desc_ocr',accept:'.pdf,.png,.jpg,.jpeg,.webp'},translate:{title:'tool_translate',desc:'desc_translate',accept:'.pdf'},
+    'excel-pdf':{title:'tool_excelpdf',desc:'desc_excelpdf',accept:'.xlsx,.xls,.xlsm,.ods,.csv'},
+    'powerpoint-pdf':{title:'tool_powerpointpdf',desc:'desc_powerpointpdf',accept:'.pptx,.ppt,.ppsx,.odp'},
+    'dicom-pdf':{title:'tool_dicompdf',desc:'desc_dicompdf',accept:'.dcm,.dicom,.ima',multiple:true},
+    'dwg-pdf':{title:'tool_dwgpfd',desc:'desc_dwgpfd',accept:'.dwg'}
   };
   const LANGS = [['ar','العربية / Arabic'],['en','English'],['fr','Français'],['es','Español'],['de','Deutsch'],['it','Italiano'],['pt','Português'],['tr','Türkçe'],['ur','اردو'],['hi','हिन्दी'],['zh','中文'],['ja','日本語'],['ko','한국어'],['ru','Русский'],['nl','Nederlands'],['pl','Polski'],['sv','Svenska'],['fa','فارسی'],['id','Bahasa Indonesia'],['ms','Bahasa Melayu'],['uk','Українська'],['el','Ελληνικά'],['he','עברית'],['vi','Tiếng Việt']];
   let translationLanguages = LANGS;
@@ -134,6 +183,12 @@
       html+=field(t('opt_ocr_lang'),`<input id="translateOcrLang" value="eng+ara" placeholder="eng+ara+fra">`,true,t('opt_ocr_hint'));
       html+=`<div class="option-field full"><label class="consent-line"><input type="checkbox" id="translationConsent"><span>${t('opt_translation_consent')}</span></label><small class="option-help">${t('translation_warning')}</small></div>`;
     }
+    if(id==='dicom-pdf'){
+      html+=\`<div class="option-field full"><label class="consent-line"><input type="checkbox" id="dicomConsent"><span>\${t('opt_dicom_consent')}</span></label><small class="option-help">\${t('dicom_privacy_warning')}</small></div>\`;
+    }
+    if(id==='dwg-pdf') html+=\`<div class="option-field full"><small class="option-help">\${t('dwg_limit_note')}</small></div>\`;
+    if(id==='excel-pdf') html+=\`<div class="option-field full"><small class="option-help">\${t('excel_pdf_note')}</small></div>\`;
+    if(id==='powerpoint-pdf') html+=\`<div class="option-field full"><small class="option-help">\${t('powerpoint_pdf_note')}</small></div>\`;
     p.innerHTML=html;p.classList.toggle('hidden',!html);
     if(id==='sign') setupSignature();
     if(id==='translate') $('#targetLang').value=currentLang==='ar'?'en':'ar';
@@ -308,6 +363,32 @@
   }
   async function runServerTool(id){
     const f=selectedFiles[0];if(!f)throw new Error(t('error_select'));
+    if(id==='dicom-pdf'){
+      if(!$('#dicomConsent').checked)throw new Error(t('dicom_consent_required'));
+      const form=new FormData();
+      selectedFiles.forEach(file=>form.append('files',file));
+      form.append('consent','true');
+      const response=await fetch(apiUrl('/api/dicom/to-pdf'),{method:'POST',body:form});
+      if(!response.ok){let message=t('error_server');try{const data=await response.json();message=data.detail||message;}catch{}throw new Error(message);}
+      const blob=await response.blob();
+      showResult(blob,'dicom-images.pdf',t('dicom_output_note'));
+      return;
+    }
+    if(id==='excel-pdf'){
+      const blob=await apiFile('/api/office/excel-to-pdf',f);
+      showResult(blob,outputName(f,'converted','pdf'));
+      return;
+    }
+    if(id==='powerpoint-pdf'){
+      const blob=await apiFile('/api/office/powerpoint-to-pdf',f);
+      showResult(blob,outputName(f,'converted','pdf'));
+      return;
+    }
+    if(id==='dwg-pdf'){
+      const blob=await apiFile('/api/cad/dwg-to-pdf',f);
+      showResult(blob,outputName(f,'converted','pdf'),t('dwg_limit_note'));
+      return;
+    }
     if(id==='compress'){const blob=await apiFile('/api/pdf/compress',f);showResult(blob,outputName(f,'compressed'));return;}
     if(id==='pdf-word'){const mode='hybrid';const blob=await apiFile('/api/pdf/to-word',f,{mode});let notice=t(mode==='layout'?'word_layout_notice':mode==='hybrid'?'word_hybrid_notice':mode==='structured'?'word_structured_notice':'word_editable_notice');if(mode==='structured'&&window.PDF_GLOBE_STRUCTURED_SUMMARY){const s=window.PDF_GLOBE_STRUCTURED_SUMMARY;notice+=currentLang==='ar'?` الصفحات القابلة للتحرير: ${s.editablePages}؛ صفحات الجداول القابلة للتحرير: ${s.tablePages}؛ صفحات الصور الاحتياطية: ${s.imagePages}.`:` Editable pages: ${s.editablePages}; editable table pages: ${s.tablePages}; image fallback pages: ${s.imagePages}.`;}if(mode==='hybrid'&&window.PDF_GLOBE_HYBRID_SUMMARY){const s=window.PDF_GLOBE_HYBRID_SUMMARY;notice+=currentLang==='ar'?` الصفحات النصية القابلة للتحرير: ${s.editablePages}؛ الصفحات المحفوظة كصور: ${s.imagePages}.`:` Editable text pages: ${s.editablePages}; pages preserved as images: ${s.imagePages}.`;}showResult(blob,outputName(f,'converted','docx'),notice);return;}
     if(id==='word-pdf'){const blob=await apiFile('/api/word/to-pdf',f);showResult(blob,outputName(f,'converted'));return;}
