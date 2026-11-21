@@ -52,6 +52,10 @@
     if(currentTool) openTool(currentTool,false);
   }
   $('#uiLanguage').addEventListener('change',e=>applyLanguage(e.target.value));
+  const mobileMenu = $('#mobileMenu');
+  if (mobileMenu) $('.mobile-menu-panel a', mobileMenu).forEach(link => {
+    link.addEventListener('click', () => mobileMenu.removeAttribute('open'));
+  });
   $('#year').textContent = new Date().getFullYear();
 
   function renderToolCards(){
