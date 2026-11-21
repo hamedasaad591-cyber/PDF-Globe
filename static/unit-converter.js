@@ -130,7 +130,12 @@
     try{await navigator.clipboard.writeText(text);alert(t('copied'));}
     catch(e){alert(t('copyError'));}
   }
-  $('pageLanguage').addEventListener('change',e=>{currentLang=e.target.value;setTextLanguage();});
+  $('pageLanguage').addEventListener('change',e=>{
+    const englishPage=window.location.pathname.startsWith('/en/');
+    if(e.target.value==='en'&&!englishPage){window.location.assign('/en/unit-converter.html');return;}
+    if(e.target.value==='ar'&&englishPage){window.location.assign('/unit-converter.html');return;}
+    currentLang=e.target.value;setTextLanguage();
+  });
   $('category').addEventListener('change',()=>{populateUnits();calculate();});
   ['amount','fromUnit','toUnit','ingredient'].forEach(id=>$(id).addEventListener('input',calculate));
   $('swapUnits').addEventListener('click',()=>{const a=$('fromUnit').value;$('fromUnit').value=$('toUnit').value;$('toUnit').value=a;calculate();});
