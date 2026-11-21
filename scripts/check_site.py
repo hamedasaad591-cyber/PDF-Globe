@@ -208,7 +208,7 @@ for icon_id in ("merge", "split", "compress", "pdf-word", "pdf-excel", "pdf-powe
     require(f'<symbol id="{icon_id}"' in icons_file, f"homepage illustration {icon_id} is missing")
 for locale, prefix in (("ar", ""), ("en", "en/")):
     page = (STATIC / prefix / "index.html").read_text(encoding="utf-8")
-    require('app.js?v=20261121-converters-12' in page, f"{locale} homepage JS cache version was not refreshed")
+    require('app.js?v=20261121-converters-13' in page, f"{locale} homepage JS cache version was not refreshed")
     require('style.css?v=20261121-converters-11' in page, f"{locale} homepage CSS cache version was not refreshed")
     for key in ("jump_pdf", "jump_print", "jump_poster", "jump_measure", "jump_translate", "jump_image"):
         require(re.search(rf'<b data-i18n="{key}">\s*[^<]+\s*</b>', page) is not None,
@@ -236,3 +236,6 @@ requirements_text = (ROOT / "requirements.txt").read_text(encoding="utf-8")
 for dependency in ("pydicom==", "pillow-heif==", "Pillow==13.0.0", "ezdxf=="):
     require(dependency in requirements_text, f"backend dependency is missing: {dependency}")
 print("PASS: Excel/PowerPoint to PDF, DICOM/DWG routes, and extended image conversion controls.")
+
+for page in (home, english_home):
+    require("<strong>28</strong>" in page, "homepage tool count must reflect 28 available tools")
