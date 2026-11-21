@@ -125,8 +125,13 @@ image_ar = (STATIC / "image-compressor.html").read_text(encoding="utf-8")
 image_en = (STATIC / "en" / "image-compressor.html").read_text(encoding="utf-8")
 image_js = (STATIC / "image-compressor.js").read_text(encoding="utf-8")
 image_css = (STATIC / "image-compressor.css").read_text(encoding="utf-8")
-require('data-static-tool="true"' in home and 'href="/image-compressor.html"' in home, "Arabic image compressor card is missing")
-require('data-static-tool="true"' in english_home and 'href="/en/image-compressor.html"' in english_home, "English image compressor card is missing")
+image_section_ar = re.search(r'<section class="directory-group" id="image-tools" data-tool-group>([\\s\\S]*?)</section>', home)
+image_section_en = re.search(r'<section class="directory-group" id="image-tools" data-tool-group>([\\s\\S]*?)</section>', english_home)
+require(image_section_ar is not None and image_section_ar.group(1).count('class="tool-card directory-tool-card"') == 4, "Arabic image tools section must contain four separate cards")
+require(image_section_en is not None and image_section_en.group(1).count('class="tool-card directory-tool-card"') == 4, "English image tools section must contain four separate cards")
+for mode in ("convert", "resize", "compress", "enhance"):
+    require(f'href="/image-compressor.html?mode={mode}"' in image_section_ar.group(1), f"Arabic image mode card is missing: {mode}")
+    require(f'href="/en/image-compressor.html?mode={mode}"' in image_section_en.group(1), f"English image mode card is missing: {mode}")
 require('tool_imagecompress:' in app and 'desc_imagecompress:' in app, "image compressor homepage localization is missing")
 for page, locale, canonical in (
     (image_ar, "ar", "https://pdf-globe.pages.dev/image-compressor.html"),
