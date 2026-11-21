@@ -193,7 +193,7 @@ async function runImageModes(page,base){
       await p.mouse.move(box.x+25,box.y+30);await p.mouse.down();
       await p.mouse.move(box.x+100,box.y+80,{steps:6});await p.mouse.up();
     },2);
-    await runPdfToImages(page,base,two);
+    await runPdfToImages(page,base,two.buffer);
     await runOcr(page,base,png);
     await runSaffha(page,base,png);
     await runPoster(page,base,png);
