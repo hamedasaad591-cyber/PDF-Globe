@@ -134,7 +134,7 @@
   }
   $('#uiLanguage').addEventListener('change',e=>{const lang=e.target.value;const englishPage=window.location.pathname==='/en/'||window.location.pathname==='/en';if(lang==='en'&&!englishPage){window.location.assign('/en/');return;}if(lang==='ar'&&englishPage){window.location.assign('/');return;}applyLanguage(lang);});
   const mobileMenu = $('#mobileMenu');
-  if (mobileMenu) $( '.mobile-menu-panel a', mobileMenu).forEach(link => {
+  if (mobileMenu) $('.mobile-menu-panel a', mobileMenu).forEach(link => {
     link.addEventListener('click', () => mobileMenu.removeAttribute('open'));
   });
   $('#year').textContent = new Date().getFullYear();
@@ -142,7 +142,7 @@
   function renderToolCards(){
     const query=$('#toolSearch').value.trim().toLocaleLowerCase();
     let visibleCount=0;
-    $( '.tool-card').forEach(card=>{
+    $('.tool-card').forEach(card=>{
       let hay='';
       if(card.dataset.staticTool==='true'){
         hay=(card.textContent+' '+(card.dataset.search||'')).toLocaleLowerCase();
@@ -157,8 +157,8 @@
       card.classList.toggle('hidden',!visible);
       if(visible)visibleCount++;
     });
-    $( '.tool-subgroup').forEach(group=>group.classList.toggle('hidden',group.querySelectorAll('.tool-card:not(.hidden)').length===0));
-    $( '[data-tool-group]').forEach(group=>group.classList.toggle('hidden',group.querySelectorAll('.tool-card:not(.hidden)').length===0));
+    $('.tool-subgroup').forEach(group=>group.classList.toggle('hidden',group.querySelectorAll('.tool-card:not(.hidden)').length===0));
+    $('[data-tool-group]').forEach(group=>group.classList.toggle('hidden',group.querySelectorAll('.tool-card:not(.hidden)').length===0));
     $('#noResults').classList.toggle('hidden',visibleCount>0);
   }
   $('#toolSearch').addEventListener('input',renderToolCards);

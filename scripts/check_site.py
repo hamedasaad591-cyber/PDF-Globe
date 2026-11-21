@@ -247,3 +247,8 @@ require("$('.tool-card').forEach" not in app, "homepage card rendering calls for
 require("$('.tool-subgroup').forEach" not in app, "homepage subgroup rendering calls forEach on a single Element")
 require("$('[data-tool-group]').forEach" not in app, "homepage category rendering calls forEach on a single Element")
 require("$$('.tool-card[data-tool]').forEach" in app, "homepage tool card click handlers are not registered")
+
+require("$$('.mobile-menu-panel a', mobileMenu).forEach" in app, "mobile menu link iteration must use querySelectorAll")
+require("$$('.tool-card').forEach" in app, "homepage tool rendering must iterate all cards")
+require("$$('.tool-subgroup').forEach" in app, "homepage subgroup rendering must iterate all subgroups")
+require("$$('[data-tool-group]').forEach" in app, "homepage group rendering must iterate all groups")
