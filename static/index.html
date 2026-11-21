@@ -28,7 +28,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=20261121-global-home-7">
+  <link rel="stylesheet" href="/style.css?v=20261121-global-home-8">
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
@@ -81,95 +81,61 @@
       </div>
     </section>
 
-    <section class="featured-tools wrap" aria-labelledby="featuredToolsTitle">
-      <div class="featured-tools-head">
-        <div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="featured_tools_kicker">أدواتنا المميزة</span></div>
-        <h2 id="featuredToolsTitle" data-i18n="featured_tools_title">ابدأ بأكثر الأدوات استخداماً</h2>
-        <p data-i18n="featured_tools_desc">ثلاث أدوات واضحة في مقدمة الموقع لتصل إلى مهمتك مباشرة.</p>
-      </div>
-      <div class="featured-grid">
-        <a class="featured-card featured-saffha" href="/saffha/">
-          <span class="featured-icon" aria-hidden="true">▦</span>
-          <span class="featured-copy"><strong data-i18n="saffha_card_title">صفّها — التوزيعات والملصقات</strong><small data-i18n="saffha_card_desc">رتّب الصور على A4 أو A3 بمقاسات دقيقة، وأنشئ PDF جاهزاً للطباعة.</small></span>
-          <span class="featured-cta" data-i18n="featured_card_cta">افتح الأداة ↗</span>
-        </a>
-        <a class="featured-card featured-poster" href="/poster-splitter.html">
-          <span class="featured-icon" aria-hidden="true">▧</span>
-          <span class="featured-copy"><strong data-i18n="poster_card_title">تقسيم البوسترات الكبيرة</strong><small data-i18n="poster_card_desc">قسّم الملصق الكبير إلى صفحات A4 أو A3 واطبعه بسهولة.</small></span>
-          <span class="featured-cta" data-i18n="featured_card_cta">افتح الأداة ↗</span>
-        </a>
-        <a class="featured-card featured-word" href="/?tool=pdf-word#workspaceSection">
-          <span class="featured-icon" aria-hidden="true">W</span>
-          <span class="featured-copy"><strong data-i18n="word_card_title">تحويل PDF إلى Word</strong><small data-i18n="word_card_desc">ارفع ملف PDF وحوّله إلى Word بخطوة واحدة ومعالجة ذكية للصفحات.</small></span>
-          <span class="featured-cta" data-i18n="featured_card_cta">افتح الأداة ↗</span>
-        </a>
-        <a class="featured-card featured-units" href="/unit-converter.html">
-          <span class="featured-icon" aria-hidden="true">⇄</span>
-          <span class="featured-copy"><strong data-i18n="tool_units">محول الوحدات والمقادير</strong><small data-i18n="desc_units">حوّل الأوزان والأطوال والحجوم، واحسب مقادير الطبخ والوصفات.</small></span>
-          <span class="featured-cta" data-i18n="featured_card_cta">افتح الأداة ↗</span>
-        </a>
-      
-        <a class="tool-card" data-static-tool="true" data-category="convert" data-search="unit converter kg to lb grams to cups cooking recipe weight length volume temperature speed pressure energy digital storage" href="/unit-converter.html"><span class="tool-icon tint-cyan">⇄</span><b data-i18n="tool_units">محول الوحدات والمقادير</b><small data-i18n="desc_units">حوّل الأوزان والأطوال والحجوم، واحسب مقادير الطبخ والوصفات.</small><span class="tool-arrow">↗</span></a>
-
-        <a class="tool-card" data-static-tool="true" data-category="convert" data-search="pdf to excel xlsx extract tables spreadsheet pdf table converter" href="/pdf-to-excel.html"><span class="tool-icon tint-green">X</span><b data-i18n="tool_pdfexcel">تحويل PDF إلى Excel</b><small data-i18n="desc_pdfexcel">استخرج الجداول والنصوص المتاحة من PDF إلى ملف Excel قابل للمراجعة.</small><span class="tool-arrow">↗</span></a>
-        <a class="tool-card" data-static-tool="true" data-category="convert" data-search="pdf to powerpoint pptx presentation slides convert pdf pages to slides" href="/pdf-to-powerpoint.html"><span class="tool-icon tint-orange">P</span><b data-i18n="tool_pdfpptx">تحويل PDF إلى PowerPoint</b><small data-i18n="desc_pdfpptx">حوّل كل صفحة من PDF إلى شريحة PowerPoint تحافظ على شكل الصفحة.</small><span class="tool-arrow">↗</span></a>
-      </div>
-    </section>
-
-    <section class="quick-stats wrap">
-      <div><strong>24</strong><span data-i18n="stat_tools">أداة مفيدة</span></div><i></i><div><strong>6</strong><span data-i18n="stat_ui">لغات للواجهة</span></div><i></i><div><strong>0</strong><span data-i18n="stat_signup">حساب مطلوب للبدء</span></div>    </section>
-
-    <section id="tools" class="tools-section wrap">
-      <div class="section-heading"><div><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="tools_kicker">مساحة العمل</span></div><h2 data-i18n="tools_title">اختر الأداة المناسبة لمهمتك</h2><p data-i18n="tools_subtitle">كل الأدوات الأساسية للملفات والمستندات في واجهة واحدة.</p></div><div class="search-box"><span>⌕</span><input id="toolSearch" type="search" data-i18n-placeholder="search_tools" placeholder="ابحث عن أداة..."></div></div>
-      <div class="category-row" id="categories">
-        <button class="category active" data-category="all" data-i18n="cat_all">كل الأدوات</button>
-        <button class="category" data-category="organize" data-i18n="cat_organize">تنظيم PDF</button>
-        <button class="category" data-category="convert" data-i18n="cat_convert">التحويل</button>
-        <button class="category" data-category="edit" data-i18n="cat_edit">التعديل</button>
-        <button class="category" data-category="security" data-i18n="cat_security">الحماية</button>
-        <button class="category" data-category="ocr" data-i18n="cat_ocr">استخراج النص والترجمة</button>
-      </div>
-      <div class="tool-grid" id="toolGrid">
-        <button class="tool-card" data-tool="merge" data-category="organize"><span class="tool-icon tint-blue">▤</span><b data-i18n="tool_merge">دمج PDF</b><small data-i18n="desc_merge">اجمع عدة ملفات في ملف واحد.</small><span class="tool-arrow">↗</span></button>
+    
+ <section class="directory-section wrap" id="tools">
+  <div class="directory-intro">
+   <div class="directory-intro-copy"><div class="eyebrow"><span class="eyebrow-dot"></span><span data-i18n="directory_kicker">الأدوات والخدمات</span></div><h2 data-i18n="directory_title">كل أدواتك، مرتبة حسب مهمتك</h2><p data-i18n="directory_desc">اختر القسم الذي تحتاجه، وستجد الأدوات والخدمات التابعة له في مكان واضح.</p></div>
+   <label class="directory-search"><span aria-hidden="true">⌕</span><input id="toolSearch" type="search" data-i18n-placeholder="search_tools" placeholder="ابحث عن أداة مثل دمج PDF أو تحويل الوحدات..." autocomplete="off"></label>
+  </div>
+  <div class="category-jump-grid" aria-label="تصفح أقسام الأدوات"><a class="category-jump-card" href="#pdf-tools"><span class="category-jump-icon">▤</span><span class="category-jump-copy"><b data-i18n="jump_pdf"></b><small data-i18n="jump_pdf_desc"></small></span><span class="category-jump-arrow">↗</span></a>
+<a class="category-jump-card" href="#print-tools"><span class="category-jump-icon">▦</span><span class="category-jump-copy"><b data-i18n="jump_print"></b><small data-i18n="jump_print_desc"></small></span><span class="category-jump-arrow">↗</span></a>
+<a class="category-jump-card" href="#poster-tools"><span class="category-jump-icon">▧</span><span class="category-jump-copy"><b data-i18n="jump_poster"></b><small data-i18n="jump_poster_desc"></small></span><span class="category-jump-arrow">↗</span></a>
+<a class="category-jump-card" href="#measure-tools"><span class="category-jump-icon">⇄</span><span class="category-jump-copy"><b data-i18n="jump_measure"></b><small data-i18n="jump_measure_desc"></small></span><span class="category-jump-arrow">↗</span></a>
+<a class="category-jump-card" href="#translation-tools"><span class="category-jump-icon">文</span><span class="category-jump-copy"><b data-i18n="jump_translate"></b><small data-i18n="jump_translate_desc"></small></span><span class="category-jump-arrow">↗</span></a>
+<a class="category-jump-card" href="#image-tools"><span class="category-jump-icon">▣</span><span class="category-jump-copy"><b data-i18n="jump_image"></b><small data-i18n="jump_image_desc"></small></span><span class="category-jump-arrow">↗</span></a></div>
+  <div class="quick-stats directory-stats"><div><strong>24</strong><span data-i18n="stat_tools">أداة مفيدة</span></div><i></i><div><strong>6</strong><span data-i18n="stat_ui">لغات للواجهة</span></div><i></i><div><strong>0</strong><span data-i18n="stat_signup">حساب مطلوب للبدء</span></div></div>
+  <section class="directory-group" id="pdf-tools" data-tool-group>
+   <div class="directory-group-heading"><div><span class="directory-index">01</span><div><span class="directory-eyebrow" data-i18n="pdf_group_kicker">pdf_group_kicker</span><h2 data-i18n="pdf_group_title">أدوات PDF</h2><p data-i18n="pdf_group_desc">إدارة ملفات PDF وتنظيم الصفحات والتحويل والتعديل والحماية.</p></div></div></div>
+   <div class="tool-subgroup"><div class="tool-subgroup-heading"><h3 data-i18n="sub_pdf_manage">إدارة وتنظيم PDF</h3><span data-i18n="sub_pdf_manage_desc">دمج، تقسيم، ضغط وترتيب</span></div><div class="tool-grid"><button class="tool-card" data-tool="merge" data-category="organize"><span class="tool-icon tint-blue">▤</span><b data-i18n="tool_merge">دمج PDF</b><small data-i18n="desc_merge">اجمع عدة ملفات في ملف واحد.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="split" data-category="organize"><span class="tool-icon tint-cyan">⫶</span><b data-i18n="tool_split">تقسيم واستخراج الصفحات</b><small data-i18n="desc_split">اختر الصفحات التي تريدها.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="compress" data-category="organize"><span class="tool-icon tint-violet">⇣</span><b data-i18n="tool_compress">ضغط PDF</b><small data-i18n="desc_compress">قلّل حجم الملف مع محاولة الحفاظ على الجودة.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="rotate" data-category="organize"><span class="tool-icon tint-orange">⟳</span><b data-i18n="tool_rotate">تدوير الصفحات</b><small data-i18n="desc_rotate">دوّر صفحات المستند بالاتجاه المناسب.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="delete" data-category="organize"><span class="tool-icon tint-red">▣</span><b data-i18n="tool_delete">حذف الصفحات</b><small data-i18n="desc_delete">احذف الصفحات غير المطلوبة.</small><span class="tool-arrow">↗</span></button>
-        <button class="tool-card" data-tool="reorder" data-category="organize"><span class="tool-icon tint-green">☷</span><b data-i18n="tool_reorder">ترتيب الصفحات</b><small data-i18n="desc_reorder">أعد ترتيب الصفحات حسب الأرقام.</small><span class="tool-arrow">↗</span></button>
-        <button class="tool-card" data-tool="pdf-word" data-category="convert"><span class="tool-icon tint-blue">W</span><b data-i18n="tool_pdfword">PDF إلى Word</b><small data-i18n="desc_pdfword">حوّل الملف إلى مستند DOCX قابل للتحرير.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="reorder" data-category="organize"><span class="tool-icon tint-green">☷</span><b data-i18n="tool_reorder">ترتيب الصفحات</b><small data-i18n="desc_reorder">أعد ترتيب الصفحات حسب الأرقام.</small><span class="tool-arrow">↗</span></button></div></div>
+   <div class="tool-subgroup"><div class="tool-subgroup-heading"><h3 data-i18n="sub_pdf_convert">تحويل الملفات من وإلى PDF</h3><span data-i18n="sub_pdf_convert_desc">Word وExcel وPowerPoint والصور</span></div><div class="tool-grid" id="toolGrid"><button class="tool-card" data-tool="pdf-word" data-category="convert"><span class="tool-icon tint-blue">W</span><b data-i18n="tool_pdfword">PDF إلى Word</b><small data-i18n="desc_pdfword">حوّل الملف إلى مستند DOCX قابل للتحرير.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="word-pdf" data-category="convert"><span class="tool-icon tint-indigo">P</span><b data-i18n="tool_wordpdf">Word إلى PDF</b><small data-i18n="desc_wordpdf">حوّل مستندات Word إلى PDF.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="image-pdf" data-category="convert"><span class="tool-icon tint-pink">▧</span><b data-i18n="tool_imagepdf">صور إلى PDF</b><small data-i18n="desc_imagepdf">حوّل صور JPG وPNG إلى ملف PDF.</small><span class="tool-arrow">↗</span></button>
-        <button class="tool-card" data-tool="pdf-image" data-category="convert"><span class="tool-icon tint-cyan">▧</span><b data-i18n="tool_pdfimage">PDF إلى صور</b><small data-i18n="desc_pdfimage">صدّر صفحات PDF بصيغة JPG داخل ZIP.</small><span class="tool-arrow">↗</span></button>
-        <button class="tool-card" data-tool="watermark" data-category="edit"><span class="tool-icon tint-orange">◈</span><b data-i18n="tool_watermark">إضافة علامة مائية</b><small data-i18n="desc_watermark">أضف نصاً شفافاً على صفحات الملف.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="pdf-image" data-category="convert"><span class="tool-icon tint-cyan">▧</span><b data-i18n="tool_pdfimage">PDF إلى صور</b><small data-i18n="desc_pdfimage">صدّر صفحات PDF بصيغة JPG داخل ZIP.</small><span class="tool-arrow">↗</span></button><a class="tool-card directory-tool-card" data-static-tool="true" data-category="convert" data-search="pdf to excel xlsx extract table spreadsheet تحويل pdf الى اكسل اكسل جداول" href="/pdf-to-excel.html"><span class="tool-icon tint-green">X</span><b data-i18n="tool_pdfexcel">تحويل PDF إلى Excel</b><small data-i18n="desc_pdfexcel">استخرج الجداول والنصوص المتاحة من PDF إلى ملف Excel قابل للمراجعة.</small><span class="tool-arrow">↗</span></a><a class="tool-card directory-tool-card" data-static-tool="true" data-category="convert" data-search="pdf to powerpoint pptx presentation slides تحويل pdf الى بوربوينت باوربوينت عرض تقديمي شرائح" href="/pdf-to-powerpoint.html"><span class="tool-icon tint-orange">P</span><b data-i18n="tool_pdfpptx">تحويل PDF إلى PowerPoint</b><small data-i18n="desc_pdfpptx">حوّل كل صفحة من PDF إلى شريحة PowerPoint تحافظ على شكل الصفحة.</small><span class="tool-arrow">↗</span></a></div><div class="directory-related-links"><a class="directory-related-link" href="/pdf-to-word-guide-ar">دليل تحويل PDF العربي إلى Word ↗</a><a class="directory-related-link" href="/pdf-to-word-guide">دليل PDF إلى Word ↗</a></div></div>
+   <div class="tool-subgroup"><div class="tool-subgroup-heading"><h3 data-i18n="sub_pdf_edit">تعديل PDF وحمايته</h3><span data-i18n="sub_pdf_edit_desc">توقيع، علامات مائية، حماية وإصلاح</span></div><div class="tool-grid"><button class="tool-card" data-tool="watermark" data-category="edit"><span class="tool-icon tint-orange">◈</span><b data-i18n="tool_watermark">إضافة علامة مائية</b><small data-i18n="desc_watermark">أضف نصاً شفافاً على صفحات الملف.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="numbers" data-category="edit"><span class="tool-icon tint-violet">№</span><b data-i18n="tool_numbers">ترقيم الصفحات</b><small data-i18n="desc_numbers">أضف أرقاماً إلى صفحات المستند.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="sign" data-category="edit"><span class="tool-icon tint-green">✍</span><b data-i18n="tool_sign">توقيع PDF</b><small data-i18n="desc_sign">ارسم توقيعك وأضفه إلى صفحة محددة.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="protect" data-category="security"><span class="tool-icon tint-red">♙</span><b data-i18n="tool_protect">حماية PDF</b><small data-i18n="desc_protect">أضف كلمة مرور إلى ملفك.</small><span class="tool-arrow">↗</span></button>
         <button class="tool-card" data-tool="unlock" data-category="security"><span class="tool-icon tint-blue">♧</span><b data-i18n="tool_unlock">فتح PDF</b><small data-i18n="desc_unlock">أزل كلمة المرور التي تعرفها.</small><span class="tool-arrow">↗</span></button>
-        <button class="tool-card" data-tool="repair" data-category="security"><span class="tool-icon tint-green">⌁</span><b data-i18n="tool_repair">إصلاح PDF</b><small data-i18n="desc_repair">أعد حفظ الملف لمحاولة إصلاح بنيته.</small><span class="tool-arrow">↗</span></button>
-        <button class="tool-card" data-tool="ocr" data-category="ocr"><span class="tool-icon tint-pink">文</span><b data-i18n="tool_ocr">استخراج النص OCR</b><small data-i18n="desc_ocr">استخرج النص من الصور والملفات الممسوحة.</small><span class="tool-arrow">↗</span></button>
-        <button class="tool-card" data-tool="translate" data-category="ocr"><span class="tool-icon tint-indigo">⇄</span><b data-i18n="tool_translate">ترجمة المستندات</b><small data-i18n="desc_translate">ترجم النص إلى لغة أخرى واحفظه في Word.</small><span class="tool-arrow">↗</span></button>
-        <a class="tool-card" data-static-tool="true" data-category="convert" data-search="unit converter kg to lb grams to cups cooking recipe weight length volume temperature speed pressure energy digital storage" href="/unit-converter.html"><span class="tool-icon tint-cyan">⇄</span><b data-i18n="tool_units">محول الوحدات والمقادير</b><small data-i18n="desc_units">حوّل الأوزان والأطوال والحجوم، واحسب مقادير الطبخ والوصفات.</small><span class="tool-arrow">↗</span></a>
-      
-        <a class="tool-card" data-static-tool="true" data-category="convert" data-search="image compressor resize image optimize compress jpg jpeg png webp reduce file size change image dimensions photo compression" href="/image-compressor.html"><span class="tool-icon tint-pink">▧</span><b data-i18n="tool_imagecompress">ضغط الصور وتغيير حجمها</b><small data-i18n="desc_imagecompress">قلّل حجم صور JPG وPNG وWebP وغيّر أبعادها وجودتها.</small><span class="tool-arrow">↗</span></a>
-        <a class="tool-card" data-static-tool="true" data-category="convert" data-search="pdf to excel xlsx extract tables spreadsheet pdf table converter" href="/pdf-to-excel.html"><span class="tool-icon tint-green">X</span><b data-i18n="tool_pdfexcel">تحويل PDF إلى Excel</b><small data-i18n="desc_pdfexcel">استخرج الجداول والنصوص المتاحة من PDF إلى ملف Excel قابل للمراجعة.</small><span class="tool-arrow">↗</span></a>
-        <a class="tool-card" data-static-tool="true" data-category="convert" data-search="pdf to powerpoint pptx presentation slides convert pdf pages to slides" href="/pdf-to-powerpoint.html"><span class="tool-icon tint-orange">P</span><b data-i18n="tool_pdfpptx">تحويل PDF إلى PowerPoint</b><small data-i18n="desc_pdfpptx">حوّل كل صفحة من PDF إلى شريحة PowerPoint تحافظ على شكل الصفحة.</small><span class="tool-arrow">↗</span></a>
-      </div>
-        
-          <a href="/print-layout-guide.html">دليل تجهيز التوزيعات والملصقات للطباعة على A4 وA3</a>
-          <a href="/saffha/">صفّها · تجهيز التوزيعات والملصقات بمقاسات دقيقة</a>
-          <a href="/pdf-to-word">PDF to Word · تحويل PDF إلى Word</a>
-          <a href="/pdf-to-word-guide">PDF to Word Guide · دليل التحويل</a>
-          <a href="/pdf-to-word-guide-ar">دليل تحويل PDF العربي إلى Word</a>
-          <a href="/merge-pdf">Merge PDF · دمج PDF</a>
-          <a href="/compress-pdf">Compress PDF · ضغط PDF</a>
-          <a href="/translate-pdf">Translate PDF · ترجمة PDF</a>
-          <a href="/split-pdf">Split PDF · تقسيم PDF</a>
-          <a href="/word-to-pdf">Word to PDF · تحويل Word إلى PDF</a>
-          <a href="/images-to-pdf">Images to PDF · الصور إلى PDF</a>
-          <a href="/pdf-to-jpg">PDF to JPG · PDF إلى صور</a>
-        </div>
-      </div>
-    </section>
+        <button class="tool-card" data-tool="repair" data-category="security"><span class="tool-icon tint-green">⌁</span><b data-i18n="tool_repair">إصلاح PDF</b><small data-i18n="desc_repair">أعد حفظ الملف لمحاولة إصلاح بنيته.</small><span class="tool-arrow">↗</span></button></div></div>
+  </section>
+  <section class="directory-group" id="print-tools" data-tool-group>
+   <div class="directory-group-heading"><div><span class="directory-index">02</span><div><span class="directory-eyebrow" data-i18n="print_group_kicker">print_group_kicker</span><h2 data-i18n="print_group_title">التوزيعات وأدوات الطباعة</h2><p data-i18n="print_group_desc">جهّز بطاقات الشكر والملصقات والتوزيعات على أوراق A4 وA3 بمقاسات دقيقة.</p></div></div></div>
+   <div class="tool-grid"><a class="tool-card directory-tool-card" data-static-tool="true" data-category="convert" data-search="saffha handouts labels stickers print distributions توزيعات ملصقات استيكرات صفها طباعة A4 A3" href="/saffha/"><span class="tool-icon tint-green">▦</span><b data-i18n="saffha_card_title">صفّها — التوزيعات والملصقات</b><small data-i18n="saffha_card_desc">رتّب الصور والتوزيعات على A4 أو A3 بمقاسات دقيقة، ثم صدّر ملفاً جاهزاً للطباعة.</small><span class="tool-arrow">↗</span></a></div><div class="directory-related-links"><a class="directory-related-link" href="/print-layout-guide.html">دليل تجهيز التوزيعات والملصقات للطباعة على A4 وA3 ↗</a></div>
+  </section>
+  <section class="directory-group" id="poster-tools" data-tool-group>
+   <div class="directory-group-heading"><div><span class="directory-index">03</span><div><span class="directory-eyebrow" data-i18n="poster_group_kicker">poster_group_kicker</span><h2 data-i18n="poster_group_title">أدوات البوسترات والملصقات الكبيرة</h2><p data-i18n="poster_group_desc">قسّم تصاميمك الكبيرة إلى صفحات متعددة لتجميعها وطباعتها.</p></div></div></div>
+   <div class="tool-grid"><a class="tool-card directory-tool-card" data-static-tool="true" data-category="convert" data-search="poster splitter large poster print tiles pages A4 A3 تقسيم بوستر بوسترات كبيرة طباعة لوحات" href="/poster-splitter.html"><span class="tool-icon tint-orange">▧</span><b data-i18n="poster_card_title">تقسيم البوسترات الكبيرة</b><small data-i18n="poster_card_desc">قسّم تصميماً كبيراً إلى صفحات A4 أو A3 مع تجهيزها للطباعة والتجميع.</small><span class="tool-arrow">↗</span></a></div>
+  </section>
+  <section class="directory-group" id="measure-tools" data-tool-group>
+   <div class="directory-group-heading"><div><span class="directory-index">04</span><div><span class="directory-eyebrow" data-i18n="measure_group_kicker">measure_group_kicker</span><h2 data-i18n="measure_group_title">تحويل المقاييس والوحدات</h2><p data-i18n="measure_group_desc">حوّل الأوزان والمقادير والأطوال والحجوم ودرجات الحرارة بسهولة.</p></div></div></div>
+   <div class="tool-grid"><a class="tool-card directory-tool-card" data-static-tool="true" data-category="convert" data-search="unit converter measurements weight mass kg gram ounce lb length volume temperature cooking recipe مقاييس وحدات وزن كيلو جرام جرام أوقية رطل طول حجم حرارة طبخ وصفات" href="/unit-converter.html"><span class="tool-icon tint-cyan">⇄</span><b data-i18n="tool_units">محول الوحدات والمقاييس</b><small data-i18n="desc_units">حوّل الأوزان والأطوال والحجوم، واحسب مقادير الطبخ والوصفات.</small><span class="tool-arrow">↗</span></a></div>
+  </section>
+  <section class="directory-group" id="translation-tools" data-tool-group>
+   <div class="directory-group-heading"><div><span class="directory-index">05</span><div><span class="directory-eyebrow" data-i18n="translation_group_kicker">translation_group_kicker</span><h2 data-i18n="translation_group_title">استخراج النص والترجمة</h2><p data-i18n="translation_group_desc">استخرج النص من ملفات PDF المصورة أو ترجم محتوى المستند واحفظ الناتج.</p></div></div></div>
+   <div class="tool-grid"><button class="tool-card" data-tool="ocr" data-category="ocr"><span class="tool-icon tint-pink">文</span><b data-i18n="tool_ocr">استخراج النص OCR</b><small data-i18n="desc_ocr">استخرج النص من الصور والملفات الممسوحة.</small><span class="tool-arrow">↗</span></button>
+        <button class="tool-card" data-tool="translate" data-category="ocr"><span class="tool-icon tint-indigo">⇄</span><b data-i18n="tool_translate">ترجمة المستندات</b><small data-i18n="desc_translate">ترجم النص إلى لغة أخرى واحفظه في Word.</small><span class="tool-arrow">↗</span></button></div><div class="directory-related-links"><a class="directory-related-link" href="/translate-pdf-ar.html">تعرف على ترجمة ملفات PDF ↗</a></div>
+  </section>
+  <section class="directory-group" id="image-tools" data-tool-group>
+   <div class="directory-group-heading"><div><span class="directory-index">06</span><div><span class="directory-eyebrow" data-i18n="image_group_kicker">image_group_kicker</span><h2 data-i18n="image_group_title">أدوات الصور</h2><p data-i18n="image_group_desc">اضغط الصور وعدّل أبعادها وجودتها قبل رفعها أو طباعتها.</p></div></div></div>
+   <div class="tool-grid"><a class="tool-card directory-tool-card" data-static-tool="true" data-category="convert" data-search="image compressor resize optimize compress jpg jpeg png webp photo images ضغط الصور تصغير الصور تغيير حجم الصور جودة صورة" href="/image-compressor.html"><span class="tool-icon tint-pink">▧</span><b data-i18n="tool_imagecompress">ضغط الصور وتغيير حجمها</b><small data-i18n="desc_imagecompress">قلّل حجم صور JPG وPNG وWebP وغيّر أبعادها وجودتها.</small><span class="tool-arrow">↗</span></a></div>
+  </section>
+  <p id="noResults" class="no-results hidden" role="status" data-i18n="no_results">لم نعثر على أداة بهذا الاسم. جرّب كلمة بحث أخرى.</p>
+ </section>
 
     <section class="workspace-section" id="workspaceSection">
       <div class="workspace wrap">
@@ -199,6 +165,6 @@
   <footer class="footer"><div class="wrap footer-inner"><a class="brand" href="#home"><span class="brand-mark small-mark">PDF</span><span class="brand-name">PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><span data-i18n="footer_note">أدوات الملفات للجميع، أينما كانوا.</span><span class="footer-links"><a href="/about.html" data-i18n="footer_about">من نحن</a><a href="/contact.html" data-i18n="footer_contact">تواصل معنا</a><a href="/privacy.html" data-i18n="footer_privacy">الخصوصية</a><a href="/terms.html" data-i18n="footer_terms">الشروط</a></span><span>© <span id="year"></span> PDF Globe</span></div><p class="footer-disclaimer wrap" data-i18n="disclaimer">هذه المنصة أداة مساعدة. راجع نتائج التحويل والترجمة قبل الاعتماد الرسمي، فقد تختلف الجودة بحسب الملف واللغة.</p></footer>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="/api-config.js" defer></script>
-  <script src="/app.js?v=20261121-global-home-4" defer></script>
+  <script src="/app.js?v=20261121-global-home-5" defer></script>
 </body>
 </html>

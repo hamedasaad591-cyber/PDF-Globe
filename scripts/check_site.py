@@ -145,7 +145,9 @@ for locale, prefix, excel_url, ppt_url in (
     require(grid_match is not None, f"{locale} homepage tool grid is missing")
     grid = grid_match.group(1)
     require(f'href="{excel_url}"' in grid and f'href="{ppt_url}"' in grid, f"{locale} homepage Excel/PowerPoint cards are missing from the tool grid")
-    require(f'href="/{prefix}image-compressor.html"' in grid, f"{locale} image compressor card is outside the tool grid")
+    require('id="pdf-tools"' in home_page and 'id="image-tools"' in home_page, f"{locale} homepage directory sections are missing")
+    require(f'href="/{prefix}image-compressor.html"' in home_page and f'href="/{prefix}unit-converter.html"' in home_page, f"{locale} image or unit utility link is missing")
+    require('category-jump-grid' in home_page and 'directory-search' in home_page, f"{locale} directory navigation or global search is missing")
     for filename, url, kind in (
         ("pdf-to-excel.html", excel_url, "excel"),
         ("pdf-to-powerpoint.html", ppt_url, "powerpoint"),
@@ -164,3 +166,17 @@ require("/api/pdf/to-excel" in office_js and "/api/pdf/to-powerpoint" in office_
 require("FormData" in office_js and "application/pdf" in office_js, "office converter frontend does not upload PDF files")
 require("office-drop" in office_css and "@media" in office_css, "office converter responsive styles are missing")
 print("PASS: PDF to Excel and PDF to PowerPoint routes, bilingual pages, homepage cards and sitemap entries.")
+
+
+# The homepage directory is organized into clear tool categories in both locales.
+for locale, prefix in (("ar", ""), ("en", "en/")):
+    page = (STATIC / prefix / "index.html").read_text(encoding="utf-8")
+    for category_id in ("pdf-tools", "print-tools", "poster-tools", "measure-tools", "translation-tools", "image-tools"):
+        require(f'id="{category_id}" data-tool-group' in page, f"{locale} homepage is missing directory group {category_id}")
+    require('id="toolSearch"' in page and 'id="noResults"' in page, f"{locale} homepage global tool search is missing")
+    require(page.count('class="category-jump-card"') == 6, f"{locale} homepage should expose six category shortcuts")
+    require(page.count('data-tool="') == 18, f"{locale} homepage core PDF tools are duplicated or missing")
+    require('href="/saffha/"' in page and 'href="/poster-splitter.html"' in page, f"{locale} handout or poster tool link is missing")
+require("directory-group" in (STATIC / "style.css").read_text(encoding="utf-8"), "Homepage directory styles are missing")
+require("$('#categories').addEventListener" not in app, "Old category filter is still wired to the removed category strip")
+require("data-tool-group" in app and "visibleCount" in app, "Global search does not show/hide directory groups")
