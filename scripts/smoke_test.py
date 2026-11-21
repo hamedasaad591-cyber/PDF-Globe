@@ -155,6 +155,35 @@ def test_image_outputs() -> None:
             check(result.format == expected_format, f"PNG to {output_format.upper()} returned {result.format}, expected {expected_format}")
             check(result.width > 0 and result.height > 0, f"PNG to {output_format.upper()} returned empty image dimensions")
 
+    # Animated GIF and multi-page TIFF exports must retain all source frames.
+    animated_frames = [
+        Image.new("RGB", (64, 48), (220, 30, 30)),
+        Image.new("RGB", (64, 48), (30, 80, 220)),
+    ]
+    gif_source = io.BytesIO()
+    animated_frames[0].save(gif_source, format="GIF", save_all=True, append_images=animated_frames[1:], duration=[80, 120], loop=0)
+    response = client.post(
+        "/api/image/convert",
+        data={"output_format": "gif"},
+        files=[("files", ("animated.gif", gif_source.getvalue(), "image/gif"))],
+    )
+    check(response.status_code == 200, f"Animated GIF conversion failed: {response.status_code} {response.text[:300]}")
+    with Image.open(io.BytesIO(response.content)) as result:
+        check(result.format == "GIF" and result.n_frames == 2, "Animated GIF conversion did not preserve both frames")
+
+    tiff_source = io.BytesIO()
+    animated_frames[0].save(tiff_source, format="TIFF", save_all=True, append_images=animated_frames[1:])
+    response = client.post(
+        "/api/image/convert",
+        data={"output_format": "tiff"},
+        files=[("files", ("animated.tiff", tiff_source.getvalue(), "image/tiff"))],
+    )
+    check(response.status_code == 200, f"Multi-page TIFF conversion failed: {response.status_code} {response.text[:300]}")
+    with Image.open(io.BytesIO(response.content)) as result:
+        check(result.format == "TIFF" and result.n_frames == 2, "TIFF conversion did not preserve both pages")
+    for frame in animated_frames:
+        frame.close()
+
     # Exercise every accepted input extension via a common PNG output.
     source_inputs = [
         (".jpg", "JPEG", "RGB"), (".jpeg", "JPEG", "RGB"), (".jfif", "JPEG", "RGB"),
