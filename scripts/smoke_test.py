@@ -191,7 +191,7 @@ def test_image_outputs() -> None:
         (".heic", "HEIF", "RGB"), (".heif", "HEIF", "RGB"), (".bmp", "BMP", "RGB"),
         (".gif", "GIF", "RGB"), (".tif", "TIFF", "RGB"), (".tiff", "TIFF", "RGB"),
         (".ico", "ICO", "RGBA"), (".tga", "TGA", "RGB"), (".ppm", "PPM", "RGB"),
-        (".pgm", "PGM", "L"), (".pbm", "PBM", "1"), (".pcx", "PCX", "RGB"),
+        (".pgm", "PPM", "L"), (".pbm", "PPM", "1"), (".pcx", "PCX", "RGB"),
     ]
     for extension, source_format, mode in source_inputs:
         color = 1 if mode == "1" else (120 if mode == "L" else (210, 55, 95, 255) if mode == "RGBA" else (210, 55, 95))
