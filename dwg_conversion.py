@@ -42,7 +42,18 @@ def register_dwg_routes(app, store_upload, download_response, require_binary, sa
                     doc = ezdxf.readfile(dxf_path)
 
                 paper_names = [name for name in doc.layout_names() if str(name).casefold() != "model"]
-                targets = [(name, doc.layout(name)) for name in paper_names[:12]]
+                # Ignore empty paper layouts and viewport-only layouts: ezdxf's
+                # drawing backend cannot derive a content bounding box from them.
+                targets = []
+                for name in paper_names:
+                    layout_object = doc.layout(name)
+                    has_drawable_entities = any(
+                        entity.dxftype() != "VIEWPORT" for entity in layout_object
+                    )
+                    if has_drawable_entities:
+                        targets.append((name, layout_object))
+                    if len(targets) >= 12:
+                        break
                 if not targets:
                     targets = [("Model", doc.modelspace())]
 
