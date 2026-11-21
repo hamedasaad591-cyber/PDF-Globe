@@ -6,8 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN git clone --depth 1 https://github.com/LibreDWG/libredwg.git /tmp/libredwg \
     && cd /tmp/libredwg \
     && ./autogen.sh \
-    && ./configure --enable-release \
-    && make -j1 \
+    && ./configure --enable-release --disable-bindings --disable-docs --disable-write \
+    && make -j2 \
     && make install DESTDIR=/opt/libredwg-root
 
 FROM python:3.12-slim
