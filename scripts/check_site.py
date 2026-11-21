@@ -74,6 +74,10 @@ require('id="apiStatus"' in home and 'id="apiStatus"' in english_home, "API avai
 require("https://pdf-globe.pages.dev/en/" in sitemap, "English homepage is missing from sitemap")
 require("applyLanguage(document.documentElement.lang || 'ar')" in app, "interface language does not follow the page locale")
 require("window.location.assign('/en/')" in app and "window.location.assign('/')" in app, "Arabic/English language selection does not route to its crawlable page")
+require("incoming.find" in app, "upload extension validation is missing")
+require("function refreshTranslationOptions()" in app and "selectedSource=" in app, "translation option refresh does not preserve selected source language")
+require("capabilities" in backend, "API health does not expose backend capabilities")
+require("translation_provider" in backend, "API health does not expose the active translation provider")
 require("allowAuto&&translationSupportsAuto" in app, "translation auto-detect option is not restricted to supported providers")
 require("translationSupportsAuto=String(data.translation_provider||'').startsWith('LibreTranslate')" in app, "translation auto-detect capability is not read from the API")
 
