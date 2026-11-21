@@ -184,11 +184,11 @@
       html+=`<div class="option-field full"><label class="consent-line"><input type="checkbox" id="translationConsent"><span>${t('opt_translation_consent')}</span></label><small class="option-help">${t('translation_warning')}</small></div>`;
     }
     if(id==='dicom-pdf'){
-      html+=\`<div class="option-field full"><label class="consent-line"><input type="checkbox" id="dicomConsent"><span>\${t('opt_dicom_consent')}</span></label><small class="option-help">\${t('dicom_privacy_warning')}</small></div>\`;
+      html+=`<div class="option-field full"><label class="consent-line"><input type="checkbox" id="dicomConsent"><span>${t('opt_dicom_consent')}</span></label><small class="option-help">${t('dicom_privacy_warning')}</small></div>`;
     }
-    if(id==='dwg-pdf') html+=\`<div class="option-field full"><small class="option-help">\${t('dwg_limit_note')}</small></div>\`;
-    if(id==='excel-pdf') html+=\`<div class="option-field full"><small class="option-help">\${t('excel_pdf_note')}</small></div>\`;
-    if(id==='powerpoint-pdf') html+=\`<div class="option-field full"><small class="option-help">\${t('powerpoint_pdf_note')}</small></div>\`;
+    if(id==='dwg-pdf') html+=`<div class="option-field full"><small class="option-help">${t('dwg_limit_note')}</small></div>`;
+    if(id==='excel-pdf') html+=`<div class="option-field full"><small class="option-help">${t('excel_pdf_note')}</small></div>`;
+    if(id==='powerpoint-pdf') html+=`<div class="option-field full"><small class="option-help">${t('powerpoint_pdf_note')}</small></div>`;
     p.innerHTML=html;p.classList.toggle('hidden',!html);
     if(id==='sign') setupSignature();
     if(id==='translate') $('#targetLang').value=currentLang==='ar'?'en':'ar';
