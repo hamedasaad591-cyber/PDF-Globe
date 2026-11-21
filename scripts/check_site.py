@@ -280,11 +280,11 @@ print("PASS: image conversion, resizing, compression and enhancement are separat
 for relative in ("static/saffha/index.html", "static/poster-splitter.html"):
     html = (ROOT / relative).read_text(encoding="utf-8")
     script_number = 0
-    for match in re.finditer(r"<script\\b([^>]*)>([\\s\\S]*?)</script\\s*>", html, re.IGNORECASE):
+    for match in re.finditer(r"<script\b([^>]*)>([\s\S]*?)</script\s*>", html, re.IGNORECASE):
         attributes, source = match.groups()
-        if re.search(r"\\bsrc\\s*=", attributes, re.IGNORECASE):
+        if re.search(r"\bsrc\s*=", attributes, re.IGNORECASE):
             continue
-        script_type = re.search(r"""\\btype\\s*=\\s*["']([^"']+)["']""", attributes, re.IGNORECASE)
+        script_type = re.search(r"""\btype\s*=\s*["']([^"']+)["']""", attributes, re.IGNORECASE)
         if script_type and script_type.group(1).lower() not in ("text/javascript", "application/javascript", "module"):
             continue
         if not source.strip():
