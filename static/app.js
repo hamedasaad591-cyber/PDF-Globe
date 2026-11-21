@@ -92,7 +92,7 @@
   $('#year').textContent = new Date().getFullYear();
 
   function renderToolCards(){
-    $('.tool-card').forEach(card=>{
+    $$('.tool-card').forEach(card=>{
       const matchesCategory=category==='all'||card.dataset.category===category;
       const query=$('#toolSearch').value.trim().toLocaleLowerCase();
       if(card.dataset.staticTool==='true'){
@@ -107,11 +107,11 @@
       const hay=(t(meta.title)+' '+t(meta.desc)+' '+card.dataset.tool).toLocaleLowerCase();
       card.classList.toggle('hidden',!matchesCategory||!!query&&!hay.includes(query));
     });
-    $('#noResults').classList.toggle('hidden', $('.tool-card:not(.hidden)').length>0);
+    $('#noResults').classList.toggle('hidden', $$('.tool-card:not(.hidden)').length>0);
   }
   $('#categories').addEventListener('click',e=>{const btn=e.target.closest('button[data-category]');if(!btn)return;category=btn.dataset.category;$$('.category').forEach(x=>x.classList.toggle('active',x===btn));renderToolCards();});
   $('#toolSearch').addEventListener('input',renderToolCards);
-  $('.tool-card[data-tool]').forEach(card=>card.addEventListener('click',()=>openTool(card.dataset.tool)));
+  $$('.tool-card[data-tool]').forEach(card=>card.addEventListener('click',()=>openTool(card.dataset.tool)));
   $('#closeWorkspace').addEventListener('click',()=>$('#workspaceSection').classList.remove('visible'));
 
   function field(label,html,full=false,help=''){return `<div class="option-field ${full?'full':''}"><label>${label}</label>${html}${help?`<small class="option-help">${help}</small>`:''}</div>`;}
