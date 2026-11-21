@@ -23,7 +23,7 @@
     "name":"PDF Globe Unit Converter",
     "applicationCategory":"UtilitiesApplication",
     "operatingSystem":"Any",
-    "url":"https://pdf-globe.pages.dev/unit-converter.html",
+    "url":"https://pdf-globe.pages.dev/en/unit-converter.html",
     "description":"Free online unit converter and cooking measurement calculator. Converts weight, length, volume, temperature, area, speed, time, data, pressure and energy units.",
     "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}
   }
@@ -32,7 +32,7 @@
 <body>
   <header class="unit-header">
     <a class="unit-brand" href="/" aria-label="PDF Globe home"><span class="unit-logo">PDF</span><span>PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a>
-    <nav><a href="/" data-t="home">Home</a><a href="/#tools" data-t="pdfTools">PDF tools</a><a href="/saffha/" data-t="printTools">Print tools</a></nav>
+    <nav><a href="/en/" data-t="home">Home</a><a href="/en/#tools" data-t="pdfTools">PDF tools</a><a href="/saffha/" data-t="printTools">Print tools</a></nav>
     <select id="pageLanguage" aria-label="Language"><option value="ar">العربية</option><option value="en">English</option></select>
   </header>
 
@@ -49,7 +49,7 @@
       <div class="converter-grid">
         <label class="field"><span data-t="category">Measurement type</span><select id="category"></select></label>
         <label class="field ingredient-field" id="ingredientField"><span data-t="ingredient">Ingredient (for weight ↔ volume)</span><select id="ingredient"></select></label>
-        <label class="field"><span data-t="amount">Amount</span><input id="amount" type="number" inputmode="decimal" step="any" min="0" value="1"></label>
+        <label class="field"><span data-t="amount">Amount</span><input id="amount" type="number" inputmode="decimal" step="any" value="1"></label>
         <label class="field"><span data-t="from">From</span><select id="fromUnit"></select></label>
         <button id="swapUnits" class="swap-button" type="button" aria-label="Swap units" title="Swap units">⇄</button>
         <label class="field"><span data-t="to">To</span><select id="toUnit"></select></label>
@@ -90,7 +90,7 @@
       <details><summary data-t="faq2q">Does one cup weigh the same for every ingredient?</summary><p data-t="faq2a">No. A cup measures volume while grams measure mass. Weight changes with ingredient density and packing. This tool uses approximate densities for common ingredients.</p></details>
       <details><summary data-t="faq3q">Are my values sent to a server?</summary><p data-t="faq3a">No. Unit conversions and recipe scaling run locally in your browser. No file upload or account is required.</p></details>
     </section>
-    <p class="back-link"><a href="/" data-t="backHome">← Back to PDF Globe</a></p>
+    <p class="back-link"><a href="/en/" data-t="backHome">← Back to PDF Globe</a></p>
   </main>
   <footer class="unit-footer"><span>© <span id="year"></span> PDF Globe</span><span data-t="footer">Free practical tools for everyone.</span><a href="/privacy.html" data-t="privacy">Privacy</a></footer>
   <script src="/unit-converter.js?v=20261121-units-1" defer></script>
