@@ -122,7 +122,7 @@ async function runPoster(page,base,png){
   const pageErrors=[];
   page.on('pageerror',error=>pageErrors.push(error.message));
   await page.goto(base+'/poster-splitter.html',{waitUntil:'domcontentloaded'});
-  await page.waitForFunction(()=>!!window.PDFLib&&!!document.querySelector('#generateBtn'),null,{timeout:60000});
+  await page.waitForFunction(()=>!!window.PDFLib&&document.documentElement.dataset.posterReady==='true'&&!!document.querySelector('#generateBtn'),null,{timeout:60000});
   await page.locator('#posterSize').selectOption('A4');
   await page.locator('#fileInput').setInputFiles({name:'poster-sample.png',mimeType:'image/png',buffer:png});
   await page.waitForTimeout(1200);
