@@ -168,7 +168,7 @@ for locale, prefix, excel_url, ppt_url in (
     grid = grid_match.group(1)
     require(f'href="{excel_url}"' in grid and f'href="{ppt_url}"' in grid, f"{locale} homepage Excel/PowerPoint cards are missing from the tool grid")
     require('id="pdf-tools"' in home_page and 'id="image-tools"' in home_page, f"{locale} homepage directory sections are missing")
-    require(f'href="/{prefix}image-compressor.html"' in home_page and f'href="/{prefix}unit-converter.html"' in home_page, f"{locale} image or unit utility link is missing")
+    require(f'href="/{prefix}image-compressor.html?mode=convert"' in home_page and f'href="/{prefix}unit-converter.html"' in home_page, f"{locale} image or unit utility link is missing")
     require('category-jump-grid' in home_page and 'directory-search' in home_page, f"{locale} directory navigation or global search is missing")
     for filename, url, kind in (
         ("pdf-to-excel.html", excel_url, "excel"),
