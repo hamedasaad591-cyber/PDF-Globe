@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compress & Resize Images Online — PDF Globe</title>
+<meta name="description" content="Compress images and resize them with control over quality and dimensions. Supports JPG, PNG and WebP. Runs locally in your browser without uploading images.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://pdf-globe.pages.dev/en/image-compressor.html">
+<link rel="alternate" hreflang="ar" href="https://pdf-globe.pages.dev/image-compressor.html">
+<link rel="alternate" hreflang="en" href="https://pdf-globe.pages.dev/en/image-compressor.html">
+<link rel="alternate" hreflang="x-default" href="https://pdf-globe.pages.dev/en/image-compressor.html">
+<meta property="og:type" content="website"><meta property="og:title" content="Compress & Resize Images — PDF Globe">
+<meta property="og:description" content="Compress images and convert them to JPG, PNG or WebP with quality and dimension controls.">
+<meta property="og:url" content="https://pdf-globe.pages.dev/en/image-compressor.html">
+<link rel="stylesheet" href="/image-compressor.css?v=20261121-img-1">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"PDF Globe Image Compressor","applicationCategory":"MultimediaApplication","operatingSystem":"Any","url":"https://pdf-globe.pages.dev/en/image-compressor.html","description":"Free browser-based image compressor and resizer for JPG, PNG and WebP images.","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}</script>
+</head>
+<body>
+<header class="img-header"><a class="img-brand" href="/en/"><span class="img-logo">PDF</span><span>PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a><nav><a href="/en/" data-t="home">Home</a><a href="/en/#tools" data-t="pdfTools">PDF tools</a><a href="/en/unit-converter.html" data-t="unitTool">Unit converter</a></nav><select id="pageLanguage" aria-label="Language"><option value="ar">العربية</option><option value="en" selected>English</option></select></header>
+<main class="img-shell">
+<section class="img-hero"><span class="eyebrow" data-t="eyebrow">Free — local processing</span><h1 data-t="heading">Compress & Resize Images</h1><p data-t="intro">Reduce image file sizes or resize dimensions with control over quality and format. Useful for websites, sharing and print.</p><div class="img-tags"><span data-t="tag1">No sign-up required</span><span data-t="tag2">Images stay on your device</span><span data-t="tag3">JPG · PNG · WebP</span></div></section>
+<section class="img-card">
+<div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="Choose images"><div class="upload-symbol">↑</div><h2 data-t="dropTitle">Drop images here</h2><p data-t="dropText">Or choose images from your device — multiple files supported</p><button id="chooseImages" type="button" class="primary-btn" data-t="choose">Choose images</button><small data-t="limits">JPG, PNG or WebP · up to 25 MB per image · 20 images per batch</small><input id="imageInput" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple hidden></div>
+<div id="selectedFiles" class="selected-files" hidden></div>
+<div class="options-grid">
+<label class="field"><span data-t="format">Output format</span><select id="outputFormat"><option value="webp">WebP — often smaller</option><option value="jpeg">JPG</option><option value="png">PNG</option></select></label>
+<label class="field"><span data-t="maxDimension">Maximum image dimension</span><select id="maxDimension"><option value="0" data-t="original">Original size</option><option value="2560">2560 px</option><option value="1920">1920 px</option><option value="1280">1280 px</option><option value="1024">1024 px</option><option value="800">800 px</option></select></label>
+<label class="field"><span data-t="quality">Output quality</span><div class="range-line"><input id="quality" type="range" min="30" max="100" step="1" value="82"><output id="qualityValue">82%</output></div></label>
+<label class="field"><span data-t="background">Background for transparent images converted to JPG</span><input id="background" type="color" value="#ffffff"></label>
+</div>
+<div class="action-row"><button type="button" id="compressImages" class="primary-btn" disabled data-t="compress">Compress images</button><span id="status" role="status" aria-live="polite" data-t="waiting">Choose images to begin.</span></div>
+<div id="results" class="results" hidden><div class="results-head"><h2 data-t="resultsTitle">Processed images</h2><button id="downloadAll" type="button" class="secondary-btn" data-t="downloadAll">Download all results</button></div><div id="resultGrid" class="result-grid"></div></div>
+<p class="privacy-note" data-t="privacyNote">Privacy: processing happens locally in your browser using Canvas. Images are not sent to PDF Globe or any server.</p>
+</section>
+<section class="info-grid"><article><b>01</b><h3 data-t="info1Title">Compress images</h3><p data-t="info1Text">Reduce image file sizes to make uploads and sharing easier and speed up web pages.</p></article><article><b>02</b><h3 data-t="info2Title">Resize dimensions</h3><p data-t="info2Text">Set a maximum width or height while preserving the image aspect ratio.</p></article><article><b>03</b><h3 data-t="info3Title">Choose a format</h3><p data-t="info3Text">Convert images to WebP, JPG or PNG for your needs.</p></article></section>
+<section class="faq"><h2 data-t="faqTitle">Frequently asked questions</h2><details><summary data-t="faq1q">Are my images uploaded?</summary><p data-t="faq1a">No. Processing happens on your device in the browser. Images are not uploaded to a server.</p></details><details><summary data-t="faq2q">Which format should I choose?</summary><p data-t="faq2a">WebP often produces smaller web images. JPG is suitable for photographs, while PNG is useful for graphics that need transparency or crisp edges.</p></details><details><summary data-t="faq3q">Does compression affect image quality?</summary><p data-t="faq3a">JPG and WebP compression may reduce some details depending on the chosen quality. Keep the original when you need maximum quality.</p></details></section>
+<p class="back-home"><a href="/en/" data-t="backHome">← Back to PDF Globe</a></p>
+</main><footer class="img-footer"><span>© <span id="year"></span> PDF Globe</span><a href="/privacy.html" data-t="privacy">Privacy</a><a href="/terms.html" data-t="terms">Terms</a></footer>
+<script src="/image-compressor.js?v=20261121-img-1" defer></script>
+</body></html>
