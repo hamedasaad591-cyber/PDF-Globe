@@ -81,5 +81,28 @@ require("translation_provider" in backend, "API health does not expose the activ
 require("allowAuto&&translationSupportsAuto" in app, "translation auto-detect option is not restricted to supported providers")
 require("translationSupportsAuto=String(data.translation_provider||'').startsWith('LibreTranslate')" in app, "translation auto-detect capability is not read from the API")
 
+# The independent unit-conversion tool must be discoverable, localized and local-only.
+unit_ar = (STATIC / "unit-converter.html").read_text(encoding="utf-8")
+unit_en = (STATIC / "en" / "unit-converter.html").read_text(encoding="utf-8")
+unit_js = (STATIC / "unit-converter.js").read_text(encoding="utf-8")
+unit_css = (STATIC / "unit-converter.css").read_text(encoding="utf-8")
+sitemap_all = (STATIC / "sitemap.xml").read_text(encoding="utf-8")
+require('data-static-tool="true"' in home and 'href="/unit-converter.html"' in home, "Arabic homepage unit converter card is missing")
+require('data-static-tool="true"' in english_home and 'href="/en/unit-converter.html"' in english_home, "English homepage unit converter card is missing")
+require('tool_units:' in app and 'desc_units:' in app, "unit converter homepage localization is missing")
+for page, locale, canonical in (
+    (unit_ar, "ar", "https://pdf-globe.pages.dev/unit-converter.html"),
+    (unit_en, "en", "https://pdf-globe.pages.dev/en/unit-converter.html"),
+):
+    require(f'<html lang="{locale}"' in page, f"{locale} unit-converter page has the wrong locale")
+    require(f'rel="canonical" href="{canonical}"' in page, f"{locale} unit-converter canonical is incorrect")
+    require('unit-converter.js?v=' in page and ' defer></script>' in page, f"{locale} unit-converter JavaScript is missing or not deferred")
+    require('hreflang="ar"' in page and 'hreflang="en"' in page, f"{locale} unit-converter page is missing language alternates")
+require("INGREDIENTS" in unit_js and "recipeUnitOptions" in unit_js, "ingredient-based cooking and recipe calculator are missing")
+require(all(x in unit_js for x in ("temperature", "pressure", "energy", "data", "area", "speed")), "unit-converter categories are incomplete")
+require("fetch(" not in unit_js and "XMLHttpRequest" not in unit_js, "unit converter should not transmit values to a server")
+require("unit-converter.html" in sitemap and "unit-converter.html" in sitemap_all, "unit converter pages are missing from a sitemap")
+require('.field[hidden]{display:none!important}' in unit_css, "non-cooking ingredient selector visibility rule is missing")
+
 print(f"PASS: {len(cards)} homepage tools registered; {len(client_tools)} browser tools dispatched; {len(expected_server)} server tools mapped.")
 print("PASS: API routes, public API configuration, Arabic/English homepages, hreflang, sitemap and deferred scripts.")
