@@ -73,6 +73,9 @@ for page, locale, canonical in (
 require('id="apiStatus"' in home and 'id="apiStatus"' in english_home, "API availability status is missing from a homepage")
 require("https://pdf-globe.pages.dev/en/" in sitemap, "English homepage is missing from sitemap")
 require("applyLanguage(document.documentElement.lang || 'ar')" in app, "interface language does not follow the page locale")
+require("window.location.assign('/en/')" in app and "window.location.assign('/')" in app, "Arabic/English language selection does not route to its crawlable page")
+require("allowAuto&&translationSupportsAuto" in app, "translation auto-detect option is not restricted to supported providers")
+require("translationSupportsAuto=String(data.translation_provider||'').startsWith('LibreTranslate')" in app, "translation auto-detect capability is not read from the API")
 
 print(f"PASS: {len(cards)} homepage tools registered; {len(client_tools)} browser tools dispatched; {len(expected_server)} server tools mapped.")
 print("PASS: API routes, public API configuration, Arabic/English homepages, hreflang, sitemap and deferred scripts.")
