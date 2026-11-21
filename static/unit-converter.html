@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>محول الوحدات والمقادير — PDF Globe</title>
+  <meta name="description" content="حوّل الأوزان والأطوال والحجوم ودرجات الحرارة والسرعة والبيانات الرقمية. حاسبة مقادير الطبخ من الغرام إلى الأكواب والملاعق، مع مضاعف الوصفات.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://pdf-globe.pages.dev/unit-converter.html">
+  <link rel="alternate" hreflang="ar" href="https://pdf-globe.pages.dev/unit-converter.html">
+  <link rel="alternate" hreflang="en" href="https://pdf-globe.pages.dev/en/unit-converter.html">
+  <link rel="alternate" hreflang="x-default" href="https://pdf-globe.pages.dev/en/unit-converter.html">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="محول الوحدات والمقادير — PDF Globe">
+  <meta property="og:description" content="محوّل وحدات شامل وحاسبة مقادير الطبخ والوصفات مجاناً.">
+  <meta property="og:url" content="https://pdf-globe.pages.dev/unit-converter.html">
+  <meta name="theme-color" content="#f7f8fc">
+  <link rel="stylesheet" href="/unit-converter.css?v=20261121-units-1">
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"SoftwareApplication",
+    "name":"PDF Globe Unit Converter",
+    "applicationCategory":"UtilitiesApplication",
+    "operatingSystem":"Any",
+    "url":"https://pdf-globe.pages.dev/unit-converter.html",
+    "description":"Free online unit converter and cooking measurement calculator. Converts weight, length, volume, temperature, area, speed, time, data, pressure and energy units.",
+    "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}
+  }
+  </script>
+</head>
+<body>
+  <header class="unit-header">
+    <a class="unit-brand" href="/" aria-label="PDF Globe home"><span class="unit-logo">PDF</span><span>PDF <b>Globe</b><small>TOOLS FOR EVERYONE</small></span></a>
+    <nav><a href="/" data-t="home">الرئيسية</a><a href="/#tools" data-t="pdfTools">أدوات PDF</a><a href="/saffha/" data-t="printTools">أدوات الطباعة</a></nav>
+    <select id="pageLanguage" aria-label="Language"><option value="ar">العربية</option><option value="en">English</option></select>
+  </header>
+
+  <main class="unit-shell">
+    <section class="unit-hero">
+      <span class="eyebrow" data-t="eyebrow">أداة مجانية — تعمل مباشرة في متصفحك</span>
+      <h1 data-t="heading">محول الوحدات والمقادير</h1>
+      <p data-t="intro">حوّل الأوزان والأطوال والحجوم ودرجات الحرارة وغيرها بسرعة، أو احسب مقادير الطبخ والوصفات بدقة عملية.</p>
+      <div class="hero-tags"><span data-t="tag1">لا حاجة للتسجيل</span><span data-t="tag2">لا يتم رفع ملفات</span><span data-t="tag3">يدعم العربية والإنجليزية</span></div>
+    </section>
+
+    <section class="converter-card" aria-labelledby="converterTitle">
+      <div class="section-title"><div><span class="eyebrow" data-t="converterLabel">محوّل الوحدات</span><h2 id="converterTitle" data-t="converterHeading">حوّل أي قياس إلى وحدة أخرى</h2></div><span class="instant-badge" data-t="instant">نتيجة فورية</span></div>
+      <div class="converter-grid">
+        <label class="field"><span data-t="category">نوع القياس</span><select id="category"></select></label>
+        <label class="field ingredient-field" id="ingredientField"><span data-t="ingredient">المكوّن (لتحويل الوزن إلى حجم)</span><select id="ingredient"></select></label>
+        <label class="field"><span data-t="amount">القيمة</span><input id="amount" type="number" inputmode="decimal" step="any" min="0" value="1"></label>
+        <label class="field"><span data-t="from">من</span><select id="fromUnit"></select></label>
+        <button id="swapUnits" class="swap-button" type="button" aria-label="Swap units" title="Swap units">⇄</button>
+        <label class="field"><span data-t="to">إلى</span><select id="toUnit"></select></label>
+      </div>
+      <div class="result-panel" aria-live="polite">
+        <span data-t="result">النتيجة</span>
+        <strong id="resultValue">—</strong>
+        <span id="resultFormula" class="result-formula"></span>
+        <button id="copyResult" class="copy-button" type="button" data-t="copy">نسخ النتيجة</button>
+      </div>
+      <p class="small-note" id="converterNote" data-t="note">التحويلات تقريبية عند الحاجة، وتُعرض النتيجة بدقة مناسبة للاستخدام اليومي.</p>
+    </section>
+
+    <section class="converter-card recipe-card">
+      <div class="section-title"><div><span class="eyebrow" data-t="recipeLabel">حاسبة الوصفات</span><h2 data-t="recipeHeading">ضاعف المقادير أو قلّلها حسب عدد الحصص</h2><p class="muted" data-t="recipeIntro">أدخل كمية كل مكوّن، وحدد عدد الحصص الأصلية والمطلوبة لتحصل على المقادير الجديدة.</p></div></div>
+      <div class="servings-grid">
+        <label class="field"><span data-t="originalServings">الحصص الأصلية</span><input id="originalServings" type="number" min="1" step="1" value="4"></label>
+        <label class="field"><span data-t="targetServings">الحصص المطلوبة</span><input id="targetServings" type="number" min="1" step="1" value="8"></label>
+        <div class="scale-summary"><span data-t="scaleFactor">معامل التغيير</span><strong id="scaleFactor">× 2</strong></div>
+      </div>
+      <div class="recipe-table-wrap">
+        <div class="recipe-head"><span data-t="ingredientName">المكوّن</span><span data-t="quantity">الكمية</span><span data-t="unit">الوحدة</span><span data-t="newQuantity">الكمية الجديدة</span><span></span></div>
+        <div id="recipeRows"></div>
+      </div>
+      <div class="recipe-actions"><button type="button" id="addIngredient" class="secondary-button" data-t="addIngredient">+ أضف مكوّناً</button><button type="button" id="copyRecipe" class="primary-button" data-t="copyRecipe">نسخ الوصفة الجديدة</button></div>
+      <p class="small-note" data-t="recipeNote">هذه الحاسبة تغيّر الكميات حسابياً. راعِ أن أوقات الطهي ودرجات الحرارة لا تتضاعف بالضرورة عند زيادة الحصص.</p>
+    </section>
+
+    <section class="info-grid">
+      <article><span class="info-icon">⚖</span><h3 data-t="info1Title">تحويل الأوزان والمقادير</h3><p data-t="info1Text">حوّل بين الغرام والكيلوغرام والرطل والأونصة، وبين الغرامات والأكواب والملاعق وفق نوع المكوّن.</p></article>
+      <article><span class="info-icon">↔</span><h3 data-t="info2Title">وحدات الحياة اليومية</h3><p data-t="info2Text">الطول والمساحة والحجم والحرارة والسرعة والوقت والطاقة والضغط وسعة البيانات الرقمية.</p></article>
+      <article><span class="info-icon">🥣</span><h3 data-t="info3Title">مقادير طبخ عملية</h3><p data-t="info3Text">اختر الدقيق أو السكر أو الزبدة أو الأرز أو العسل وغيرها لتحويل الحجم إلى وزن تقريبي مناسب للمكوّن.</p></article>
+    </section>
+
+    <section class="faq-section">
+      <h2 data-t="faqHeading">أسئلة شائعة حول تحويل الوحدات</h2>
+      <details><summary data-t="faq1q">كم غراماً في الكيلوغرام؟</summary><p data-t="faq1a">الكيلوغرام الواحد يساوي 1000 غرام بالضبط.</p></details>
+      <details><summary data-t="faq2q">هل الكوب يساوي نفس الوزن لكل المكونات؟</summary><p data-t="faq2a">لا. الكوب وحدة حجم، بينما الغرام وحدة وزن؛ لذلك يختلف الوزن حسب كثافة المكوّن وطريقة تعبئته. تستخدم الأداة كثافات تقريبية للمكونات الشائعة.</p></details>
+      <details><summary data-t="faq3q">هل تُرفع بياناتي إلى الخادم؟</summary><p data-t="faq3a">لا. عمليات التحويل وحساب الوصفات تتم محلياً داخل متصفحك ولا تحتاج إلى رفع ملفات أو إنشاء حساب.</p></details>
+    </section>
+    <p class="back-link"><a href="/" data-t="backHome">← العودة إلى PDF Globe</a></p>
+  </main>
+  <footer class="unit-footer"><span>© <span id="year"></span> PDF Globe</span><span data-t="footer">أدوات مجانية وعملية للجميع.</span><a href="/privacy.html" data-t="privacy">الخصوصية</a></footer>
+  <script src="/unit-converter.js?v=20261121-units-1" defer></script>
+</body>
+</html>
