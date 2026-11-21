@@ -96,6 +96,28 @@ def make_office_files() -> tuple[bytes, bytes, bytes]:
     return xlsx.getvalue(), pptx.getvalue(), docx.getvalue()
 
 
+def post_with_retry(client: httpx.Client, url: str, **kwargs) -> httpx.Response:
+    """Retry only transient transport/gateway failures during Render deploy swaps."""
+    last_response = None
+    for attempt in range(5):
+        try:
+            response = client.post(url, **kwargs)
+            last_response = response
+            if response.status_code not in {502, 503, 504}:
+                return response
+            message = f"HTTP {response.status_code}"
+        except httpx.TransportError as exc:
+            message = str(exc)[:200]
+            if attempt == 4:
+                raise
+        if attempt == 4:
+            break
+        delay = min(3 * (attempt + 1), 10)
+        print(f"WARNING transient Render response ({message}); retrying in {delay}s ({attempt + 1}/4)")
+        time.sleep(delay)
+    return last_response
+
+
 def expect_pdf(response: httpx.Response, label: str) -> None:
     check(response.status_code == 200, f"{label}: HTTP {response.status_code}: {response.text[:400]}")
     check(response.content.startswith(b"%PDF-"), f"{label}: response is not a PDF")
@@ -154,12 +176,12 @@ def main() -> None:
         print("PASS deployed CORS preflight for Cloudflare Pages origin")
 
         one_file = {"file": ("live-test.pdf", pdf, "application/pdf")}
-        response = client.post(f"{BASE_URL}/api/pdf/compress", files=one_file)
+        response = post_with_retry(client, f"{BASE_URL}/api/pdf/compress", files=one_file)
         expect_pdf(response, "live PDF compression")
-        response = client.post(f"{BASE_URL}/api/pdf/repair", files=one_file)
+        response = post_with_retry(client, f"{BASE_URL}/api/pdf/repair", files=one_file)
         expect_pdf(response, "live PDF repair")
 
-        response = client.post(
+        response = post_with_retry(client, 
             f"{BASE_URL}/api/pdf/to-word",
             files=one_file,
             data={"mode": "hybrid"},
@@ -168,19 +190,19 @@ def main() -> None:
         word_result = Document(io.BytesIO(response.content))
         check(len(word_result.paragraphs) > 0 or len(word_result.inline_shapes) > 0, "live PDF-to-Word returned an empty DOCX")
 
-        response = client.post(f"{BASE_URL}/api/pdf/to-excel", files=one_file)
+        response = post_with_retry(client, f"{BASE_URL}/api/pdf/to-excel", files=one_file)
         check(response.status_code == 200, f"live PDF-to-Excel failed: {response.status_code} {response.text[:300]}")
         wb = load_workbook(io.BytesIO(response.content), read_only=True)
         check("Read me" in wb.sheetnames, "live PDF-to-Excel workbook is missing its guide")
         wb.close()
 
-        response = client.post(f"{BASE_URL}/api/pdf/to-powerpoint", files=one_file)
+        response = post_with_retry(client, f"{BASE_URL}/api/pdf/to-powerpoint", files=one_file)
         check(response.status_code == 200, f"live PDF-to-PowerPoint failed: {response.status_code} {response.text[:300]}")
         pres = Presentation(io.BytesIO(response.content))
         check(len(pres.slides) == 1 and len(pres.slides[0].shapes) > 0, "live PDF-to-PowerPoint output is empty")
         print("PASS deployed PDF compression, repair, Word, Excel and PowerPoint outputs")
 
-        response = client.post(
+        response = post_with_retry(client, 
             f"{BASE_URL}/api/pdf/protect",
             files=one_file,
             data={"password": "GlobeTest2026"},
@@ -189,7 +211,7 @@ def main() -> None:
         protected = response.content
         with fitz.open(stream=protected, filetype="pdf") as secured:
             check(secured.is_encrypted, "live protected PDF is not encrypted")
-        response = client.post(
+        response = post_with_retry(client, 
             f"{BASE_URL}/api/pdf/unlock",
             files={"file": ("protected.pdf", protected, "application/pdf")},
             data={"password": "GlobeTest2026"},
@@ -198,20 +220,34 @@ def main() -> None:
         print("PASS deployed PDF protection and unlocking")
 
         image = {"files": ("live-test.png", png, "image/png")}
-        response = client.post(f"{BASE_URL}/api/image/convert", files=image, data={"output_format": "webp", "quality": "86"})
+        response = post_with_retry(client, f"{BASE_URL}/api/image/convert", files=image, data={"output_format": "webp", "quality": "86"})
         check(response.status_code == 200, f"live PNG-to-WebP failed: {response.status_code} {response.text[:300]}")
         with Image.open(io.BytesIO(response.content)) as img:
             check(img.format == "WEBP" and img.size == (64, 48), "live PNG-to-WebP output is invalid")
-        response = client.post(f"{BASE_URL}/api/image/convert", files=image, data={"output_format": "pdf"})
+
+        cmyk_buffer = io.BytesIO()
+        Image.new("CMYK", (64, 48), (0, 100, 100, 0)).save(cmyk_buffer, format="JPEG")
+        response = post_with_retry(
+            client,
+            f"{BASE_URL}/api/image/convert",
+            files={"files": ("live-cmyk.jpg", cmyk_buffer.getvalue(), "image/jpeg")},
+            data={"output_format": "png"},
+        )
+        check(response.status_code == 200, f"live CMYK JPEG-to-PNG failed: {response.status_code} {response.text[:300]}")
+        with Image.open(io.BytesIO(response.content)) as img:
+            check(img.format == "PNG" and img.mode in {"RGB", "RGBA"} and img.size == (64, 48),
+                  "live CMYK JPEG-to-PNG output is invalid")
+
+        response = post_with_retry(client, f"{BASE_URL}/api/image/convert", files=image, data={"output_format": "pdf"})
         expect_pdf(response, "live image-to-PDF")
         print("PASS deployed image conversion, resizing pipeline and image-to-PDF response")
 
-        response = client.post(
+        response = post_with_retry(client, 
             f"{BASE_URL}/api/dicom/to-pdf",
             files={"files": ("live-test.dcm", dicom, "application/dicom")},
         )
         check(response.status_code == 400, "live DICOM endpoint did not require explicit consent")
-        response = client.post(
+        response = post_with_retry(client, 
             f"{BASE_URL}/api/dicom/to-pdf",
             files={"files": ("live-test.dcm", dicom, "application/dicom")},
             data={"consent": "true"},
@@ -219,17 +255,17 @@ def main() -> None:
         expect_pdf(response, "live DICOM-to-PDF")
         print("PASS deployed DICOM consent and DICOM-to-PDF output")
 
-        response = client.post(
+        response = post_with_retry(client, 
             f"{BASE_URL}/api/office/excel-to-pdf",
             files={"file": ("live-test.xlsx", xlsx, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
         )
         expect_pdf(response, "live Excel-to-PDF")
-        response = client.post(
+        response = post_with_retry(client, 
             f"{BASE_URL}/api/office/powerpoint-to-pdf",
             files={"file": ("live-test.pptx", pptx, "application/vnd.openxmlformats-officedocument.presentationml.presentation")},
         )
         expect_pdf(response, "live PowerPoint-to-PDF")
-        response = client.post(
+        response = post_with_retry(client, 
             f"{BASE_URL}/api/word/to-pdf",
             files={"file": ("live-test.docx", docx, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
         )
@@ -237,7 +273,7 @@ def main() -> None:
         print("PASS deployed Excel-to-PDF, PowerPoint-to-PDF and Word-to-PDF outputs")
 
         dwg_bytes = DWG_PATH.read_bytes()
-        response = client.post(
+        response = post_with_retry(client, 
             f"{BASE_URL}/api/cad/dwg-to-pdf",
             files={"file": ("libredwg-line-test.dwg", dwg_bytes, "application/octet-stream")},
         )
@@ -245,13 +281,13 @@ def main() -> None:
         print("PASS deployed real DWG parsing and PDF rendering")
 
         try:
-            translated = client.post(
+            translated = post_with_retry(client, 
                 f"{BASE_URL}/api/translate",
                 json={"text": "Hello, world.", "source": "en", "target": "ar"},
             )
             if translated.status_code == 200 and translated.json().get("translated_text"):
                 print("PASS live translation provider returned text")
-                export = client.post(
+                export = post_with_retry(client, 
                     f"{BASE_URL}/api/translate/docx",
                     json={"translated_text": translated.json()["translated_text"], "target": "ar"},
                 )
