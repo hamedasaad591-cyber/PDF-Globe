@@ -220,3 +220,9 @@ body{background:radial-gradient(circle at 6% 8%,rgba(95,115,235,.13),transparent
  .featured-cta{grid-column:2;margin-top:2px}
  .quick-stats{margin-top:16px}
 }
+
+@media (min-width:641px) and (max-width:900px){
+  .desktop-nav{display:none}
+  .mobile-menu{display:block;position:relative;flex-shrink:0}
+  .topbar{gap:12px}
+}
