@@ -110,6 +110,16 @@ def test_pdf_outputs(source_pdf: bytes) -> None:
     response = client.post("/api/pdf/compress", files=payload)
     check(response.status_code == 200, f"PDF compression failed: {response.status_code} {response.text[:300]}")
     assert_pdf(response.content, "compressed PDF")
+    compression_result = response.headers.get("X-PDF-Globe-Compression-Result")
+    original_size = int(response.headers.get("X-PDF-Globe-Original-Bytes", "0"))
+    output_size = int(response.headers.get("X-PDF-Globe-Output-Bytes", "0"))
+    check(compression_result in {"compressed", "unchanged"}, "PDF compression result header is missing or invalid")
+    check(original_size == len(source_pdf), "PDF compression reported the wrong original size")
+    check(output_size == len(response.content), "PDF compression reported the wrong output size")
+    if compression_result == "compressed":
+        check(output_size < original_size, "PDF compression claimed a reduction but returned a larger/equal file")
+    else:
+        check(response.content == source_pdf, "PDF compression should return the untouched original when no size reduction is possible")
     check(response.headers.get("content-length") == str(len(response.content)), "streamed PDF response is missing a correct Content-Length")
     check("attachment;" in response.headers.get("content-disposition", ""), "streamed PDF response is missing download headers")
 
@@ -136,6 +146,22 @@ def test_pdf_outputs(source_pdf: bytes) -> None:
     check(len(presentation.slides[0].shapes) > 0, "PDF to PowerPoint slide contains no page image")
 
     print("PASS PDF compression, repair, PDF-to-Word, PDF-to-Excel and PDF-to-PowerPoint outputs")
+
+
+def test_pdf_compression_keeps_original_when_candidate_grows(source_pdf: bytes) -> None:
+    def create_larger_candidate(src: Path, out: Path) -> None:
+        out.write_bytes(src.read_bytes() + b"\\n% deliberately larger candidate\\n")
+
+    with patch.object(main, "_create_pdf_compression_candidate", create_larger_candidate):
+        response = client.post(
+            "/api/pdf/compress",
+            files={"file": ("already-optimized.pdf", source_pdf, "application/pdf")},
+        )
+    check(response.status_code == 200, f"PDF compression fallback failed: {response.status_code} {response.text[:300]}")
+    check(response.headers.get("X-PDF-Globe-Compression-Result") == "unchanged", "larger compression candidate was not rejected")
+    check(response.content == source_pdf, "larger compression candidate was returned instead of the original PDF")
+    check(response.headers.get("X-PDF-Globe-Output-Bytes") == str(len(source_pdf)), "fallback download size does not match the original")
+    print("PASS PDF compression never returns a larger file when optimization gives no savings")
 
 
 def test_image_outputs() -> None:
@@ -425,6 +451,7 @@ def main_test() -> None:
     source_pdf = pdf_fixture()
     test_health()
     test_pdf_outputs(source_pdf)
+    test_pdf_compression_keeps_original_when_candidate_grows(source_pdf)
     test_image_outputs()
     test_dicom_output()
     test_office_outputs()
