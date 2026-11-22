@@ -5,6 +5,7 @@ import io
 import os
 import sys
 import time
+import unicodedata
 import zipfile
 from pathlib import Path
 
@@ -13,6 +14,9 @@ import httpx
 import numpy as np
 import pydicom
 from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from openpyxl import Workbook, load_workbook
 from PIL import Image
 from pptx import Presentation
@@ -40,6 +44,229 @@ def make_pdf() -> bytes:
     doc.close()
     return data
 
+
+
+def _set_rtl_paragraph(paragraph) -> None:
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    ppr = paragraph._p.get_or_add_pPr()
+    bidi = OxmlElement("w:bidi")
+    bidi.set(qn("w:val"), "1")
+    ppr.append(bidi)
+    for run in paragraph.runs:
+        run.font.name = "DejaVu Sans"
+        rpr = run._element.get_or_add_rPr()
+        rfonts = rpr.rFonts
+        if rfonts is None:
+            rfonts = OxmlElement("w:rFonts")
+            rpr.insert(0, rfonts)
+        for key in ("ascii", "hAnsi", "cs", "eastAsia"):
+            rfonts.set(qn(f"w:{key}"), "DejaVu Sans")
+
+
+def make_arabic_quality_docx() -> bytes:
+    """Create a non-sensitive, two-page Arabic document with a real bordered table."""
+    document = Document()
+    section = document.sections[0]
+    section.top_margin = Inches(0.55)
+    section.bottom_margin = Inches(0.55)
+    section.left_margin = Inches(0.6)
+    section.right_margin = Inches(0.6)
+
+    heading = document.add_heading("اختبار جودة اللغة العربية - PDF Globe", level=1)
+    _set_rtl_paragraph(heading)
+    intro = document.add_paragraph("هذا مستند تجريبي للتحقق من اتجاه الكتابة العربية واستخراج الجداول والأرقام.")
+    _set_rtl_paragraph(intro)
+
+    table = document.add_table(rows=1, cols=3)
+    table.style = "Table Grid"
+    try:
+        table_pr = table._tbl.tblPr
+        bidi_visual = OxmlElement("w:bidiVisual")
+        bidi_visual.set(qn("w:val"), "1")
+        table_pr.append(bidi_visual)
+    except Exception:
+        pass
+
+    rows = [
+        ("الصنف", "الكمية", "السعر"),
+        ("ورق A4", "12", "15.50"),
+        ("حبر أسود", "3", "48.00"),
+        ("أقلام زرقاء", "25", "2.75"),
+    ]
+    for row_index, values in enumerate(rows):
+        cells = table.rows[0].cells if row_index == 0 else table.add_row().cells
+        for cell, value in zip(cells, values):
+            cell.text = value
+            for paragraph in cell.paragraphs:
+                _set_rtl_paragraph(paragraph)
+                for run in paragraph.runs:
+                    if row_index == 0:
+                        run.bold = True
+
+    document.add_page_break()
+    second = document.add_heading("الصفحة الثانية - نتائج الاختبار", level=2)
+    _set_rtl_paragraph(second)
+    paragraph = document.add_paragraph(
+        "يجب أن تبقى الكلمات العربية واضحة، وأن تحتفظ الأرقام بقيمها، "
+        "وأن يكون اتجاه الفقرات من اليمين إلى اليسار."
+    )
+    _set_rtl_paragraph(paragraph)
+    paragraph = document.add_paragraph("مرجع الاختبار: AR-PDFG-2026-11-22")
+    _set_rtl_paragraph(paragraph)
+
+    buffer = io.BytesIO()
+    document.save(buffer)
+    return buffer.getvalue()
+
+
+def _arabic_char_count(value: str) -> int:
+    return sum(1 for character in value if "\\u0600" <= character <= "\\u06ff")
+
+
+def _normal_text(value: str) -> str:
+    return unicodedata.normalize("NFKC", value or "")
+
+
+def test_arabic_conversion_quality(client: httpx.Client) -> None:
+    """Exercise RTL text, bordered tables, editable Word and scanned-page fallbacks on live Render."""
+    source_docx = make_arabic_quality_docx()
+    response = post_with_retry(
+        client,
+        f"{BASE_URL}/api/word/to-pdf",
+        files={"file": ("arabic-quality-test.docx", source_docx,
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+    )
+    expect_pdf(response, "Arabic Word-to-PDF")
+
+    with fitz.open(stream=response.content, filetype="pdf") as source_pdf:
+        check(source_pdf.page_count >= 2, "Arabic Word-to-PDF lost the second page")
+        source_text = _normal_text("\\n".join(page.get_text("text", sort=True) for page in source_pdf))
+        check(_arabic_char_count(source_text) >= 30, "Arabic Word-to-PDF output lost most Arabic text")
+        check("15.50" in source_text and "48.00" in source_text and "AR-PDFG-2026-11-22" in source_text,
+              "Arabic Word-to-PDF lost table values or the page-two reference")
+        tables = []
+        for page in source_pdf:
+            try:
+                tables.extend(list(page.find_tables().tables))
+            except Exception:
+                pass
+        check(any(getattr(table, "row_count", 0) >= 3 and getattr(table, "col_count", 0) >= 3
+                  for table in tables),
+              "Arabic Word-to-PDF did not preserve a detectable 3-column table")
+    arabic_pdf = response.content
+    print("PASS Arabic Word-to-PDF: RTL text, 2 pages, table geometry and numeric values")
+
+    response = post_with_retry(
+        client,
+        f"{BASE_URL}/api/pdf/to-excel",
+        files={"file": ("arabic-quality-test.pdf", arabic_pdf, "application/pdf")},
+    )
+    check(response.status_code == 200, f"Arabic PDF-to-Excel failed: {response.status_code}: {response.text[:300]}")
+    workbook = load_workbook(io.BytesIO(response.content), read_only=False, data_only=False)
+    table_sheets = [sheet for sheet in workbook.worksheets if sheet.title.startswith("Page ") and " Table " in sheet.title]
+    check(bool(table_sheets), "Arabic PDF-to-Excel did not create a dedicated extracted-table worksheet")
+    sheet_values = [
+        _normal_text(str(cell.value or ""))
+        for sheet in table_sheets
+        for row in sheet.iter_rows()
+        for cell in row
+    ]
+    joined_values = " ".join(sheet_values)
+    check(_arabic_char_count(joined_values) >= 10, "Arabic PDF-to-Excel lost Arabic table labels or item names")
+    check(all(value in joined_values for value in ("12", "15.50", "48.00", "2.75")),
+          "Arabic PDF-to-Excel lost one or more table quantities/prices")
+    workbook.close()
+    print("PASS Arabic PDF-to-Excel: table worksheet, Arabic cells and all four numeric values")
+
+    response = post_with_retry(
+        client,
+        f"{BASE_URL}/api/pdf/to-word",
+        files={"file": ("arabic-quality-test.pdf", arabic_pdf, "application/pdf")},
+        data={"mode": "structured"},
+    )
+    check(response.status_code == 200, f"Arabic structured PDF-to-Word failed: {response.status_code}: {response.text[:300]}")
+    check(int(response.headers.get("X-PDF-Globe-Structured-Table-Pages", "0")) >= 1,
+          "Structured PDF-to-Word did not report an editable table page")
+    structured_doc = Document(io.BytesIO(response.content))
+    structured_values = " ".join(
+        _normal_text(cell.text)
+        for table in structured_doc.tables
+        for row in table.rows
+        for cell in row.cells
+    )
+    check(len(structured_doc.tables) >= 1, "Structured PDF-to-Word did not create a native Word table")
+    check(_arabic_char_count(structured_values) >= 10, "Structured PDF-to-Word lost Arabic table content")
+    check(all(value in structured_values for value in ("12", "15.50", "48.00")),
+          "Structured PDF-to-Word lost quantities or prices in its editable table")
+    print("PASS Arabic structured PDF-to-Word: editable Word table, RTL text and numeric values")
+
+    response = post_with_retry(
+        client,
+        f"{BASE_URL}/api/pdf/to-word",
+        files={"file": ("arabic-quality-test.pdf", arabic_pdf, "application/pdf")},
+        data={"mode": "hybrid"},
+    )
+    check(response.status_code == 200, f"Arabic hybrid PDF-to-Word failed: {response.status_code}: {response.text[:300]}")
+    check(int(response.headers.get("X-PDF-Globe-Hybrid-Image-Pages", "0")) >= 1,
+          "Hybrid PDF-to-Word did not preserve the complex table page as an image")
+    hybrid_doc = Document(io.BytesIO(response.content))
+    check(len(hybrid_doc.inline_shapes) >= 1, "Hybrid PDF-to-Word did not embed the original table page")
+    check(int(response.headers.get("X-PDF-Globe-Hybrid-Editable-Pages", "0")) >= 1,
+          "Hybrid PDF-to-Word did not retain simple text pages as editable content")
+    print("PASS Arabic hybrid PDF-to-Word: complex page preserved visually and simple page editable")
+
+    response = post_with_retry(
+        client,
+        f"{BASE_URL}/api/pdf/to-powerpoint",
+        files={"file": ("arabic-quality-test.pdf", arabic_pdf, "application/pdf")},
+    )
+    check(response.status_code == 200, f"Arabic PDF-to-PowerPoint failed: {response.status_code}: {response.text[:300]}")
+    presentation = Presentation(io.BytesIO(response.content))
+    check(len(presentation.slides) == 2, "Arabic PDF-to-PowerPoint did not create one slide per source page")
+    check(all(any(shape.shape_type == 13 for shape in slide.shapes) for slide in presentation.slides),
+          "Arabic PDF-to-PowerPoint slide is missing its rendered page image")
+    print("PASS Arabic PDF-to-PowerPoint: two slides with page images")
+
+    # A scanned image-only page must not be presented as editable text without OCR.
+    scan_buffer = io.BytesIO()
+    scan = Image.new("RGB", (900, 1200), "white")
+    from PIL import ImageDraw
+    draw = ImageDraw.Draw(scan)
+    draw.text((60, 70), "SCANNED PDF GLOBE TEST 2026", fill="black")
+    scan.save(scan_buffer, format="PNG")
+    scan.close()
+    scanned_pdf_doc = fitz.open()
+    scan_page = scanned_pdf_doc.new_page(width=595, height=842)
+    scan_page.insert_image(scan_page.rect, stream=scan_buffer.getvalue())
+    scanned_bytes = scanned_pdf_doc.tobytes(garbage=4, deflate=True)
+    scanned_pdf_doc.close()
+
+    response = post_with_retry(
+        client,
+        f"{BASE_URL}/api/pdf/to-word",
+        files={"file": ("scanned-quality-test.pdf", scanned_bytes, "application/pdf")},
+        data={"mode": "structured"},
+    )
+    check(response.status_code == 200, f"Scanned PDF-to-Word failed: {response.status_code}: {response.text[:300]}")
+    check(int(response.headers.get("X-PDF-Globe-Structured-Image-Pages", "0")) == 1,
+          "Scanned PDF-to-Word did not identify the image-only page fallback")
+    scanned_doc = Document(io.BytesIO(response.content))
+    check(len(scanned_doc.inline_shapes) >= 1, "Scanned PDF-to-Word did not preserve the scanned page image")
+    print("PASS scanned PDF-to-Word: image-only page preserved and correctly not claimed as editable text")
+
+    response = post_with_retry(
+        client,
+        f"{BASE_URL}/api/pdf/to-excel",
+        files={"file": ("scanned-quality-test.pdf", scanned_bytes, "application/pdf")},
+    )
+    check(response.status_code == 200, f"Scanned PDF-to-Excel failed: {response.status_code}: {response.text[:300]}")
+    scanned_workbook = load_workbook(io.BytesIO(response.content), read_only=True)
+    guide = scanned_workbook["Read me"]
+    guide_text = " ".join(str(cell.value or "") for row in guide.iter_rows() for cell in row)
+    check("No selectable text or tables" in guide_text,
+          "Scanned PDF-to-Excel did not explain that OCR is required")
+    scanned_workbook.close()
+    print("PASS scanned PDF-to-Excel: clearly reports that OCR is required")
 
 def make_png() -> bytes:
     buffer = io.BytesIO()
@@ -308,6 +535,8 @@ def main() -> None:
                 print("WARNING live translation provider did not return a result:", translated.status_code, translated.text[:250])
         except Exception as exc:
             print("WARNING live translation provider could not be verified:", str(exc)[:250])
+
+        test_arabic_conversion_quality(client)
 
         print("PASS ALL DEPLOYED API SMOKE TESTS (excluding any translation-provider warning above)")
 
