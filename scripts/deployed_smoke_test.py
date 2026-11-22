@@ -178,6 +178,16 @@ def main() -> None:
         one_file = {"file": ("live-test.pdf", pdf, "application/pdf")}
         response = post_with_retry(client, f"{BASE_URL}/api/pdf/compress", files=one_file)
         expect_pdf(response, "live PDF compression")
+        compression_result = response.headers.get("X-PDF-Globe-Compression-Result")
+        original_size = int(response.headers.get("X-PDF-Globe-Original-Bytes", "0"))
+        output_size = int(response.headers.get("X-PDF-Globe-Output-Bytes", "0"))
+        check(compression_result in {"compressed", "unchanged"}, "live PDF compression metadata is missing or invalid")
+        check(original_size == len(pdf), "live PDF compression reported an incorrect original size")
+        check(output_size == len(response.content), "live PDF compression reported an incorrect output size")
+        if compression_result == "compressed":
+            check(output_size < original_size, "live compression claimed a size reduction but returned a larger/equal PDF")
+        else:
+            check(response.content == pdf, "live compression should preserve the original when there is no size reduction")
         response = post_with_retry(client, f"{BASE_URL}/api/pdf/repair", files=one_file)
         expect_pdf(response, "live PDF repair")
 
