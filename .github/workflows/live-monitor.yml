@@ -9,6 +9,7 @@ on:
     paths:
       - ".github/workflows/live-monitor.yml"
       - "scripts/live_site_check.py"
+      - "scripts/live_browser_smoke_test.js"
 
 permissions:
   contents: read
@@ -31,3 +32,11 @@ jobs:
           python-version: "3.12"
       - name: Monitor public website and API
         run: python scripts/live_site_check.py
+      - name: Set up Node.js for live browser checks
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Playwright and Chromium
+        run: npm install --no-save playwright@1.53.0 && npx playwright install --with-deps chromium
+      - name: Check public tool cards in Chromium
+        run: node scripts/live_browser_smoke_test.js
