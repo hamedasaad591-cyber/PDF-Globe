@@ -14,6 +14,7 @@ import httpx
 import numpy as np
 import pydicom
 from docx import Document
+from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
@@ -120,7 +121,7 @@ def make_arabic_quality_docx() -> bytes:
 
 
 def _arabic_char_count(value: str) -> int:
-    return sum(1 for character in value if "\\u0600" <= character <= "\\u06ff")
+    return sum(1 for character in value if "\u0600" <= character <= "\u06ff")
 
 
 def _normal_text(value: str) -> str:
@@ -140,7 +141,7 @@ def test_arabic_conversion_quality(client: httpx.Client) -> None:
 
     with fitz.open(stream=response.content, filetype="pdf") as source_pdf:
         check(source_pdf.page_count >= 2, "Arabic Word-to-PDF lost the second page")
-        source_text = _normal_text("\\n".join(page.get_text("text", sort=True) for page in source_pdf))
+        source_text = _normal_text("\n".join(page.get_text("text", sort=True) for page in source_pdf))
         check(_arabic_char_count(source_text) >= 30, "Arabic Word-to-PDF output lost most Arabic text")
         check("15.50" in source_text and "48.00" in source_text and "AR-PDFG-2026-11-22" in source_text,
               "Arabic Word-to-PDF lost table values or the page-two reference")
