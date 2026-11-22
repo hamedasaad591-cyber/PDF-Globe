@@ -83,7 +83,7 @@ def require(condition: bool, message: str) -> None:
 
 def _html_attributes(markup: str) -> dict[str, str]:
     attributes: dict[str, str] = {}
-    for match in re.finditer(r"""([:\\w-]+)\\s*=\\s*(?:"([^"]*)"|'([^']*)')""", markup):
+    for match in re.finditer(r"""([:\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""", markup):
         attributes[match.group(1).lower()] = match.group(2) if match.group(2) is not None else match.group(3)
     return attributes
 
@@ -95,16 +95,16 @@ def check_page(url: str) -> tuple[str, float, int, str]:
     require(body.strip(), f"{url}: empty response body")
     html = body.decode("utf-8", errors="replace")
 
-    html_tag = re.search(r"<html\\b[^>]*>", html, re.I)
+    html_tag = re.search(r"<html\b[^>]*>", html, re.I)
     lang = _html_attributes(html_tag.group(0)).get("lang", "") if html_tag else ""
     require(lang in {"ar", "en"}, f"{url}: missing or unsupported HTML language declaration")
 
-    title_match = re.search(r"<title[^>]*>([\\s\\S]*?)</title>", html, re.I)
-    title = re.sub(r"\\s+", " ", re.sub(r"<[^>]+>", " ", title_match.group(1))).strip() if title_match else ""
+    title_match = re.search(r"<title[^>]*>([\s\S]*?)</title>", html, re.I)
+    title = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", title_match.group(1))).strip() if title_match else ""
     require(len(title) >= 16, f"{url}: missing or too-short page title")
 
     description = ""
-    for markup in re.findall(r"<meta\\b[^>]*>", html, re.I):
+    for markup in re.findall(r"<meta\b[^>]*>", html, re.I):
         attrs = _html_attributes(markup)
         if attrs.get("name", "").lower() == "description":
             description = attrs.get("content", "").strip()
@@ -112,22 +112,23 @@ def check_page(url: str) -> tuple[str, float, int, str]:
     require(len(description) >= 70, f"{url}: missing or too-short meta description")
 
     canonical = ""
-    for markup in re.findall(r"<link\\b[^>]*>", html, re.I):
+    for markup in re.findall(r"<link\b[^>]*>", html, re.I):
         attrs = _html_attributes(markup)
         if attrs.get("rel", "").lower() == "canonical":
             canonical = attrs.get("href", "").strip()
             break
     require(canonical == url, f"{url}: canonical URL mismatch (found {canonical or 'none'})")
 
-    h1_match = re.search(r"<h1[^>]*>([\\s\\S]*?)</h1>", html, re.I)
-    h1_text = re.sub(r"\\s+", " ", re.sub(r"<[^>]+>", " ", h1_match.group(1))).strip() if h1_match else ""
+    h1_match = re.search(r"<h1[^>]*>([\s\S]*?)</h1>", html, re.I)
+    h1_text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", h1_match.group(1))).strip() if h1_match else ""
     require(len(h1_text) >= 5, f"{url}: missing or empty H1 heading")
     return url, elapsed, len(body), title
 
 
 def main() -> int:
     failures: list[str] = []
-    checked_pages: list[tuple[str, float, int]] = []\n    seo_titles: list[tuple[str, str]] = []
+    checked_pages: list[tuple[str, float, int]] = []
+    seo_titles: list[tuple[str, str]] = []
 
     # Public homepage: language, title, canonical and indexability.
     for path, expected_lang, expected_canonical in (
