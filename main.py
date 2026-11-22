@@ -77,6 +77,8 @@ app.add_middleware(
         "X-PDF-Globe-Hybrid-Editable-Pages", "X-PDF-Globe-Hybrid-Image-Pages",
         "X-PDF-Globe-Structured-Editable-Pages", "X-PDF-Globe-Structured-Table-Pages",
         "X-PDF-Globe-Structured-Image-Pages",
+        "X-PDF-Globe-Compression-Result", "X-PDF-Globe-Original-Bytes",
+        "X-PDF-Globe-Output-Bytes",
     ],
     max_age=3600,
 )
@@ -128,7 +130,7 @@ def _cleanup_download(path: str) -> None:
         pass
 
 
-def download_response(path: Path, filename: str, media_type: str) -> StreamingResponse:
+def download_response(path: Path, filename: str, media_type: str, extra_headers: Optional[dict[str, str]] = None) -> StreamingResponse:
     """Stage a temporary output outside its request folder and stream it to the client.
 
     The response background task removes the staged file after the client finishes
@@ -166,6 +168,8 @@ def download_response(path: Path, filename: str, media_type: str) -> StreamingRe
             "Cache-Control": "no-store",
             "X-Content-Type-Options": "nosniff",
         }
+        if extra_headers:
+            headers.update(extra_headers)
         return StreamingResponse(
             _iter_download(staged_path),
             media_type=media_type,
@@ -213,23 +217,70 @@ async def health():
     }
 
 
+def _create_pdf_compression_candidate(src: Path, out: Path) -> None:
+    """Build lossless PDF optimization candidates and keep the smallest valid one."""
+    with fitz.open(src) as doc:
+        if doc.is_encrypted:
+            raise HTTPException(status_code=423, detail="الملف محمي بكلمة مرور. أزل الحماية أولاً")
+        page_count = doc.page_count
+        doc.save(out, garbage=4, deflate=True, deflate_images=True, deflate_fonts=True, clean=True)
+
+    qpdf = shutil.which("qpdf")
+    if not qpdf:
+        return
+
+    qpdf_out = out.with_name(f"{out.stem}_qpdf.pdf")
+    try:
+        result = subprocess.run(
+            [
+                qpdf, "--compress-streams=y", "--recompress-flate",
+                "--compression-level=9", "--object-streams=generate",
+                str(src), str(qpdf_out),
+            ],
+            capture_output=True, text=True, timeout=75,
+        )
+        if result.returncode != 0 or not qpdf_out.is_file():
+            return
+        with fitz.open(qpdf_out) as optimized:
+            if optimized.is_encrypted or optimized.page_count != page_count:
+                return
+        if qpdf_out.stat().st_size < out.stat().st_size:
+            os.replace(qpdf_out, out)
+    except Exception:
+        # PyMuPDF's candidate remains available if qpdf cannot process this PDF.
+        pass
+    finally:
+        qpdf_out.unlink(missing_ok=True)
+
+
 @app.post("/api/pdf/compress")
 async def compress_pdf(file: UploadFile = File(...)):
     with tempfile.TemporaryDirectory(prefix="pdfglobe-") as td:
         folder = Path(td)
         src = await store_upload(file, folder, {".pdf"})
         out = folder / f"{safe_name(file.filename)}_compressed.pdf"
+        original_size = src.stat().st_size
         try:
-            doc = fitz.open(src)
-            if doc.is_encrypted:
-                raise HTTPException(status_code=423, detail="الملف محمي بكلمة مرور. أزل الحماية أولاً")
-            doc.save(out, garbage=4, deflate=True, deflate_images=True, deflate_fonts=True, clean=True)
-            doc.close()
+            _create_pdf_compression_candidate(src, out)
         except HTTPException:
             raise
         except Exception as exc:
             raise HTTPException(status_code=422, detail=f"تعذر ضغط الملف: {exc}")
-        return download_response(out, out.name, "application/pdf")
+
+        candidate_size = out.stat().st_size
+        was_reduced = candidate_size < original_size
+        result_path = out if was_reduced else src
+        result_size = candidate_size if was_reduced else original_size
+        suffix = "compressed" if was_reduced else "original"
+        result_name = f"{safe_name(file.filename)}_{suffix}.pdf"
+        return download_response(
+            result_path, result_name, "application/pdf",
+            extra_headers={
+                "X-PDF-Globe-Compression-Result": "compressed" if was_reduced else "unchanged",
+                "X-PDF-Globe-Original-Bytes": str(original_size),
+                "X-PDF-Globe-Output-Bytes": str(result_size),
+            },
+        )
 
 
 def create_layout_preserving_docx(src: Path, out: Path, dpi: int = 180) -> None:
