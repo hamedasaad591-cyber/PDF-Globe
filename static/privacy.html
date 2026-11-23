@@ -32,7 +32,7 @@
   <main class="wrap legal-page">
     <div class="eyebrow">PDF GLOBE · LEGAL</div>
     <h1>Privacy Policy | سياسة الخصوصية</h1>
-    <p class="legal-meta">Last updated / آخر تحديث: 21 November 2026</p>
+    <p class="legal-meta">Last updated / آخر تحديث: 23 November 2026</p>
     <div class="jump-links" aria-label="Language navigation">
       <a href="#english">English</a><a href="#arabic">العربية</a><a href="/terms">Terms of Use / شروط الاستخدام</a>
     </div>
@@ -44,7 +44,7 @@
       <h3>1. How file processing works</h3>
       <p><strong>Browser-based tools.</strong> Tools such as merge, split/extract pages, rotate, delete or reorder pages, watermarks, page numbers, signatures, images-to-PDF, PDF-to-images, and OCR are designed to process the selected content in your browser. The file is not intentionally uploaded to the PDF Globe API for these browser-based operations. OCR software and language data may be downloaded from a third-party content delivery network; the OCR recognition itself runs in the browser.</p>
       <p><strong>Saffha print layout tool.</strong> Saffha arranges the selected PNG, JPEG or WebP images locally in your browser and creates the print-ready PDF in your browser. It does not intentionally upload those selected images to the PDF Globe API. The current beta limits use to 12 images, up to 15 MB per image and 45 MB combined. Your device memory and browser capabilities may impose lower practical limits.</p>
-      <p><strong>Server-based tools.</strong> Some operations need the PDF Globe API hosted by Render. These currently include PDF compression, PDF-to-Word conversion, Word-to-PDF conversion, PDF repair, and PDF password protection/unlocking. When you choose one of these tools, the selected file is transmitted over HTTPS to the API so the requested operation can be performed.</p>
+      <p><strong>Server-based tools.</strong> Some operations transmit the selected file over HTTPS to the PDF Globe API hosted by Render so the requested processing can be performed. These currently include PDF compression; PDF-to-Word, PDF-to-Excel and PDF-to-PowerPoint conversion; Word, Excel and PowerPoint to PDF conversion; PDF repair and password protection/unlocking; image conversion, resizing, compression and enhancement; DICOM-to-PDF conversion; and DWG-to-PDF conversion. The specific formats and limits are shown in the relevant tool.</p>
       <p><strong>Translation.</strong> Text is extracted or recognised in the browser and sent to the PDF Globe API. The API sends the text to the translation provider configured at the time of the request. The current primary configuration is Cloudflare Workers AI. Depending on service configuration or availability, LibreTranslate or the MyMemory public translation API may be used instead. The original PDF is not intentionally sent to the translation provider by this text-translation workflow; extracted text is sent. The translated text is then sent to the PDF Globe API to generate a downloadable DOCX file.</p>
 
       <h3>2. Temporary files and retention</h3>
@@ -54,6 +54,7 @@
       <h3>3. Service providers and external resources</h3>
       <ul>
         <li><strong>Cloudflare Pages:</strong> delivers the static website and may process ordinary connection and security metadata.</li>
+        <li><strong>Cloudflare Web Analytics:</strong> provides aggregate page-view, visit and real-user performance reports for the website, as described above.</li>
         <li><strong>Render:</strong> hosts the PDF Globe API and may process request, network, operational, and security metadata. Files submitted for server-based tools pass through this API.</li>
         <li><strong>Cloudflare Workers AI:</strong> receives extracted text when it is the configured translation provider.</li>
         <li><strong>Other translation providers:</strong> LibreTranslate or MyMemory may receive translation text if configured or used as a fallback.</li>
@@ -63,7 +64,7 @@
 
       <h3>4. Technical information, cookies, and analytics</h3>
       <p>Like most websites, the hosting and security providers may receive technical information such as IP address, browser and device details, request time, requested URL, referring page, and error/security events. This information may be used to deliver the site, prevent abuse, troubleshoot errors, and protect the service.</p>
-      <p>The current website application does not require registration and its application code does not intentionally set first-party login or advertising cookies, or store user profiles in browser storage. The current site code does not intentionally include third-party advertising pixels or an advertising network. Hosting or security providers may still use their own technical mechanisms under their policies. This notice will be updated if analytics, advertising, or other tracking technologies are added.</p>
+      <p>PDF Globe uses <strong>Cloudflare Web Analytics</strong> to measure aggregate page views, visits and real-user page performance, including Core Web Vitals. Cloudflare states that Web Analytics does not collect or use visitors’ personal data and does not use cookies, localStorage or fingerprinting for analytics. These analytics reports are separate from the operational, network and security information that hosting providers may process to deliver and protect the website and API. PDF Globe does not use Web Analytics to build visitor profiles or serve targeted advertising. The website does not require registration, does not intentionally set first-party login or advertising cookies, and does not intentionally include advertising pixels or an advertising network.</p>
 
       <h3>5. Your choices and responsibilities</h3>
       <ul>
@@ -92,7 +93,7 @@
       <h3>1. كيف تتم معالجة الملفات؟</h3>
       <p><strong>الأدوات التي تعمل داخل المتصفح:</strong> صُممت أدوات مثل دمج الملفات، وتقسيم الصفحات واستخراجها، والتدوير والحذف وإعادة الترتيب، والعلامة المائية، وترقيم الصفحات، والتوقيع، وتحويل الصور إلى PDF، وتحويل صفحات PDF إلى صور، والتعرّف الضوئي على الحروف (OCR) لمعالجة المحتوى داخل متصفحك. لا يُرسل الملف عمداً إلى واجهة PDF Globe الخلفية عند استخدام هذه الأدوات المحلية. قد ينزّل المتصفح مكتبات البرنامج أو ملفات اللغات الخاصة بالتعرّف الضوئي من شبكات توصيل محتوى خارجية، بينما تتم عملية التعرّف نفسها داخل المتصفح.</p>
       <p><strong>أداة صفّها لتجهيز الطباعة:</strong> ترتب أداة صفّها الصور المحددة بصيغ PNG أو JPEG أو WEBP محلياً داخل متصفحك، وتنشئ ملف PDF في المتصفح. لا ترفع الأداة هذه الصور عمداً إلى واجهة PDF Globe الخلفية. يقتصر الإصدار التجريبي حالياً على 12 صورة بحد أقصى 15 ميغابايت للصورة و45 ميغابايت إجمالاً. وقد تفرض ذاكرة الجهاز وإمكانات المتصفح حدوداً عملية أقل.</p>
-      <p><strong>الأدوات التي تحتاج إلى الخادم:</strong> بعض العمليات تتطلب واجهة PDF Globe المستضافة لدى Render، ومنها حالياً ضغط PDF، وتحويل PDF إلى Word، وتحويل Word إلى PDF، ومحاولة إصلاح PDF، وحماية PDF بكلمة مرور أو إزالة الحماية عند معرفة كلمة المرور. عند اختيار إحدى هذه الأدوات، يُرسل الملف المحدد عبر HTTPS إلى واجهة الموقع لتنفيذ العملية المطلوبة.</p>
+      <p><strong>الأدوات التي تحتاج إلى الخادم:</strong> ترسل بعض العمليات الملف المحدد عبر HTTPS إلى واجهة PDF Globe المستضافة لدى Render لتنفيذ المعالجة المطلوبة. وتشمل هذه الأدوات حالياً ضغط PDF؛ وتحويل PDF إلى Word أو Excel أو PowerPoint؛ وتحويل Word وExcel وPowerPoint إلى PDF؛ وإصلاح PDF وحمايته بكلمة مرور أو إزالة الحماية؛ وتحويل الصور وتغيير أبعادها وضغطها وتحسينها؛ وتحويل DICOM إلى PDF؛ وتحويل DWG إلى PDF. تظهر الصيغ والحدود الخاصة بكل أداة في واجهتها.</p>
       <p><strong>الترجمة:</strong> يُستخرج النص أو يُتعرّف عليه داخل المتصفح، ثم يُرسل النص إلى واجهة PDF Globe. ترسل الواجهة النص إلى مزود الترجمة المهيأ وقت الطلب. الإعداد الأساسي الحالي هو Cloudflare Workers AI، وقد يُستخدم LibreTranslate أو MyMemory كبديل بحسب إعداد الخدمة أو توفر المزود. في مسار ترجمة النصوص، لا يُرسل ملف PDF الأصلي عمداً إلى مزود الترجمة؛ بل يُرسل النص المستخرج. بعد الترجمة يُرسل النص المترجم إلى واجهة PDF Globe لإنشاء ملف Word قابل للتنزيل.</p>
 
       <h3>2. الملفات المؤقتة وفترة الاحتفاظ</h3>
@@ -102,6 +103,7 @@
       <h3>3. مزودو الخدمات والموارد الخارجية</h3>
       <ul>
         <li><strong>Cloudflare Pages:</strong> يقدم ملفات الموقع الثابتة وقد يعالج بيانات الاتصال والأمان المعتادة.</li>
+        <li><strong>Cloudflare Web Analytics:</strong> يقدم تقارير إجمالية عن مشاهدات الصفحات والزيارات وأداء الموقع الفعلي، كما هو موضح أعلاه.</li>
         <li><strong>Render:</strong> يستضيف واجهة PDF Globe الخلفية وقد يعالج بيانات الطلبات والشبكة والتشغيل والأمان. تمر الملفات المرسلة للأدوات التي تحتاج إلى الخادم عبر هذه الواجهة.</li>
         <li><strong>Cloudflare Workers AI:</strong> يستقبل النص المستخرج عندما يكون هو مزود الترجمة المهيأ.</li>
         <li><strong>مزودو الترجمة الآخرون:</strong> قد يستقبل LibreTranslate أو MyMemory نص الترجمة إذا تم تهيئتهما أو استخدامهما كبديل.</li>
@@ -111,7 +113,7 @@
 
       <h3>4. المعلومات التقنية وملفات الارتباط والتحليلات</h3>
       <p>قد يتلقى مزودو الاستضافة والأمان معلومات تقنية معتادة مثل عنوان IP ونوع المتصفح والجهاز ووقت الطلب والرابط المطلوب والصفحة المُحيلة وأحداث الأخطاء أو الأمان. قد تُستخدم هذه المعلومات لتقديم الموقع ومنع إساءة الاستخدام ومعالجة الأعطال وحماية الخدمة.</p>
-      <p>لا يتطلب التطبيق الحالي التسجيل، ولا يتضمن كوده عمداً ملفات ارتباط خاصة بتسجيل الدخول أو الإعلانات، ولا يخزن ملفات تعريف للمستخدمين في مساحة تخزين المتصفح. كما لا يتضمن كود الموقع الحالي عمداً وحدات تتبع إعلانية أو شبكة إعلانات. ومع ذلك قد يستخدم مزودو الاستضافة أو الأمان آليات تقنية خاصة بهم وفق سياساتهم. سنحدّث هذه السياسة إذا أضفنا التحليلات أو الإعلانات أو تقنيات تتبع أخرى.</p>
+      <p>يستخدم PDF Globe خدمة <strong>Cloudflare Web Analytics</strong> لقياس مشاهدات الصفحات والزيارات بصورة إجمالية، ومتابعة أداء الصفحات كما يختبره الزوار فعلياً، بما في ذلك مؤشرات Core Web Vitals. توضح Cloudflare أن Web Analytics لا تجمع أو تستخدم البيانات الشخصية للزوار، ولا تستخدم ملفات الارتباط أو localStorage أو البصمة الرقمية لأغراض التحليلات. وتختلف تقارير التحليلات هذه عن معلومات التشغيل والشبكة والأمان التي قد يعالجها مزودو الاستضافة لتقديم الموقع وحماية الموقع والواجهة الخلفية. لا يستخدم PDF Globe هذه التحليلات لبناء ملفات تعريف للزوار أو عرض إعلانات موجهة. لا يتطلب الموقع التسجيل، ولا يضع عمداً ملفات ارتباط خاصة بتسجيل الدخول أو الإعلانات، ولا يتضمن وحدات تتبع إعلانية أو شبكة إعلانات.</p>
 
       <h3>5. اختياراتك ومسؤولياتك</h3>
       <ul>
