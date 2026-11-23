@@ -480,6 +480,88 @@ def main() -> None:
         expect_pdf(response, "live image-to-PDF")
         print("PASS deployed image conversion, resizing pipeline and image-to-PDF response")
 
+        # Exercise every image-studio operation on the deployed API using synthetic files.
+        resize_response = post_with_retry(
+            client,
+            f"{BASE_URL}/api/image/convert",
+            files={"files": ("studio-resize.png", png, "image/png")},
+            data={"output_format": "png", "width": "32", "height": "24",
+                  "keep_aspect": "true", "quality": "88"},
+        )
+        check(resize_response.status_code == 200,
+              f"live image resize failed: {resize_response.status_code} {resize_response.text[:250]}")
+        with Image.open(io.BytesIO(resize_response.content)) as resized:
+            check(resized.format == "PNG" and resized.size == (32, 24),
+                  f"live image resize returned unexpected output: {resized.format} {resized.size}")
+        print("PASS deployed image resize: exact pixel dimensions and PNG output")
+
+        noise = np.random.default_rng(20261123).integers(0, 256, (256, 256, 3), dtype=np.uint8)
+        noise_buffer = io.BytesIO()
+        Image.fromarray(noise, mode="RGB").save(noise_buffer, format="PNG", optimize=False)
+        noise_png = noise_buffer.getvalue()
+        compressed_outputs = {}
+        for quality_value in (25, 92):
+            compressed = post_with_retry(
+                client,
+                f"{BASE_URL}/api/image/convert",
+                files={"files": (f"studio-quality-{quality_value}.png", noise_png, "image/png")},
+                data={"output_format": "webp", "quality": str(quality_value)},
+            )
+            check(compressed.status_code == 200,
+                  f"live image compression quality {quality_value} failed: {compressed.status_code} {compressed.text[:250]}")
+            with Image.open(io.BytesIO(compressed.content)) as converted:
+                check(converted.format == "WEBP" and converted.size == (256, 256),
+                      f"live image compression returned invalid WebP at quality {quality_value}")
+                compressed_outputs[quality_value] = (len(compressed.content), np.asarray(converted.convert("RGB")).copy())
+        check(compressed_outputs[25][0] < compressed_outputs[92][0],
+              "live image compression quality did not reduce WebP size at lower quality")
+        check(not np.array_equal(compressed_outputs[25][1], compressed_outputs[92][1]),
+              "live image compression quality setting did not affect rendered pixels")
+        print("PASS deployed image compression: low/high quality produce valid WebP with expected size and quality differences")
+
+        yy, xx = np.mgrid[0:64, 0:96]
+        gradient = np.stack((40 + xx, 55 + yy, 75 + (xx + yy) // 2), axis=2).clip(0, 255).astype(np.uint8)
+        enhance_buffer = io.BytesIO()
+        Image.fromarray(gradient, mode="RGB").save(enhance_buffer, format="PNG")
+        enhance_png = enhance_buffer.getvalue()
+        enhanced = post_with_retry(
+            client,
+            f"{BASE_URL}/api/image/convert",
+            files={"files": ("studio-enhance.png", enhance_png, "image/png")},
+            data={"output_format": "png", "sharpen": "80", "contrast": "35", "brightness": "20"},
+        )
+        check(enhanced.status_code == 200,
+              f"live image enhancement failed: {enhanced.status_code} {enhanced.text[:250]}")
+        with Image.open(io.BytesIO(enhanced.content)) as enhanced_image:
+            enhanced_pixels = np.asarray(enhanced_image.convert("RGB")).copy()
+            check(enhanced_image.format == "PNG" and enhanced_image.size == (96, 64),
+                  f"live image enhancement returned invalid PNG: {enhanced_image.format} {enhanced_image.size}")
+        check(float(enhanced_pixels.mean()) > float(gradient.mean()),
+              "live image brightness/contrast enhancement did not change image pixel values as requested")
+        print("PASS deployed image enhancement: sharpen, contrast and brightness affect valid output")
+
+        batch_response = post_with_retry(
+            client,
+            f"{BASE_URL}/api/image/convert",
+            files=[
+                ("files", ("studio-batch-one.png", png, "image/png")),
+                ("files", ("studio-batch-two.png", png, "image/png")),
+            ],
+            data={"output_format": "webp", "quality": "85"},
+        )
+        check(batch_response.status_code == 200,
+              f"live image batch conversion failed: {batch_response.status_code} {batch_response.text[:250]}")
+        with zipfile.ZipFile(io.BytesIO(batch_response.content)) as archive:
+            image_names = [name for name in archive.namelist() if name.lower().endswith(".webp")]
+            check(len(image_names) == 2, f"live image batch should return two WebP files; found {image_names}")
+            for image_name in image_names:
+                with Image.open(io.BytesIO(archive.read(image_name))) as batch_image:
+                    check(batch_image.format == "WEBP" and batch_image.size == (64, 48),
+                          f"live image batch produced an invalid file: {image_name}")
+        print("PASS deployed image batch: two valid WebP files returned in ZIP")
+
+        print("PASS ALL DEPLOYED IMAGE STUDIO MODES: convert, resize, compress, enhance and batch")
+
         response = post_with_retry(client, 
             f"{BASE_URL}/api/dicom/to-pdf",
             files={"files": ("live-test.dcm", dicom, "application/dicom")},
