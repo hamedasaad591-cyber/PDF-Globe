@@ -76,6 +76,61 @@ def fetch(url: str, timeout: int = TIMEOUT) -> tuple[int, bytes, str, float, str
     raise RuntimeError(f"Request failed after {RETRIES} attempts: {url} ({last_error})")
 
 
+def fetch_api_health(url: str, timeout: int = 15) -> tuple[int, bytes, str, float, str]:
+    """Allow Render's free instance enough time to wake after an idle spin-down.
+
+    Render documents that a free web service can show a temporary HTTP 503
+    loading page while it starts, which can take about one minute. The generic
+    site fetch uses short retries; the API health probe needs a longer window.
+    """
+    started_all = time.monotonic()
+    last_error = "unknown startup error"
+    attempts = 19
+    for attempt in range(attempts):
+        started = time.monotonic()
+        request = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/json,text/plain,*/*",
+                "Cache-Control": "no-cache",
+            },
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                body = response.read(1024 * 1024 + 1)
+                if len(body) > 1024 * 1024:
+                    raise RuntimeError(f"API health response exceeds 1 MB safety limit: {url}")
+                return (
+                    response.status,
+                    body,
+                    response.headers.get("Content-Type", "").lower(),
+                    time.monotonic() - started_all,
+                    response.geturl(),
+                )
+        except urllib.error.HTTPError as exc:
+            body = exc.read(2048)
+            last_error = f"HTTP {exc.code}: {body[:200]!r}"
+            if exc.code not in RETRYABLE_STATUS:
+                return (
+                    exc.code, body, exc.headers.get("Content-Type", "").lower(),
+                    time.monotonic() - started_all, exc.geturl()
+                )
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            last_error = str(exc)[:250]
+
+        if attempt < attempts - 1:
+            if attempt == 0:
+                print("INFO: API returned a temporary startup response; waiting for the Render instance to wake.")
+            time.sleep(5)
+
+    elapsed = time.monotonic() - started_all
+    raise RuntimeError(
+        f"API did not become ready after {attempts} attempts over {elapsed:.0f}s: "
+        f"{url} ({last_error})"
+    )
+
+
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
@@ -221,9 +276,9 @@ def main() -> int:
         except Exception as exc:
             failures.append(str(exc))
 
-    # Public API health and feature manifest. Render's free instance may need a cold start.
+    # Public API health and feature manifest. Allow Render's free instance time to wake from idle.
     try:
-        status, body, content_type, elapsed, final_url = fetch(API_URL + "/api/health", timeout=60)
+        status, body, content_type, elapsed, final_url = fetch_api_health(API_URL + "/api/health")
         require(status == 200, f"API health: HTTP {status}")
         health = json.loads(body.decode("utf-8"))
         require(health.get("ok") is True, "API health did not report ok=true")
