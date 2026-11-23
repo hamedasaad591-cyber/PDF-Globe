@@ -857,3 +857,21 @@ body.homepage .category-jump-card:nth-child(7){--jump:#5672bd;--jump-bg:#eef3ff}
   body.homepage .language-select{max-width:86px;padding:6px 4px}
   body.homepage .header-cta{padding:7px 8px}
 }
+
+/* Ensure fixed mobile navigation is positioned against the viewport,
+   not the blurred sticky header (backdrop-filter creates a fixed containing block). */
+@media(max-width:640px){
+  body.homepage .topbar{
+    -webkit-backdrop-filter:none;
+    backdrop-filter:none;
+  }
+}
+@media(max-width:340px){
+  body.homepage .topbar{gap:8px;padding-inline:8px}
+  body.homepage .brand{min-width:0;gap:6px}
+  body.homepage .brand-mark{width:32px;height:32px;flex:0 0 32px}
+  body.homepage .brand-name{font-size:15px;letter-spacing:-.6px}
+  body.homepage .mobile-menu summary{width:34px;height:34px}
+  body.homepage .top-actions .header-cta{display:none}
+  body.homepage .top-actions .language-select{max-width:78px}
+}
