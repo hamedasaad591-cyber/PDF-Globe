@@ -129,8 +129,25 @@ function assert(condition, message) {
           const summary = document.querySelector('#mobileMenu > summary');
           return !!summary && getComputedStyle(summary).display !== 'none';
         })(),
-        toolCards: document.querySelectorAll('.tool-card[data-tool]').length
+        toolCards: document.querySelectorAll('.tool-card[data-tool]').length,
+        overflowers: [...document.querySelectorAll('body *')].map(node => {
+          const rect = node.getBoundingClientRect();
+          const style = getComputedStyle(node);
+          return {
+            tag: node.tagName.toLowerCase(),
+            id: node.id || '',
+            className: typeof node.className === 'string' ? node.className.slice(0, 100) : '',
+            left: Math.round(rect.left * 10) / 10,
+            right: Math.round(rect.right * 10) / 10,
+            width: Math.round(rect.width * 10) / 10,
+            scrollWidth: node.scrollWidth,
+            clientWidth: node.clientWidth,
+            position: style.position
+          };
+        }).filter(item => item.right > window.innerWidth + 0.5 || item.left < -0.5)
+          .sort((a, b) => b.right - a.right).slice(0, 12)
       }));
+      console.log('MOBILE LAYOUT DIAGNOSTICS ' + width + 'px: ' + JSON.stringify(mobile.overflowers));
       assert(mobile.document <= mobile.viewport + 1,
         'Horizontal page overflow at ' + width + 'px: document is ' + mobile.document + 'px');
       assert(mobile.body <= mobile.viewport + 1,
