@@ -225,7 +225,7 @@ function assert(condition, message) {
     const sitemapResponse = await page.request.get(BASE + '/sitemap.xml');
     assert(sitemapResponse.ok(), 'Public sitemap is not reachable from the browser');
     const sitemapXml = await sitemapResponse.text();
-    const pageUrls = [...sitemapXml.matchAll(/<loc>([^<]+)<\\/loc>/g)].map(match => match[1].trim());
+    const pageUrls = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1].trim());
     assert(pageUrls.length >= 30, 'Expected at least 30 public sitemap pages; found ' + pageUrls.length);
     assert(new Set(pageUrls).size === pageUrls.length, 'Public sitemap contains duplicate browser audit URLs');
     for (const url of pageUrls) {
