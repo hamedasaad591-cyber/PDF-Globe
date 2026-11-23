@@ -838,13 +838,9 @@ body.homepage .category-jump-card:nth-child(7){--jump:#5672bd;--jump-bg:#eef3ff}
    and give the compact header enough room at 320–380 px widths. */
 @media(max-width:640px){
   body.homepage .mobile-menu-panel{
-    position:fixed;
-    top:74px;
-    right:12px;
-    left:auto;
-    inset-inline-start:auto;
-    inset-inline-end:auto;
-    width:min(310px,calc(100vw - 24px));
+    position:fixed !important;
+    inset:74px 12px auto auto !important;
+    width:min(310px,calc(100vw - 24px)) !important;
     max-height:calc(100vh - 90px);
     overflow-y:auto;
   }

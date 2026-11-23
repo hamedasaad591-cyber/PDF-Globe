@@ -101,7 +101,10 @@ function assert(condition, message) {
       'Homepage tool registry mismatch. Missing: ' + missing.join(', ') +
       '; unexpected: ' + unexpected.join(', '));
 
-    console.log('PASS live homepage: HTTP 200, PDFLib loaded, exactly 22 unique tool cards');
+    const totalCards = await page.locator('.tool-card').count();
+    assert(totalCards >= 31,
+      'Expected at least 31 homepage tools including standalone utilities; found ' + totalCards);
+    console.log('PASS live homepage: HTTP 200, PDFLib loaded, 22 interactive cards and ' + totalCards + ' total tool cards');
 
     for (const id of EXPECTED_TOOLS) {
       const card = page.locator('.tool-card[data-tool="' + id + '"]');
@@ -217,6 +220,31 @@ function assert(condition, message) {
     assert(languageState.cards === EXPECTED_TOOLS.length,
       'English homepage does not contain all 22 tool cards');
     console.log('PASS language switching: Arabic homepage navigates to complete English homepage');
+
+    // Load every URL in the production sitemap in Chromium, not just the homepage.
+    const sitemapResponse = await page.request.get(BASE + '/sitemap.xml');
+    assert(sitemapResponse.ok(), 'Public sitemap is not reachable from the browser');
+    const sitemapXml = await sitemapResponse.text();
+    const pageUrls = [...sitemapXml.matchAll(/<loc>([^<]+)<\\/loc>/g)].map(match => match[1].trim());
+    assert(pageUrls.length >= 30, 'Expected at least 30 public sitemap pages; found ' + pageUrls.length);
+    assert(new Set(pageUrls).size === pageUrls.length, 'Public sitemap contains duplicate browser audit URLs');
+    for (const url of pageUrls) {
+      assert(new URL(url).origin === BASE, 'Sitemap contains a foreign-origin URL: ' + url);
+      const pageResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+      assert(pageResponse && pageResponse.status() === 200,
+        'Sitemap page failed to load in Chromium: ' + url + ' (' + (pageResponse ? pageResponse.status() : 'no response') + ')');
+      const state = await page.evaluate(() => ({
+        title: document.title.trim(),
+        lang: document.documentElement.lang,
+        canonical: document.querySelector('link[rel="canonical"]')?.href || '',
+        heading: document.querySelector('h1')?.textContent.trim() || ''
+      }));
+      assert(state.title.length >= 16, 'Page title missing in browser: ' + url);
+      assert(['ar', 'en'].includes(state.lang), 'Unsupported page language in browser: ' + url);
+      assert(state.canonical === url, 'Canonical URL mismatch in browser: ' + url + ' found ' + state.canonical);
+      assert(state.heading.length >= 5, 'Main heading missing in browser: ' + url);
+    }
+    console.log('PASS Chromium navigation and metadata for all ' + pageUrls.length + ' sitemap pages');
 
     if (failures.length) {
       throw new Error(failures.join('\n'));

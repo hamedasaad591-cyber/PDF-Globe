@@ -35,6 +35,8 @@ REQUIRED_CAPABILITIES = (
     "dwg_to_pdf",
     "protect_pdf",
     "unlock_pdf",
+    "repair_pdf",
+    "translate",
 )
 
 
@@ -143,7 +145,7 @@ def _html_attributes(markup: str) -> dict[str, str]:
     return attributes
 
 
-def check_page(url: str) -> tuple[str, float, int, str]:
+def check_page(url: str) -> tuple[str, float, int, str, list[str]]:
     status, body, content_type, elapsed, final_url = fetch(url)
     require(status == 200, f"{url}: expected HTTP 200, received {status}")
     require("text/html" in content_type, f"{url}: expected HTML, received {content_type or 'unknown content type'}")
@@ -177,13 +179,35 @@ def check_page(url: str) -> tuple[str, float, int, str]:
     h1_match = re.search(r"<h1[^>]*>([\s\S]*?)</h1>", html, re.I)
     h1_text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", h1_match.group(1))).strip() if h1_match else ""
     require(len(h1_text) >= 5, f"{url}: missing or empty H1 heading")
-    return url, elapsed, len(body), title
+
+    # Record same-origin navigation and static resources from every indexed page.
+    local_references: set[str] = set()
+    for markup in re.findall(r"<(?:a|link|script|img|source)\b[^>]*>", html, re.I):
+        attrs = _html_attributes(markup)
+        for attribute in ("href", "src"):
+            value = attrs.get(attribute, "").strip()
+            if not value:
+                continue
+            parsed = urllib.parse.urlsplit(urllib.parse.urljoin(url, value))
+            if parsed.scheme in {"http", "https"} and parsed.netloc == "pdf-globe.pages.dev":
+                local_references.add(urllib.parse.urlunsplit((
+                    parsed.scheme, parsed.netloc, parsed.path or "/", "", ""
+                )))
+    return url, elapsed, len(body), title, sorted(local_references)
+
+
+def check_local_reference(url: str) -> tuple[str, float, int]:
+    status, body, content_type, elapsed, final_url = fetch(url)
+    require(status == 200, f"Internal reference {url}: expected HTTP 200, received {status}")
+    require(body, f"Internal reference {url}: empty response body")
+    return url, elapsed, len(body)
 
 
 def main() -> int:
     failures: list[str] = []
     checked_pages: list[tuple[str, float, int]] = []
     seo_titles: list[tuple[str, str]] = []
+    local_references: set[str] = set()
 
     # Public homepage: language, title, canonical and indexability.
     for path, expected_lang, expected_canonical in (
@@ -244,9 +268,10 @@ def main() -> int:
             for future in concurrent.futures.as_completed(futures):
                 url = futures[future]
                 try:
-                    page_url, page_elapsed, page_size, page_title = future.result()
+                    page_url, page_elapsed, page_size, page_title, page_links = future.result()
                     checked_pages.append((page_url, page_elapsed, page_size))
                     seo_titles.append((page_url, page_title))
+                    local_references.update(page_links)
                 except Exception as exc:
                     failures.append(str(exc))
 
@@ -258,6 +283,19 @@ def main() -> int:
             failures.append("Duplicate SEO page titles: " + "; ".join(", ".join(items) for items in duplicate_titles))
         else:
             print(f"PASS SEO metadata for all {len(seo_titles)} sitemap pages: unique titles, descriptions, canonical URLs, language and H1")
+
+    # Visit every same-origin link and local asset discovered across the sitemap.
+    if local_references:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            futures = {pool.submit(check_local_reference, item): item for item in sorted(local_references)}
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    reference, elapsed, size = future.result()
+                    checked_pages.append((reference, elapsed, size))
+                except Exception as exc:
+                    failures.append(str(exc))
+        if not failures:
+            print(f"PASS all {len(local_references)} unique same-domain links and page assets")
 
     # Critical frontend files referenced by both language versions.
     for path, expected_type in (
