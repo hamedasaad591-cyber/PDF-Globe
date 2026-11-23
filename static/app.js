@@ -84,6 +84,7 @@
   let translationLanguages = LANGS;
   let currentLang = 'ar';
   let apiHealth = null;
+  let apiWaking = false;
   let translationSupportsAuto = false;
   let currentTool = null;
   let selectedFiles = [];
@@ -96,7 +97,9 @@
     if(!node)return;
     const isArabic=currentLang==='ar';
     if(!apiHealth){
-      node.textContent=isArabic?'جارٍ التحقق من خادم المعالجة...':'Checking document-processing server...';
+      node.textContent=apiWaking
+        ? (isArabic?'الخادم يستيقظ الآن، قد يستغرق الاتصال لحظات...':'The server is waking up. Connection may take a little while...')
+        : (isArabic?'جارٍ التحقق من خادم المعالجة...':'Checking document-processing server...');
       node.dataset.state='checking';
       return;
     }
@@ -469,7 +472,59 @@
   if (requestedTool && Object.prototype.hasOwnProperty.call(toolMeta, requestedTool)) {
     openTool(requestedTool, false);
   }
-  // Show API readiness in browser console for operators, without exposing secrets.
-  fetch(apiUrl('/api/health'),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('API unavailable');return r.json();}).then(data=>{apiHealth=data;translationSupportsAuto=String(data.translation_provider||'').startsWith('LibreTranslate');document.documentElement.dataset.apiReady=data.ok?'true':'false';updateApiStatus();if(currentTool==='translate')refreshTranslationOptions();}).catch(()=>{apiHealth={ok:false};document.documentElement.dataset.apiReady='false';updateApiStatus();});
-  fetch(apiUrl('/api/languages')).then(r=>r.json()).then(data=>{if(Array.isArray(data.languages)&&data.languages.length){translationLanguages=data.languages.map(x=>[x.code,x.name||x.code]);if(currentTool==='translate')refreshTranslationOptions();}}).catch(()=>{});
+  // A free Render instance may sleep after inactivity. Retry its lightweight
+  // health endpoint while it wakes instead of showing a false offline state
+  // after the first temporary 503 response.
+  async function loadApiHealth(){
+    const deadline=Date.now()+95000;
+    while(Date.now()<deadline){
+      const controller=new AbortController();
+      const timeoutId=setTimeout(()=>controller.abort(),Math.min(12000,Math.max(1000,deadline-Date.now())));
+      let ready=false;
+      try{
+        const response=await fetch(apiUrl('/api/health'),{cache:'no-store',signal:controller.signal});
+        if(response.ok){
+          const data=await response.json();
+          if(data&&data.ok===true){
+            apiHealth=data;
+            apiWaking=false;
+            translationSupportsAuto=String(data.translation_provider||'').startsWith('LibreTranslate');
+            document.documentElement.dataset.apiReady='true';
+            updateApiStatus();
+            if(currentTool==='translate')refreshTranslationOptions();
+            ready=true;
+          }
+        }
+      }catch(_error){
+        // A timeout, network error or temporary Render 503 is retried below.
+      }finally{
+        clearTimeout(timeoutId);
+      }
+      if(ready){
+        try{
+          const response=await fetch(apiUrl('/api/languages'),{cache:'no-store'});
+          if(response.ok){
+            const data=await response.json();
+            if(Array.isArray(data.languages)&&data.languages.length){
+              translationLanguages=data.languages.map(x=>[x.code,x.name||x.code]);
+              if(currentTool==='translate')refreshTranslationOptions();
+            }
+          }
+        }catch(_error){}
+        return;
+      }
+      if(!apiWaking){
+        apiWaking=true;
+        updateApiStatus();
+      }
+      const pause=Math.min(5000,Math.max(0,deadline-Date.now()));
+      if(pause<=0)break;
+      await new Promise(resolve=>setTimeout(resolve,pause));
+    }
+    apiWaking=false;
+    apiHealth={ok:false};
+    document.documentElement.dataset.apiReady='false';
+    updateApiStatus();
+  }
+  loadApiHealth();
 })();
