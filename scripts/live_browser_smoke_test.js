@@ -162,6 +162,13 @@ function assert(condition, message) {
     await menuSummary.click();
     assert(await page.locator('#mobileMenu').evaluate(node => node.open),
       'Mobile navigation did not open');
+    const menuBounds = await page.locator('#mobileMenu .mobile-menu-panel').evaluate(node => {
+      const rect = node.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, viewport: window.innerWidth };
+    });
+    assert(menuBounds.left >= -0.5 && menuBounds.right <= menuBounds.viewport + 0.5,
+      'Mobile navigation panel extends beyond the viewport: ' + JSON.stringify(menuBounds));
+    console.log('PASS mobile navigation panel stays within the viewport');
     await page.locator('#mobileMenu .mobile-menu-panel a[href="#tools"]').click();
     assert(!(await page.locator('#mobileMenu').evaluate(node => node.open)),
       'Mobile navigation did not close after choosing a menu item');
