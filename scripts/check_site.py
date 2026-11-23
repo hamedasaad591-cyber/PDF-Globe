@@ -49,7 +49,7 @@ for tool in expected_server:
 
 require("X-PDF-Globe-Compression-Result" in backend and "X-PDF-Globe-Original-Bytes" in backend and "X-PDF-Globe-Output-Bytes" in backend, "PDF compression result and size headers are missing")
 require("pdfGlobeCompression" in app and "compress_unchanged" in app, "PDF compression result is not explained in the UI")
-require("app.js?v=20261122-pdf-compression-1" in home and "app.js?v=20261122-pdf-compression-1" in english_home, "PDF compression UI cache tag is stale")
+require("app.js?v=20261123-api-wake-retry-1" in home and "app.js?v=20261123-api-wake-retry-1" in english_home, "PDF compression UI cache tag is stale")
 
 office_backend = (ROOT / "office_conversion.py").read_text(encoding="utf-8")
 image_backend = (ROOT / "image_conversion.py").read_text(encoding="utf-8")
