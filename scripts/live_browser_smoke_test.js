@@ -14,6 +14,7 @@ function assert(condition, message) {
 (async () => {
   let browser;
   const failures = [];
+  let simulatedHealthRequests = 0;
   try {
     browser = await chromium.launch({
       headless: true,
@@ -29,6 +30,16 @@ function assert(condition, message) {
     await context.route('https://pdf-globe.onrender.com/**', async route => {
       const url = new URL(route.request().url());
       if (url.pathname === '/api/health') {
+        simulatedHealthRequests += 1;
+        // Simulate Render's free-instance wake-up: two temporary 503 responses,
+        // then a healthy JSON response. The page must recover without a reload.
+        if (simulatedHealthRequests <= 2) {
+          return route.fulfill({
+            status: 503,
+            contentType: 'text/html',
+            body: '<!doctype html><title>Application loading</title>'
+          });
+        }
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -66,6 +77,16 @@ function assert(condition, message) {
       null,
       { timeout: 60000 }
     );
+
+    await page.waitForFunction(
+      () => document.documentElement.dataset.apiReady === 'true',
+      null,
+      { timeout: 25000 }
+    );
+    assert(simulatedHealthRequests >= 3,
+      'Frontend did not retry temporary Render 503 responses; health requests: ' + simulatedHealthRequests);
+    console.log('PASS API wake-up recovery: recovered after ' + (simulatedHealthRequests - 1) +
+      ' temporary 503 responses without reloading the page');
 
     const ids = await page.locator('.tool-card[data-tool]').evaluateAll(cards =>
       cards.map(card => card.getAttribute('data-tool'))
