@@ -109,6 +109,70 @@ function assert(condition, message) {
       console.log('PASS live tool card ' + id + ': workspace, title, upload types and idle state');
     }
 
+    // Mobile layout, navigation, search, and language switching are tested
+    // against the public site at real phone viewport widths.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.waitForFunction(
+      () => document.querySelectorAll('.tool-card[data-tool]').length === 22,
+      null,
+      { timeout: 60000 }
+    );
+
+    for (const width of [390, 360, 320]) {
+      await page.setViewportSize({ width, height: 844 });
+      const mobile = await page.evaluate(() => ({
+        viewport: window.innerWidth,
+        document: document.documentElement.scrollWidth,
+        body: document.body.scrollWidth,
+        menuVisible: (() => {
+          const summary = document.querySelector('#mobileMenu > summary');
+          return !!summary && getComputedStyle(summary).display !== 'none';
+        })(),
+        toolCards: document.querySelectorAll('.tool-card[data-tool]').length
+      }));
+      assert(mobile.document <= mobile.viewport + 1,
+        'Horizontal page overflow at ' + width + 'px: document is ' + mobile.document + 'px');
+      assert(mobile.body <= mobile.viewport + 1,
+        'Horizontal body overflow at ' + width + 'px: body is ' + mobile.body + 'px');
+      assert(mobile.menuVisible, 'Mobile navigation is not visible at ' + width + 'px');
+      assert(mobile.toolCards === EXPECTED_TOOLS.length,
+        'Mobile page lost tool cards at ' + width + 'px');
+      console.log('PASS mobile layout ' + width + 'px: no horizontal overflow, navigation and all tool cards present');
+    }
+
+    const menuSummary = page.locator('#mobileMenu > summary');
+    await menuSummary.click();
+    assert(await page.locator('#mobileMenu').evaluate(node => node.open),
+      'Mobile navigation did not open');
+    await page.locator('#mobileMenu .mobile-menu-panel a[href="#tools"]').click();
+    assert(!(await page.locator('#mobileMenu').evaluate(node => node.open)),
+      'Mobile navigation did not close after choosing a menu item');
+    console.log('PASS mobile navigation: opens and closes after link selection');
+
+    await page.locator('#toolSearch').fill('merge');
+    const filteredCards = page.locator('.tool-card[data-tool]:not(.hidden)');
+    assert(await filteredCards.count() === 1,
+      'Mobile tool search should show exactly one result for "merge"');
+    assert(await filteredCards.first().getAttribute('data-tool') === 'merge',
+      'Mobile tool search returned the wrong tool');
+    await page.locator('#toolSearch').fill('');
+    console.log('PASS mobile tool search: filters to the matching tool and resets');
+
+    await page.locator('#uiLanguage').selectOption('en');
+    await page.waitForURL(url => url.pathname === '/en/' || url.pathname === '/en',
+      { timeout: 15000 });
+    const languageState = await page.evaluate(() => ({
+      lang: document.documentElement.lang,
+      direction: document.documentElement.dir,
+      cards: document.querySelectorAll('.tool-card[data-tool]').length
+    }));
+    assert(languageState.lang === 'en', 'Language switch did not load English HTML');
+    assert(languageState.direction === 'ltr', 'English page should use left-to-right direction');
+    assert(languageState.cards === EXPECTED_TOOLS.length,
+      'English homepage does not contain all 22 tool cards');
+    console.log('PASS language switching: Arabic homepage navigates to complete English homepage');
+
     if (failures.length) {
       throw new Error(failures.join('\n'));
     }
