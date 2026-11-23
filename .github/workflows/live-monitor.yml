@@ -10,6 +10,12 @@ on:
       - ".github/workflows/live-monitor.yml"
       - "scripts/live_site_check.py"
       - "scripts/live_browser_smoke_test.js"
+      - "static/style.css"
+      - "static/app.js"
+      - "static/index.html"
+      - "static/en/index.html"
+      - "static/privacy.html"
+      - "static/terms.html"
 
 permissions:
   contents: read
