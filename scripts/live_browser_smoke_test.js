@@ -299,16 +299,22 @@ function assert(condition, message) {
     const saffhaResponse = await page.goto(saffhaUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
     assert(saffhaResponse && saffhaResponse.status() === 200, 'Saffha page did not return HTTP 200');
     await page.waitForFunction(() => typeof window.PDFLib !== 'undefined', null, { timeout: 45000 });
-    const tinyPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS9sAAAAASUVORK5CYII=', 'base64');
+    const tinyPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAFElEQVR4nGO8E5DHAANMDEgANwcAUYYBovIttqMAAAAASUVORK5CYII=', 'base64');
     await page.locator('#fileInput').setInputFiles({ name: 'pdf-globe-smoke.png', mimeType: 'image/png', buffer: tinyPng });
     await page.waitForFunction(() => {
       const button = document.querySelector('#downloadBtn');
       return button && !button.disabled && document.querySelectorAll('#filesList .file-row').length === 1;
     }, null, { timeout: 15000 });
-    const [saffhaDownload] = await Promise.all([
-      page.waitForEvent('download', { timeout: 30000 }),
-      page.locator('#downloadBtn').click()
-    ]);
+    let saffhaDownload;
+    try {
+      [saffhaDownload] = await Promise.all([
+        page.waitForEvent('download', { timeout: 30000 }),
+        page.locator('#downloadBtn').click()
+      ]);
+    } catch (error) {
+      const statusText = await page.locator('#status').textContent().catch(() => 'status unavailable');
+      throw new Error('Saffha did not trigger a PDF download. UI status: ' + (statusText || '').trim() + '. Browser error: ' + error.message);
+    }
     assert(saffhaDownload.suggestedFilename() === 'saffha-a4.pdf',
       'Saffha generated an unexpected filename: ' + saffhaDownload.suggestedFilename());
     const saffhaPath = await saffhaDownload.path();
