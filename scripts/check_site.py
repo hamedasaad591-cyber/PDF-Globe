@@ -114,6 +114,9 @@ require("applyLanguage(document.documentElement.lang || 'ar')" in app, "interfac
 require("window.location.assign('/en/')" in app and "window.location.assign('/')" in app, "Arabic/English language selection does not route to its crawlable page")
 require("incoming.find" in app, "upload extension validation is missing")
 require("function refreshTranslationOptions()" in app and "selectedSource=" in app, "translation option refresh does not preserve selected source language")
+require("async function ensureApiReady()" in app, "server-side tool actions are missing the API readiness gate")
+require(app.count("await ensureApiReady();") >= 4, "not all direct and shared server API requests wait for readiness")
+require("apiHealthPromise" in app and "const deadline=Date.now()+95000" in app, "API readiness retries must be shared and bounded")
 require("capabilities" in backend, "API health does not expose backend capabilities")
 require("translation_provider" in backend, "API health does not expose the active translation provider")
 require("allowAuto&&translationSupportsAuto" in app, "translation auto-detect option is not restricted to supported providers")
@@ -299,6 +302,9 @@ print("PASS: image conversion, resizing, compression and enhancement are separat
 # Check every executable inline script in the two standalone print tools.
 for relative in ("static/saffha/index.html", "static/poster-splitter.html"):
     html = (ROOT / relative).read_text(encoding="utf-8")
+    if relative == "static/saffha/index.html":
+        require("cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" in html and "onerror=" in html,
+                "Saffha PDF generation is missing its fallback CDN")
     script_number = 0
     for match in re.finditer(r"<script\b([^>]*)>([\s\S]*?)</script\s*>", html, re.IGNORECASE):
         attributes, source = match.groups()
