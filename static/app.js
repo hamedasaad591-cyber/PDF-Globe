@@ -85,6 +85,7 @@
   let currentLang = 'ar';
   let apiHealth = null;
   let apiWaking = false;
+  let apiHealthPromise = null;
   let translationSupportsAuto = false;
   let currentTool = null;
   let selectedFiles = [];
@@ -357,16 +358,29 @@
     }
     return text;
   }
+  async function apiErrorMessage(response){
+    let message=t('error_server');
+    try{
+      const data=await response.json();
+      if(data&&typeof data.detail==='string'&&data.detail.trim())message=data.detail;
+    }catch(_error){}
+    if(message===t('error_server')&&[502,503,504].includes(response.status)){
+      message=currentLang==='ar'?'خادم المعالجة يستيقظ أو غير متاح مؤقتاً. أعد المحاولة بعد لحظات.':'The processing server is waking up or temporarily unavailable. Please retry in a moment.';
+    }
+    return message;
+  }
   async function apiFile(path,file,extra={}){
+    await ensureApiReady();
     const form=new FormData();form.append('file',file);Object.entries(extra).forEach(([k,v])=>form.append(k,v));
     const response=await fetch(apiUrl(path),{method:'POST',body:form});
-    if(!response.ok){let message=t('error_server');try{const data=await response.json();message=data.detail||message;}catch{}throw new Error(message);}
+    if(!response.ok)throw new Error(await apiErrorMessage(response));
     if(path==='/api/pdf/to-word'){
       const n=(name)=>Number(response.headers.get(name)||0);
       window.PDF_GLOBE_STRUCTURED_SUMMARY={editablePages:n('X-PDF-Globe-Structured-Editable-Pages'),tablePages:n('X-PDF-Globe-Structured-Table-Pages'),imagePages:n('X-PDF-Globe-Structured-Image-Pages')};
       window.PDF_GLOBE_HYBRID_SUMMARY={editablePages:n('X-PDF-Globe-Hybrid-Editable-Pages'),imagePages:n('X-PDF-Globe-Hybrid-Image-Pages')};
     }
     const blob=await response.blob();
+    if(!blob.size)throw new Error(currentLang==='ar'?'أعاد الخادم ملفاً فارغاً. لم يتم تنزيل نتيجة غير صالحة.':'The server returned an empty file. No invalid result was downloaded.');
     if(path==='/api/pdf/compress'){
       blob.pdfGlobeCompression={
         result:response.headers.get('X-PDF-Globe-Compression-Result')||'unknown',
@@ -380,16 +394,18 @@
     const f=selectedFiles[0];if(!f)throw new Error(t('error_select'));
     if(id==='dicom-pdf'){
       if(!$('#dicomConsent').checked)throw new Error(t('dicom_consent_required'));
+      await ensureApiReady();
       const form=new FormData();
       selectedFiles.forEach(file=>form.append('files',file));
       form.append('consent','true');
       const response=await fetch(apiUrl('/api/dicom/to-pdf'),{method:'POST',body:form});
-      if(!response.ok){let message=t('error_server');try{const data=await response.json();message=data.detail||message;}catch{}throw new Error(message);}
+      if(!response.ok)throw new Error(await apiErrorMessage(response));
       const blob=await response.blob();
       showResult(blob,'dicom-images.pdf',t('dicom_output_note'));
       return;
     }
     if(id==='image-pdf'){
+      await ensureApiReady();
       const form=new FormData();
       selectedFiles.forEach(file=>form.append('files',file));
       form.append('output_format','pdf');
@@ -439,11 +455,11 @@
     }
     if(id==='translate'){
       if(!$('#translationConsent').checked)throw new Error(t('error_consent'));
-      setProgress(5,t('translation_started'));const extracted=await extractPdfText(f,$('#translateOcrLang').value.trim()||'eng+ara');if(!extracted.trim())throw new Error('No text layer found. Run OCR first for scanned PDFs.');
+      setProgress(5,t('translation_started'));const extracted=await extractPdfText(f,$('#translateOcrLang').value.trim()||'eng+ara');if(!extracted.trim())throw new Error('No text layer found. Run OCR first for scanned PDFs.');await ensureApiReady();
       const tr=await fetch(apiUrl('/api/translate'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:extracted,source:$('#sourceLang').value,target:$('#targetLang').value})});
-      const data=await tr.json();if(!tr.ok)throw new Error(data.detail||t('error_server'));setProgress(80,t('processing'));
-      const doc=await fetch(apiUrl('/api/translate/docx'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({translated_text:data.translated_text,target:$('#targetLang').value})});if(!doc.ok){const err=await doc.json();throw new Error(err.detail||t('error_server'));}
-      const blob=await doc.blob();showResult(blob,outputName(f,'translated','docx'),`${t('done')} ${t('translation_warning')}`);return;
+      const data=await tr.json().catch(()=>({}));if(!tr.ok)throw new Error(await apiErrorMessage(tr));if(typeof data.translated_text!=='string'||!data.translated_text.trim())throw new Error(t('error_server'));setProgress(80,t('processing'));
+      const doc=await fetch(apiUrl('/api/translate/docx'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({translated_text:data.translated_text,target:$('#targetLang').value})});if(!doc.ok)throw new Error(await apiErrorMessage(doc));
+      const blob=await doc.blob();if(!blob.size)throw new Error(t('error_server'));showResult(blob,outputName(f,'translated','docx'),`${t('done')} ${t('translation_warning')}`);return;
     }
   }
   $('#runTool').addEventListener('click',async()=>{
@@ -475,56 +491,68 @@
   // A free Render instance may sleep after inactivity. Retry its lightweight
   // health endpoint while it wakes instead of showing a false offline state
   // after the first temporary 503 response.
-  async function loadApiHealth(){
-    const deadline=Date.now()+95000;
-    while(Date.now()<deadline){
-      const controller=new AbortController();
-      const timeoutId=setTimeout(()=>controller.abort(),Math.min(12000,Math.max(1000,deadline-Date.now())));
-      let ready=false;
-      try{
-        const response=await fetch(apiUrl('/api/health'),{cache:'no-store',signal:controller.signal});
-        if(response.ok){
-          const data=await response.json();
-          if(data&&data.ok===true){
-            apiHealth=data;
-            apiWaking=false;
-            translationSupportsAuto=String(data.translation_provider||'').startsWith('LibreTranslate');
-            document.documentElement.dataset.apiReady='true';
-            updateApiStatus();
-            if(currentTool==='translate')refreshTranslationOptions();
-            ready=true;
-          }
-        }
-      }catch(_error){
-        // A timeout, network error or temporary Render 503 is retried below.
-      }finally{
-        clearTimeout(timeoutId);
-      }
-      if(ready){
+  async function ensureApiReady(){
+    // Always make a fresh lightweight check before a server upload. A previous
+    // healthy state may be stale because Render's free instance can sleep again.
+    if(apiHealthPromise)return apiHealthPromise;
+    apiHealthPromise=(async()=>{
+      const deadline=Date.now()+95000;
+      while(Date.now()<deadline){
+        const controller=new AbortController();
+        const timeoutId=setTimeout(()=>controller.abort(),Math.min(12000,Math.max(1000,deadline-Date.now())));
+        let healthyData=null;
         try{
-          const response=await fetch(apiUrl('/api/languages'),{cache:'no-store'});
+          const response=await fetch(apiUrl('/api/health'),{cache:'no-store',signal:controller.signal});
           if(response.ok){
             const data=await response.json();
-            if(Array.isArray(data.languages)&&data.languages.length){
-              translationLanguages=data.languages.map(x=>[x.code,x.name||x.code]);
-              if(currentTool==='translate')refreshTranslationOptions();
-            }
+            if(data&&data.ok===true)healthyData=data;
           }
-        }catch(_error){}
-        return;
+        }catch(_error){
+          // Network errors, timeouts and temporary Render 503 pages are retried.
+        }finally{
+          clearTimeout(timeoutId);
+        }
+        if(healthyData){
+          apiHealth=healthyData;
+          apiWaking=false;
+          translationSupportsAuto=String(healthyData.translation_provider||'').startsWith('LibreTranslate');
+          document.documentElement.dataset.apiReady='true';
+          updateApiStatus();
+          if(currentTool==='translate')refreshTranslationOptions();
+          // Language discovery is optional; never block file processing on it.
+          fetch(apiUrl('/api/languages'),{cache:'no-store'})
+            .then(response=>response.ok?response.json():null)
+            .then(data=>{
+              if(data&&Array.isArray(data.languages)&&data.languages.length){
+                translationLanguages=data.languages.map(x=>[x.code,x.name||x.code]);
+                if(currentTool==='translate')refreshTranslationOptions();
+              }
+            })
+            .catch(()=>{});
+          return healthyData;
+        }
+        if(!apiWaking){
+          apiWaking=true;
+          updateApiStatus();
+        }
+        const pause=Math.min(5000,Math.max(0,deadline-Date.now()));
+        if(pause<=0)break;
+        await new Promise(resolve=>setTimeout(resolve,pause));
       }
-      if(!apiWaking){
-        apiWaking=true;
-        updateApiStatus();
-      }
-      const pause=Math.min(5000,Math.max(0,deadline-Date.now()));
-      if(pause<=0)break;
-      await new Promise(resolve=>setTimeout(resolve,pause));
+      apiWaking=false;
+      apiHealth={ok:false};
+      document.documentElement.dataset.apiReady='false';
+      updateApiStatus();
+      throw new Error(currentLang==='ar'
+        ? 'تعذر الاتصال بخادم المعالجة بعد محاولات متكررة. لم نرفع الملف؛ تحقق من الاتصال وأعد المحاولة.'
+        : 'The processing server did not become ready after repeated checks. Your file was not uploaded; check your connection and try again.');
+    })();
+    try{
+      return await apiHealthPromise;
+    }finally{
+      apiHealthPromise=null;
     }
-    apiWaking=false;
-    apiHealth={ok:false};
-    document.documentElement.dataset.apiReady='false';
-    updateApiStatus();
   }
+  function loadApiHealth(){ensureApiReady().catch(()=>{});}
   loadApiHealth();
 })();
