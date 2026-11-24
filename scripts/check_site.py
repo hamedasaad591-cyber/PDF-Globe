@@ -51,7 +51,8 @@ for tool in expected_server:
 
 require("X-PDF-Globe-Compression-Result" in backend and "X-PDF-Globe-Original-Bytes" in backend and "X-PDF-Globe-Output-Bytes" in backend, "PDF compression result and size headers are missing")
 require("pdfGlobeCompression" in app and "compress_unchanged" in app, "PDF compression result is not explained in the UI")
-require("app.js?v=20261124-api-readiness-2" in home and "app.js?v=20261124-api-readiness-2" in english_home, "API readiness UI cache tag is stale")
+require("maxMB:25" in app, "image-to-PDF frontend limit must match the server 25 MB limit")
+require("app.js?v=20261124-api-readiness-3" in home and "app.js?v=20261124-api-readiness-3" in english_home, "API readiness UI cache tag is stale")
 
 office_backend = (ROOT / "office_conversion.py").read_text(encoding="utf-8")
 image_backend = (ROOT / "image_conversion.py").read_text(encoding="utf-8")
@@ -79,6 +80,7 @@ require("BackgroundPolicy.WHITE" in dwg_backend, "DWG PDF export is not configur
 # The public frontend must point to the configured API host, never a secret-bearing URL.
 require("https://pdf-globe.onrender.com" in api_config, "public API base URL is missing")
 require("API_TOKEN" not in api_config and "SECRET" not in api_config, "a secret-like value must not be placed in api-config.js")
+require("PDF_GLOBE_WAIT_FOR_API_READY" in api_config, "shared API readiness helper is missing")
 
 # Check that both homepages declare reciprocal language alternatives and their own canonicals.
 for page, locale, canonical in (
@@ -167,6 +169,7 @@ for page, locale, canonical in (
     require('image-compressor.js?v=' in page and ' defer></script>' in page, f"{locale} image compressor script is missing or not deferred")
     require('hreflang="ar"' in page and 'hreflang="en"' in page, f"{locale} image compressor page is missing language alternates")
 require("/api/image/convert" in image_js, "image compressor does not call the image conversion API")
+require("PDF_GLOBE_WAIT_FOR_API_READY" in image_js, "image uploads do not wait for API readiness")
 require("new FormData()" in image_js and "form.append(" in image_js, "image compressor does not submit image files to the server")
 require("output_format" in image_js and "sharpen" in image_js and "brightness" in image_js, "image processing controls are not wired to the API")
 require("مؤقت" in image_js or "Temporary" in image_js, "image converter upload behavior is not disclosed")
@@ -211,6 +214,7 @@ office_js = (STATIC / "office-converter.js").read_text(encoding="utf-8")
 office_css = (STATIC / "office-converter.css").read_text(encoding="utf-8")
 require("/api/pdf/to-excel" in office_js and "/api/pdf/to-powerpoint" in office_js, "office converter frontend endpoints are missing")
 require("FormData" in office_js and "application/pdf" in office_js, "office converter frontend does not upload PDF files")
+require("PDF_GLOBE_WAIT_FOR_API_READY" in office_js, "office uploads do not wait for API readiness")
 require("office-drop" in office_css and "@media" in office_css, "office converter responsive styles are missing")
 print("PASS: PDF to Excel and PDF to PowerPoint routes, bilingual pages, homepage cards and sitemap entries.")
 
@@ -238,7 +242,7 @@ for icon_id in ("merge", "split", "compress", "pdf-word", "pdf-excel", "pdf-powe
     require(f'<symbol id="{icon_id}"' in icons_file, f"homepage illustration {icon_id} is missing")
 for locale, prefix in (("ar", ""), ("en", "en/")):
     page = (STATIC / prefix / "index.html").read_text(encoding="utf-8")
-    require('app.js?v=20261123-api-wake-retry-1' in page, f"{locale} homepage JS cache version was not refreshed")
+    require('app.js?v=20261124-api-readiness-3' in page, f"{locale} homepage JS cache version was not refreshed")
     require('style.css?v=20261123-mobile-layout-2' in page, f"{locale} homepage CSS cache version was not refreshed")
     for key in ("jump_pdf", "jump_print", "jump_poster", "jump_measure", "jump_translate", "jump_image"):
         require(re.search(rf'<b data-i18n="{key}">\s*[^<]+\s*</b>', page) is not None,
@@ -257,7 +261,7 @@ image_backend = (ROOT / "image_conversion.py").read_text(encoding="utf-8")
 for locale, page in (("ar", image_page_ar), ("en", image_page_en)):
     for control in ("outputFormat", "width", "height", "keepAspect", "quality", "sharpen", "contrast", "brightness", "background"):
         require(f'id="{control}"' in page, f"{locale} image converter control is missing: {control}")
-    require('image-compressor.js?v=20261121-image-tools-4' in page, f"{locale} image converter JS cache tag is stale")
+    require('image-compressor.js?v=20261124-readiness-2' in page, f"{locale} image converter JS cache tag is stale")
     require("api-config.js" in page, f"{locale} image converter API configuration is missing")
 require("/api/image/convert" in image_js, "image studio does not call the image conversion API")
 for fmt in ("webp", "jpeg", "png", "avif", "heic", "bmp", "gif", "tiff", "ico", "pdf"):
@@ -293,7 +297,7 @@ for locale, prefix in (("ar", ""), ("en", "en/")):
 for mode in ("convert", "resize", "compress", "enhance"):
     require(f"'{mode}'" in image_js, f"image task mode is not supported: {mode}")
 require("function configureMode()" in image_js and "MODE_COPY[MODE]" in image_js, "image task settings or labels are not mode-specific")
-require("image-compressor.js?v=20261121-image-tools-4" in image_ar and "image-compressor.js?v=20261121-image-tools-4" in image_en, "image tool script cache was not refreshed")
+require("image-compressor.js?v=20261124-readiness-2" in image_ar and "image-compressor.js?v=20261124-readiness-2" in image_en, "image tool script cache was not refreshed")
 require("imageTools:'أدوات الصور'" in image_js and "imageTools:'Image tools'" in image_js, "image tools navigation labels are missing")
 require("الذكاء الاصطناعي" in image_js and "super-resolution" in image_js, "image resize and enhancement limitations are not disclosed")
 print("PASS: image conversion, resizing, compression and enhancement are separate task modes.")
