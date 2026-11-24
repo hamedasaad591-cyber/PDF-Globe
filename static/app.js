@@ -6,7 +6,7 @@
   const apiUrl = (path) => `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const pdfLib = window.PDFLib;
-  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 
   const I18N = {
     ar: {
