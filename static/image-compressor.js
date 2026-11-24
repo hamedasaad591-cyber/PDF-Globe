@@ -230,6 +230,8 @@ async function run(){
   form.append('background', $('background').value);
   try{
     const base = (window.PDF_GLOBE_API_BASE || 'https://pdf-globe.onrender.com').replace(/\/+$/,'');
+    if(typeof window.PDF_GLOBE_WAIT_FOR_API_READY !== 'function') throw new Error(t('failed'));
+    await window.PDF_GLOBE_WAIT_FOR_API_READY();
     const response = await fetch(base + '/api/image/convert', {method:'POST', body:form});
     if(!response.ok){
       let detail = t('failed');

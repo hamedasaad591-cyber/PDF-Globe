@@ -27,7 +27,7 @@ jobs:
       - name: Check Python syntax
         run: python -m py_compile main.py office_conversion.py image_conversion.py dicom_conversion.py dwg_conversion.py scripts/check_site.py scripts/smoke_test.py scripts/deployed_smoke_test.py scripts/live_site_check.py
       - name: Check JavaScript syntax
-        run: node --check static/app.js && node --check static/unit-converter.js && node --check static/image-compressor.js && node --check static/office-converter.js && node --check scripts/browser_smoke_test.js && node --check scripts/live_browser_smoke_test.js
+        run: node --check static/api-config.js && node --check static/app.js && node --check static/unit-converter.js && node --check static/image-compressor.js && node --check static/office-converter.js && node --check scripts/browser_smoke_test.js && node --check scripts/live_browser_smoke_test.js
       - name: Check tool and page wiring
         run: python scripts/check_site.py
       - name: Smoke-test file generation end to end
