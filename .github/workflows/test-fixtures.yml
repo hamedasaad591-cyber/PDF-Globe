@@ -1,0 +1,113 @@
+name: Build PDF Globe test fixtures
+
+on:
+  push:
+    branches:
+      - temp/test-file-fixtures
+
+permissions:
+  contents: read
+
+jobs:
+  fixtures:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download the real DWG fixture used by project tests
+        run: |
+          mkdir -p output
+          curl -fsSL --retry 3 \
+            https://raw.githubusercontent.com/LibreDWG/libredwg/27e828d212852b8cd08c1cd5d2721e5b738ca8a9/test/test-data/2000/Line.dwg \
+            -o output/PDF_Globe_Test_Drawing.dwg
+          test "$(head -c 6 output/PDF_Globe_Test_Drawing.dwg)" = "AC1015"
+
+      - name: Generate a synthetic DICOM image without patient data
+        run: |
+          python -m pip install --quiet pydicom==3.0.1 numpy==2.2.6
+          python - <<'PY'
+          from datetime import datetime
+          from pathlib import Path
+          import numpy as np
+          import pydicom
+          from pydicom.dataset import FileDataset, FileMetaDataset
+          from pydicom.uid import (
+              ExplicitVRLittleEndian,
+              SecondaryCaptureImageStorage,
+              PYDICOM_IMPLEMENTATION_UID,
+              generate_uid,
+          )
+
+          out = Path("output/PDF_Globe_Test_Image.dcm")
+          rows = columns = 256
+
+          # Create a non-clinical phantom: smooth grayscale field, rings,
+          # a central cross and labeled-looking bars. No real patient data.
+          y, x = np.mgrid[0:rows, 0:columns]
+          cx = cy = 127.5
+          radius = np.sqrt((x - cx) ** 2 + (y - cy) ** 2)
+          pixels = (35 + 0.45 * x + 0.25 * y).clip(0, 255)
+          pixels += (70 * np.exp(-((radius - 72) ** 2) / (2 * 3.5 ** 2)))
+          pixels += (35 * np.exp(-((radius - 38) ** 2) / (2 * 2.5 ** 2)))
+          pixels[124:133, 36:220] = 245
+          pixels[36:220, 124:133] = 245
+          pixels[48:58, 168:218] = 220
+          pixels[64:72, 178:218] = 180
+          pixels = np.clip(pixels, 0, 255).astype(np.uint8)
+
+          sop_instance = generate_uid()
+          study_instance = generate_uid()
+          series_instance = generate_uid()
+
+          meta = FileMetaDataset()
+          meta.MediaStorageSOPClassUID = SecondaryCaptureImageStorage
+          meta.MediaStorageSOPInstanceUID = sop_instance
+          meta.TransferSyntaxUID = ExplicitVRLittleEndian
+          meta.ImplementationClassUID = PYDICOM_IMPLEMENTATION_UID
+
+          ds = FileDataset(str(out), {}, file_meta=meta, preamble=b"\\0" * 128)
+          ds.is_little_endian = True
+          ds.is_implicit_VR = False
+          ds.SpecificCharacterSet = "ISO_IR 192"
+          ds.SOPClassUID = SecondaryCaptureImageStorage
+          ds.SOPInstanceUID = sop_instance
+          ds.StudyInstanceUID = study_instance
+          ds.SeriesInstanceUID = series_instance
+          ds.Modality = "OT"
+          ds.PatientName = "SYNTHETIC^PDFGLOBE"
+          ds.PatientID = "PDFGLOBE-TEST-0001"
+          ds.PatientBirthDate = ""
+          ds.PatientSex = "O"
+          ds.StudyDescription = "Synthetic test phantom - not for clinical use"
+          ds.SeriesDescription = "PDF Globe DICOM upload test"
+          ds.StudyDate = datetime.now().strftime("%Y%m%d")
+          ds.StudyTime = datetime.now().strftime("%H%M%S")
+          ds.ContentDate = ds.StudyDate
+          ds.ContentTime = ds.StudyTime
+          ds.InstanceNumber = "1"
+          ds.ConversionType = "WSD"
+          ds.ImageType = ["DERIVED", "SECONDARY"]
+          ds.Rows = rows
+          ds.Columns = columns
+          ds.SamplesPerPixel = 1
+          ds.PhotometricInterpretation = "MONOCHROME2"
+          ds.BitsAllocated = 8
+          ds.BitsStored = 8
+          ds.HighBit = 7
+          ds.PixelRepresentation = 0
+          ds.PixelData = pixels.tobytes()
+          ds.save_as(out, enforce_file_format=True)
+
+          # Re-open and verify essential tags and pixel array before artifact upload.
+          check = pydicom.dcmread(out)
+          assert check.file_meta.TransferSyntaxUID == ExplicitVRLittleEndian
+          assert check.pixel_array.shape == (rows, columns)
+          assert check.pixel_array.dtype == np.uint8
+          print(f"Validated synthetic DICOM: {out.stat().st_size} bytes, {rows}x{columns}")
+          PY
+
+      - name: Upload verified test files
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-globe-test-files
+          path: output/*
+          if-no-files-found: error
+          retention-days: 3
