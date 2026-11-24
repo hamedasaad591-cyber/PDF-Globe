@@ -52,7 +52,11 @@ for tool in expected_server:
 require("X-PDF-Globe-Compression-Result" in backend and "X-PDF-Globe-Original-Bytes" in backend and "X-PDF-Globe-Output-Bytes" in backend, "PDF compression result and size headers are missing")
 require("pdfGlobeCompression" in app and "compress_unchanged" in app, "PDF compression result is not explained in the UI")
 require("maxMB:25" in app, "image-to-PDF frontend limit must match the server 25 MB limit")
-require("app.js?v=20261124-api-readiness-3" in home and "app.js?v=20261124-api-readiness-3" in english_home, "API readiness UI cache tag is stale")
+require("app.js?v=20261124-api-readiness-4" in home and "app.js?v=20261124-api-readiness-4" in english_home, "API readiness UI cache tag is stale")
+require("cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" in home and "onerror=" in home, "PDF-lib homepage fallback CDN is missing")
+require("cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js" in home and "cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" in home, "PDF.js or JSZip fallback CDN is missing")
+require("cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js" in app, "PDF.js worker URL is missing")
+
 
 office_backend = (ROOT / "office_conversion.py").read_text(encoding="utf-8")
 image_backend = (ROOT / "image_conversion.py").read_text(encoding="utf-8")
@@ -242,7 +246,7 @@ for icon_id in ("merge", "split", "compress", "pdf-word", "pdf-excel", "pdf-powe
     require(f'<symbol id="{icon_id}"' in icons_file, f"homepage illustration {icon_id} is missing")
 for locale, prefix in (("ar", ""), ("en", "en/")):
     page = (STATIC / prefix / "index.html").read_text(encoding="utf-8")
-    require('app.js?v=20261124-api-readiness-3' in page, f"{locale} homepage JS cache version was not refreshed")
+    require('app.js?v=20261124-api-readiness-4' in page, f"{locale} homepage JS cache version was not refreshed")
     require('style.css?v=20261123-mobile-layout-2' in page, f"{locale} homepage CSS cache version was not refreshed")
     for key in ("jump_pdf", "jump_print", "jump_poster", "jump_measure", "jump_translate", "jump_image"):
         require(re.search(rf'<b data-i18n="{key}">\s*[^<]+\s*</b>', page) is not None,
