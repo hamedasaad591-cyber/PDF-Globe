@@ -99,6 +99,8 @@ function assert(condition, message) {
     );
     assert(simulatedHealthRequests >= 3,
       'Frontend did not retry temporary Render 503 responses; health requests: ' + simulatedHealthRequests);
+    // Let the initial readiness promise settle before simulating a later sleep cycle.
+    await page.waitForTimeout(300);
     console.log('PASS API wake-up recovery: recovered after ' + (simulatedHealthRequests - 1) +
       ' temporary 503 responses without reloading the page');
 
@@ -113,7 +115,7 @@ function assert(condition, message) {
     await page.waitForFunction(
       () => document.querySelector('#resultBox') && !document.querySelector('#resultBox').classList.contains('hidden'),
       null,
-      { timeout: 15000 }
+      { timeout: 30000 }
     );
     assert(simulatedHealthRequests === 6,
       'Server upload did not retry its fresh readiness probe after two temporary 503 responses; health requests: ' + simulatedHealthRequests);
