@@ -221,10 +221,22 @@ function assert(condition, message) {
       'English homepage does not contain all 22 tool cards');
     console.log('PASS language switching: Arabic homepage navigates to complete English homepage');
 
+    // Verify the public robots.txt points to a directly served XML sitemap.
+    const robotsResponse = await page.request.get(BASE + '/robots.txt');
+    assert(robotsResponse.ok(), 'Public robots.txt is not reachable from the browser');
+    const robotsText = await robotsResponse.text();
+    assert(/Sitemap:\\s*https:\\/\\/pdf-globe\\.pages\\.dev\\/sitemap\\.xml\\s*$/mi.test(robotsText),
+      'robots.txt does not reference the canonical public sitemap URL');
+
     // Load every URL in the production sitemap in Chromium, not just the homepage.
     const sitemapResponse = await page.request.get(BASE + '/sitemap.xml');
     assert(sitemapResponse.ok(), 'Public sitemap is not reachable from the browser');
+    const sitemapContentType = sitemapResponse.headers()['content-type'] || '';
+    assert(/(?:application|text)\\/xml/i.test(sitemapContentType),
+      'Public sitemap does not have an XML content type: ' + sitemapContentType);
     const sitemapXml = await sitemapResponse.text();
+    assert(/^\\s*<\\?xml|^\\s*<urlset/i.test(sitemapXml),
+      'Public sitemap response does not begin with an XML sitemap document');
     const pageUrls = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1].trim());
     assert(pageUrls.length >= 30, 'Expected at least 30 public sitemap pages; found ' + pageUrls.length);
     assert(new Set(pageUrls).size === pageUrls.length, 'Public sitemap contains duplicate browser audit URLs');
