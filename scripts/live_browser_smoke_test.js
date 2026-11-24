@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+const fs = require('node:fs/promises');
 
 const BASE = 'https://pdf-globe.pages.dev';
 const EXPECTED_TOOLS = [
@@ -15,6 +16,8 @@ function assert(condition, message) {
   let browser;
   const failures = [];
   let simulatedHealthRequests = 0;
+  let lastHealthHealthy = false;
+  let uploadAfterHealthyProbe = false;
   try {
     browser = await chromium.launch({
       headless: true,
@@ -22,7 +25,8 @@ function assert(condition, message) {
     });
     const context = await browser.newContext({
       viewport: { width: 1440, height: 1000 },
-      ignoreHTTPSErrors: false
+      ignoreHTTPSErrors: false,
+      acceptDownloads: true
     });
 
     // The monitor checks the deployed API separately. Stub only these read-only
@@ -33,13 +37,15 @@ function assert(condition, message) {
         simulatedHealthRequests += 1;
         // Simulate Render's free-instance wake-up: two temporary 503 responses,
         // then a healthy JSON response. The page must recover without a reload.
-        if (simulatedHealthRequests <= 2) {
+        if (simulatedHealthRequests <= 2 || simulatedHealthRequests === 4 || simulatedHealthRequests === 5) {
+          lastHealthHealthy = false;
           return route.fulfill({
             status: 503,
             contentType: 'text/html',
             body: '<!doctype html><title>Application loading</title>'
           });
         }
+        lastHealthHealthy = true;
         return route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -55,6 +61,14 @@ function assert(condition, message) {
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({ languages: [] })
+        });
+      }
+      if (url.pathname === '/api/pdf/compress' && route.request().method() === 'POST') {
+        uploadAfterHealthyProbe = lastHealthHealthy;
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/pdf',
+          body: Buffer.from('%PDF-1.4\\n% synthetic readiness response\\n')
         });
       }
       return route.fulfill({
@@ -87,6 +101,25 @@ function assert(condition, message) {
       'Frontend did not retry temporary Render 503 responses; health requests: ' + simulatedHealthRequests);
     console.log('PASS API wake-up recovery: recovered after ' + (simulatedHealthRequests - 1) +
       ' temporary 503 responses without reloading the page');
+
+    // A tool click must probe the API again: it may have gone to sleep since page load.
+    await page.locator('.tool-card[data-tool="compress"]').click();
+    await page.locator('#fileInput').setInputFiles({
+      name: 'readiness-check.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4\\n% upload is intercepted by this test\\n')
+    });
+    await page.locator('#runTool').click();
+    await page.waitForFunction(
+      () => document.querySelector('#resultBox') && !document.querySelector('#resultBox').classList.contains('hidden'),
+      null,
+      { timeout: 15000 }
+    );
+    assert(simulatedHealthRequests === 6,
+      'Server upload did not retry its fresh readiness probe after two temporary 503 responses; health requests: ' + simulatedHealthRequests);
+    assert(uploadAfterHealthyProbe,
+      'Server upload was sent before the latest API health probe became healthy');
+    console.log('PASS server upload waits for a fresh API health check and retries a simulated cold start');
 
     const ids = await page.locator('.tool-card[data-tool]').evaluateAll(cards =>
       cards.map(card => card.getAttribute('data-tool'))
@@ -257,6 +290,39 @@ function assert(condition, message) {
       assert(state.heading.length >= 5, 'Main heading missing in browser: ' + url);
     }
     console.log('PASS Chromium navigation and metadata for all ' + pageUrls.length + ' sitemap pages');
+
+    // Exercise Saffha from image upload through a real browser-generated PDF.
+    const saffhaUrl = BASE + '/saffha/';
+    assert(pageUrls.includes(saffhaUrl), 'Saffha is missing from the public sitemap');
+    const saffhaResponse = await page.goto(saffhaUrl, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    assert(saffhaResponse && saffhaResponse.status() === 200, 'Saffha page did not return HTTP 200');
+    await page.waitForFunction(() => typeof window.PDFLib !== 'undefined', null, { timeout: 45000 });
+    const tinyPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS9sAAAAASUVORK5CYII=', 'base64');
+    await page.locator('#fileInput').setInputFiles({ name: 'pdf-globe-smoke.png', mimeType: 'image/png', buffer: tinyPng });
+    await page.waitForFunction(() => {
+      const button = document.querySelector('#downloadBtn');
+      return button && !button.disabled && document.querySelectorAll('#filesList .file-row').length === 1;
+    }, null, { timeout: 15000 });
+    const [saffhaDownload] = await Promise.all([
+      page.waitForEvent('download', { timeout: 30000 }),
+      page.locator('#downloadBtn').click()
+    ]);
+    assert(saffhaDownload.suggestedFilename() === 'saffha-a4.pdf',
+      'Saffha generated an unexpected filename: ' + saffhaDownload.suggestedFilename());
+    const saffhaPath = await saffhaDownload.path();
+    assert(saffhaPath, 'Saffha PDF download did not produce a local file');
+    const saffhaBytes = await fs.readFile(saffhaPath);
+    assert(saffhaBytes.subarray(0, 5).toString('ascii') === '%PDF-', 'Saffha output does not have a PDF signature');
+    assert(saffhaBytes.length > 500, 'Saffha generated an unexpectedly small PDF');
+    const pageCount = await page.evaluate(async base64 => {
+      const raw = atob(base64);
+      const bytes = Uint8Array.from(raw, character => character.charCodeAt(0));
+      const doc = await PDFLib.PDFDocument.load(bytes);
+      return doc.getPageCount();
+    }, saffhaBytes.toString('base64'));
+    assert(pageCount === 1, 'Saffha output should contain exactly one A4 page; found ' + pageCount);
+    await page.waitForFunction(() => document.querySelector('#status')?.textContent.includes('تم تجهيز ملف PDF'), null, { timeout: 10000 });
+    console.log('PASS Saffha: loads PDF library, accepts PNG, renders preview and exports a valid one-page PDF');
 
     if (failures.length) {
       throw new Error(failures.join('\n'));
