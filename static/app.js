@@ -400,7 +400,7 @@
       form.append('consent','true');
       const response=await fetch(apiUrl('/api/dicom/to-pdf'),{method:'POST',body:form});
       if(!response.ok)throw new Error(await apiErrorMessage(response));
-      const blob=await response.blob();
+      const blob=await response.blob();if(!blob.size)throw new Error(t('error_server'));
       showResult(blob,'dicom-images.pdf',t('dicom_output_note'));
       return;
     }
@@ -410,7 +410,7 @@
       selectedFiles.forEach(file=>form.append('files',file));
       form.append('output_format','pdf');
       const response=await fetch(apiUrl('/api/image/convert'),{method:'POST',body:form});
-      if(!response.ok){let message=t('error_server');try{const data=await response.json();message=data.detail||message;}catch{}throw new Error(message);}
+      if(!response.ok)throw new Error(await apiErrorMessage(response));
       const blob=await response.blob();
       if(!blob.size)throw new Error(t('error_server'));
       showResult(blob,'images_converted.pdf');
