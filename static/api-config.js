@@ -5,7 +5,7 @@ window.PDF_GLOBE_API_BASE = "https://pdf-globe.onrender.com";
 window.PDF_GLOBE_WAIT_FOR_API_READY = async function (options = {}) {
   const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 95000;
   const retryMs = Number(options.retryMs) > 0 ? Number(options.retryMs) : 5000;
-  const apiBase = String(window.PDF_GLOBE_API_BASE || window.location.origin).replace(/\\/+$/, "");
+  const apiBase = String(window.PDF_GLOBE_API_BASE || window.location.origin).replace(/\/+$/, "");
   const deadline = Date.now() + timeoutMs;
   let lastError = null;
 
