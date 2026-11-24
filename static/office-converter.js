@@ -107,6 +107,10 @@
     convertButton.disabled = true;
     setStatus(messages.working);
     try {
+      if (typeof window.PDF_GLOBE_WAIT_FOR_API_READY !== "function") {
+        throw new Error(messages.failed);
+      }
+      await window.PDF_GLOBE_WAIT_FOR_API_READY();
       const form = new FormData();
       form.append("file", selectedFile);
       const response = await fetch(apiBase + selectedTool.endpoint, {
