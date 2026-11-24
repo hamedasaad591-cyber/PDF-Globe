@@ -3,6 +3,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 STATIC = ROOT / "static"
@@ -15,7 +16,8 @@ home = (STATIC / "index.html").read_text(encoding="utf-8")
 english_home = (STATIC / "en" / "index.html").read_text(encoding="utf-8")
 app = (STATIC / "app.js").read_text(encoding="utf-8")
 backend = (ROOT / "main.py").read_text(encoding="utf-8")
-sitemap = (STATIC / "sitemap-pages.xml").read_text(encoding="utf-8")
+sitemap = (STATIC / "sitemap.xml").read_text(encoding="utf-8")
+robots = (STATIC / "robots.txt").read_text(encoding="utf-8")
 api_config = (STATIC / "api-config.js").read_text(encoding="utf-8")
 
 # Every visible homepage tool card must have exactly one registered tool handler.
@@ -94,6 +96,20 @@ for page, locale, canonical in (
 
 require('id="apiStatus"' in home and 'id="apiStatus"' in english_home, "API availability status is missing from a homepage")
 require("https://pdf-globe.pages.dev/en/" in sitemap, "English homepage is missing from sitemap")
+sitemap_root = ET.fromstring(sitemap)
+sitemap_urls = [
+    element.text.strip()
+    for element in sitemap_root.iter()
+    if element.tag.endswith("loc") and element.text
+]
+require(sitemap_root.tag.endswith("urlset"), "Public sitemap root element is not urlset")
+require(len(sitemap_urls) >= 30, f"Expected at least 30 sitemap URLs, found {len(sitemap_urls)}")
+require(len(sitemap_urls) == len(set(sitemap_urls)), "Public sitemap contains duplicate URLs")
+require(all(url.startswith("https://pdf-globe.pages.dev/") for url in sitemap_urls),
+        "Public sitemap contains a URL outside the canonical site origin")
+require("Sitemap: https://pdf-globe.pages.dev/sitemap.xml" in robots,
+        "robots.txt does not reference the direct public sitemap URL")
+require("Disallow: /" not in robots, "robots.txt blocks the entire site")
 require("applyLanguage(document.documentElement.lang || 'ar')" in app, "interface language does not follow the page locale")
 require("window.location.assign('/en/')" in app and "window.location.assign('/')" in app, "Arabic/English language selection does not route to its crawlable page")
 require("incoming.find" in app, "upload extension validation is missing")
