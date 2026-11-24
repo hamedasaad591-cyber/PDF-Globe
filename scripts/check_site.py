@@ -126,7 +126,7 @@ require("apiHealthPromise" in app and "const deadline=Date.now()+95000" in app, 
 require("capabilities" in backend, "API health does not expose backend capabilities")
 require("translation_provider" in backend, "API health does not expose the active translation provider")
 require("allowAuto&&translationSupportsAuto" in app, "translation auto-detect option is not restricted to supported providers")
-require("translationSupportsAuto=String(data.translation_provider||'').startsWith('LibreTranslate')" in app, "translation auto-detect capability is not read from the API")
+require("translationSupportsAuto=String(healthyData.translation_provider||'').startsWith('LibreTranslate')" in app, "translation auto-detect capability is not read from the API")
 
 # The independent unit-conversion tool must be discoverable, localized and local-only.
 unit_ar = (STATIC / "unit-converter.html").read_text(encoding="utf-8")
