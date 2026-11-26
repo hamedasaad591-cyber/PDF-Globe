@@ -116,6 +116,37 @@ require(all(url.startswith("https://pdf-globe.pages.dev/") for url in sitemap_ur
 require("Sitemap: https://pdf-globe.pages.dev/sitemap.xml" in robots,
         "robots.txt does not reference the direct public sitemap URL")
 require("Disallow: /" not in robots, "robots.txt blocks the entire site")
+require(all(not url.split("?", 1)[0].endswith(".html") for url in sitemap_urls), "Public sitemap contains a .html URL that redirects to a clean URL")
+sitemap_pages = (STATIC / "sitemap-pages.xml").read_text(encoding="utf-8")
+require(sitemap_pages == sitemap, "sitemap-pages.xml must match the canonical public sitemap")
+favicon = STATIC / "favicon.svg"
+require(favicon.is_file() and "<svg" in favicon.read_text(encoding="utf-8"), "SVG favicon is missing or invalid")
+headers = (STATIC / "_headers").read_text(encoding="utf-8")
+for security_header in ("X-Content-Type-Options: nosniff", "Referrer-Policy:", "X-Frame-Options:", "Permissions-Policy:"):
+    require(security_header in headers, f"Cloudflare Pages security header is missing: {security_header}")
+for page_url in sitemap_urls:
+    route = page_url.removeprefix("https://pdf-globe.pages.dev")
+    if route in ("", "/"):
+        page_file = STATIC / "index.html"
+    elif route.endswith("/"):
+        page_file = STATIC / route.lstrip("/") / "index.html"
+    else:
+        page_file = STATIC / (route.lstrip("/") + ".html")
+    require(page_file.is_file(), f"Sitemap URL has no matching static page: {page_url} ({page_file})")
+    page_html = page_file.read_text(encoding="utf-8")
+    canonical_match = re.search(r'<link[^>]+rel="canonical"[^>]+href="([^"]+)"', page_html, re.I)
+    require(canonical_match is not None and canonical_match.group(1) == page_url,
+            f"Page canonical does not match its sitemap URL: {page_url}")
+    require('rel="icon" type="image/svg+xml" href="/favicon.svg"' in page_html,
+            f"Page does not reference the shared favicon: {page_url}")
+    internal_hrefs = re.findall(r'href="([^"]+)"', page_html)
+    bad_internal_hrefs = [
+        value for value in internal_hrefs
+        if (value.startswith("/") or value.startswith("https://pdf-globe.pages.dev/"))
+        and ".html" in value.split("?", 1)[0].split("#", 1)[0]
+    ]
+    require(not bad_internal_hrefs,
+            f"Page contains internal links to redirecting .html URLs: {page_url} ({bad_internal_hrefs})")
 require("applyLanguage(document.documentElement.lang || 'ar')" in app, "interface language does not follow the page locale")
 require("window.location.assign('/en/')" in app and "window.location.assign('/')" in app, "Arabic/English language selection does not route to its crawlable page")
 require("incoming.find" in app, "upload extension validation is missing")
@@ -134,12 +165,12 @@ unit_en = (STATIC / "en" / "unit-converter.html").read_text(encoding="utf-8")
 unit_js = (STATIC / "unit-converter.js").read_text(encoding="utf-8")
 unit_css = (STATIC / "unit-converter.css").read_text(encoding="utf-8")
 sitemap_all = (STATIC / "sitemap.xml").read_text(encoding="utf-8")
-require('data-static-tool="true"' in home and 'href="/unit-converter.html"' in home, "Arabic homepage unit converter card is missing")
-require('data-static-tool="true"' in english_home and 'href="/en/unit-converter.html"' in english_home, "English homepage unit converter card is missing")
+require('data-static-tool="true"' in home and 'href="/unit-converter"' in home, "Arabic homepage unit converter card is missing")
+require('data-static-tool="true"' in english_home and 'href="/en/unit-converter"' in english_home, "English homepage unit converter card is missing")
 require('tool_units:' in app and 'desc_units:' in app, "unit converter homepage localization is missing")
 for page, locale, canonical in (
-    (unit_ar, "ar", "https://pdf-globe.pages.dev/unit-converter.html"),
-    (unit_en, "en", "https://pdf-globe.pages.dev/en/unit-converter.html"),
+    (unit_ar, "ar", "https://pdf-globe.pages.dev/unit-converter"),
+    (unit_en, "en", "https://pdf-globe.pages.dev/en/unit-converter"),
 ):
     require(f'<html lang="{locale}"' in page, f"{locale} unit-converter page has the wrong locale")
     require(f'rel="canonical" href="{canonical}"' in page, f"{locale} unit-converter canonical is incorrect")
@@ -148,7 +179,7 @@ for page, locale, canonical in (
 require("INGREDIENTS" in unit_js and "recipeUnitOptions" in unit_js, "ingredient-based cooking and recipe calculator are missing")
 require(all(x in unit_js for x in ("temperature", "pressure", "energy", "data", "area", "speed")), "unit-converter categories are incomplete")
 require("fetch(" not in unit_js and "XMLHttpRequest" not in unit_js, "unit converter should not transmit values to a server")
-require("unit-converter.html" in sitemap and "unit-converter.html" in sitemap_all, "unit converter pages are missing from a sitemap")
+require("https://pdf-globe.pages.dev/unit-converter</loc>" in sitemap and "https://pdf-globe.pages.dev/en/unit-converter</loc>" in sitemap_all, "unit converter pages are missing from a sitemap")
 require('.field[hidden]{display:none!important}' in unit_css, "non-cooking ingredient selector visibility rule is missing")
 
 # Image compression/resizing is a separate browser-only tool.
@@ -161,12 +192,12 @@ image_section_en = re.search(r'<section class="directory-group" id="image-tools"
 require(image_section_ar is not None and image_section_ar.group(1).count('class="tool-card directory-tool-card"') == 4, "Arabic image tools section must contain four separate cards")
 require(image_section_en is not None and image_section_en.group(1).count('class="tool-card directory-tool-card"') == 4, "English image tools section must contain four separate cards")
 for mode in ("convert", "resize", "compress", "enhance"):
-    require(f'href="/image-compressor.html?mode={mode}"' in image_section_ar.group(1), f"Arabic image mode card is missing: {mode}")
-    require(f'href="/en/image-compressor.html?mode={mode}"' in image_section_en.group(1), f"English image mode card is missing: {mode}")
+    require(f'href="/image-compressor?mode={mode}"' in image_section_ar.group(1), f"Arabic image mode card is missing: {mode}")
+    require(f'href="/en/image-compressor?mode={mode}"' in image_section_en.group(1), f"English image mode card is missing: {mode}")
 require('tool_imagecompress:' in app and 'desc_imagecompress:' in app, "image compressor homepage localization is missing")
 for page, locale, canonical in (
-    (image_ar, "ar", "https://pdf-globe.pages.dev/image-compressor.html"),
-    (image_en, "en", "https://pdf-globe.pages.dev/en/image-compressor.html"),
+    (image_ar, "ar", "https://pdf-globe.pages.dev/image-compressor"),
+    (image_en, "en", "https://pdf-globe.pages.dev/en/image-compressor"),
 ):
     require(f'<html lang="{locale}"' in page, f"{locale} image compressor page has the wrong locale")
     require(f'rel="canonical" href="{canonical}"' in page, f"{locale} image compressor canonical is incorrect")
@@ -178,7 +209,7 @@ require("new FormData()" in image_js and "form.append(" in image_js, "image comp
 require("output_format" in image_js and "sharpen" in image_js and "brightness" in image_js, "image processing controls are not wired to the API")
 require("مؤقت" in image_js or "Temporary" in image_js, "image converter upload behavior is not disclosed")
 require("function invalidateResults()" in image_js, "image compressor must clear stale results when settings change")
-require("image-compressor.html" in sitemap and "image-compressor.html" in sitemap_all, "image compressor pages are missing from a sitemap")
+require("https://pdf-globe.pages.dev/image-compressor</loc>" in sitemap and "https://pdf-globe.pages.dev/en/image-compressor</loc>" in sitemap_all, "image compressor pages are missing from a sitemap")
 require("grid-template-columns:1fr" in image_css, "image compressor mobile layout is missing")
 
 print(f"PASS: {len(cards)} homepage tools registered; {len(client_tools)} browser tools dispatched; {len(expected_server)} server tools mapped.")
@@ -191,8 +222,8 @@ require("openpyxl==" in requirements_text and "python-pptx==" in requirements_te
 require('@app.post("/api/pdf/to-excel")' in backend and "page.find_tables" in backend, "PDF to Excel table extraction route is missing")
 require('@app.post("/api/pdf/to-powerpoint")' in backend and "Presentation()" in backend and "add_picture" in backend, "PDF to PowerPoint route is missing")
 for locale, prefix, excel_url, ppt_url in (
-    ("ar", "", "/pdf-to-excel.html", "/pdf-to-powerpoint.html"),
-    ("en", "en/", "/en/pdf-to-excel.html", "/en/pdf-to-powerpoint.html"),
+    ("ar", "", "/pdf-to-excel", "/pdf-to-powerpoint"),
+    ("en", "en/", "/en/pdf-to-excel", "/en/pdf-to-powerpoint"),
 ):
     home_page = (STATIC / (prefix + "index.html")).read_text(encoding="utf-8")
     grid_match = re.search(r'<div class="tool-grid" id="toolGrid">([\s\S]*?)</div>', home_page)
@@ -200,7 +231,7 @@ for locale, prefix, excel_url, ppt_url in (
     grid = grid_match.group(1)
     require(f'href="{excel_url}"' in grid and f'href="{ppt_url}"' in grid, f"{locale} homepage Excel/PowerPoint cards are missing from the tool grid")
     require('id="pdf-tools"' in home_page and 'id="image-tools"' in home_page, f"{locale} homepage directory sections are missing")
-    require(f'href="/{prefix}image-compressor.html?mode=convert"' in home_page and f'href="/{prefix}unit-converter.html"' in home_page, f"{locale} image or unit utility link is missing")
+    require(f'href="/{prefix}image-compressor?mode=convert"' in home_page and f'href="/{prefix}unit-converter"' in home_page, f"{locale} image or unit utility link is missing")
     require('category-jump-grid' in home_page and 'directory-search' in home_page, f"{locale} directory navigation or global search is missing")
     for filename, url, kind in (
         ("pdf-to-excel.html", excel_url, "excel"),
@@ -231,7 +262,7 @@ for locale, prefix in (("ar", ""), ("en", "en/")):
     require('id="toolSearch"' in page and 'id="noResults"' in page, f"{locale} homepage global tool search is missing")
     require(page.count('class="category-jump-card"') == 7, f"{locale} homepage should expose seven category shortcuts")
     require(page.count('data-tool="') == 22, f"{locale} homepage tools are duplicated or missing")
-    require('href="/saffha/"' in page and 'href="/poster-splitter.html"' in page, f"{locale} handout or poster tool link is missing")
+    require('href="/saffha/"' in page and 'href="/poster-splitter"' in page, f"{locale} handout or poster tool link is missing")
 require("directory-group" in (STATIC / "style.css").read_text(encoding="utf-8"), "Homepage directory styles are missing")
 require("$('#categories').addEventListener" not in app, "Old category filter is still wired to the removed category strip")
 require("data-tool-group" in app and "visibleCount" in app, "Global search does not show/hide directory groups")
@@ -296,7 +327,7 @@ for locale, prefix in (("ar", ""), ("en", "en/")):
     require(section is not None, f"{locale} image section is missing")
     image_section = section.group(1)
     for mode in ("convert", "resize", "compress", "enhance"):
-        require(f"image-compressor.html?mode={mode}" in image_section, f"{locale} image task is missing: {mode}")
+        require(f"image-compressor?mode={mode}" in image_section, f"{locale} image task is missing: {mode}")
     require(image_section.count('class="tool-card directory-tool-card"') == 4, f"{locale} image section must show four independent cards")
 for mode in ("convert", "resize", "compress", "enhance"):
     require(f"'{mode}'" in image_js, f"image task mode is not supported: {mode}")

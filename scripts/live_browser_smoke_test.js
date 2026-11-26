@@ -85,6 +85,21 @@ function assert(condition, message) {
     const response = await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 60000 });
     assert(response && response.status() === 200,
       'Public Arabic homepage did not return HTTP 200');
+    assert(page.url() === BASE + '/',
+      'Arabic homepage unexpectedly redirected to ' + page.url());
+    const securityHeaders = response.headers();
+    assert((securityHeaders['x-content-type-options'] || '').toLowerCase() === 'nosniff',
+      'X-Content-Type-Options security header is missing');
+    assert((securityHeaders['referrer-policy'] || '').length > 0,
+      'Referrer-Policy security header is missing');
+    assert((securityHeaders['x-frame-options'] || '').toUpperCase() === 'DENY',
+      'X-Frame-Options security header is missing');
+    assert((securityHeaders['permissions-policy'] || '').length > 0,
+      'Permissions-Policy security header is missing');
+    const faviconResponse = await page.request.get(BASE + '/favicon.svg');
+    assert(faviconResponse.status() === 200 &&
+      (faviconResponse.headers()['content-type'] || '').includes('image/svg+xml'),
+      'Shared SVG favicon is missing or has the wrong content type');
 
     await page.waitForFunction(
       () => !!window.PDFLib && document.querySelectorAll('.tool-card[data-tool]').length > 0,
@@ -275,11 +290,15 @@ function assert(condition, message) {
     const pageUrls = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1].trim());
     assert(pageUrls.length >= 30, 'Expected at least 30 public sitemap pages; found ' + pageUrls.length);
     assert(new Set(pageUrls).size === pageUrls.length, 'Public sitemap contains duplicate browser audit URLs');
+    assert(pageUrls.every(url => !new URL(url).pathname.endsWith('.html')),
+      'Public sitemap contains a .html URL that will redirect to a clean URL');
     for (const url of pageUrls) {
       assert(new URL(url).origin === BASE, 'Sitemap contains a foreign-origin URL: ' + url);
       const pageResponse = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
       assert(pageResponse && pageResponse.status() === 200,
         'Sitemap page failed to load in Chromium: ' + url + ' (' + (pageResponse ? pageResponse.status() : 'no response') + ')');
+      assert(page.url() === url,
+        'Sitemap page redirected from its advertised URL: ' + url + ' -> ' + page.url());
       const state = await page.evaluate(() => ({
         title: document.title.trim(),
         lang: document.documentElement.lang,
@@ -288,7 +307,7 @@ function assert(condition, message) {
       }));
       assert(state.title.length >= 16, 'Page title missing in browser: ' + url);
       assert(['ar', 'en'].includes(state.lang), 'Unsupported page language in browser: ' + url);
-      assert(state.canonical === url, 'Canonical URL mismatch in browser: ' + url + ' found ' + state.canonical);
+      assert(state.canonical === page.url(), 'Canonical URL mismatch in browser: ' + url + ' found ' + state.canonical);
       assert(state.heading.length >= 5, 'Main heading missing in browser: ' + url);
     }
     console.log('PASS Chromium navigation and metadata for all ' + pageUrls.length + ' sitemap pages');
