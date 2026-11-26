@@ -148,6 +148,7 @@ def _html_attributes(markup: str) -> dict[str, str]:
 def check_page(url: str) -> tuple[str, float, int, str, list[str]]:
     status, body, content_type, elapsed, final_url = fetch(url)
     require(status == 200, f"{url}: expected HTTP 200, received {status}")
+    require(final_url == url, f"{url}: redirects to {final_url}; sitemap URLs must be final canonical URLs")
     require("text/html" in content_type, f"{url}: expected HTML, received {content_type or 'unknown content type'}")
     require(body.strip(), f"{url}: empty response body")
     html = body.decode("utf-8", errors="replace")
@@ -199,6 +200,7 @@ def check_page(url: str) -> tuple[str, float, int, str, list[str]]:
 def check_local_reference(url: str) -> tuple[str, float, int]:
     status, body, content_type, elapsed, final_url = fetch(url)
     require(status == 200, f"Internal reference {url}: expected HTTP 200, received {status}")
+    require(final_url == url, f"Internal reference {url} redirects to {final_url}; update the link to its final URL")
     require(body, f"Internal reference {url}: empty response body")
     return url, elapsed, len(body)
 
@@ -252,6 +254,7 @@ def main() -> int:
         urls = [node.text.strip() for node in root.findall(".//sm:loc", namespace) if node.text and node.text.strip()]
         require(len(urls) >= 30, f"Sitemap unexpectedly contains only {len(urls)} URLs (expected at least 30)")
         require(len(urls) == len(set(urls)), "Sitemap contains duplicate URLs")
+        require(all(not urllib.parse.urlsplit(item).path.endswith(".html") for item in urls), "Sitemap contains a redirecting .html URL")
         require(SITE_URL + "/" in urls and SITE_URL + "/en/" in urls, "Sitemap is missing Arabic or English homepage")
         for item in urls:
             parsed = urllib.parse.urlparse(item)
@@ -302,6 +305,7 @@ def main() -> int:
         ("/style.css", "text/css"),
         ("/app.js", "javascript"),
         ("/api-config.js", "javascript"),
+        ("/favicon.svg", "image/svg+xml"),
     ):
         url = SITE_URL + path
         try:

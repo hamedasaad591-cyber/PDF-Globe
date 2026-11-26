@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/live-monitor.yml"
+      - "static/**"
       - "scripts/live_site_check.py"
       - "scripts/live_browser_smoke_test.js"
       - "static/style.css"
